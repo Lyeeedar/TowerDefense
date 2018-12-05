@@ -1,0 +1,154 @@
+<Definitions Colour="125,156,127" Icon="Sprites/Icons/LevelIcon.png" xmlns:meta="Editor">
+	<!--Completion Conditions-->
+	<Definition Name="None" Nullable="False" SkipIfDefault="False" meta:RefKey="StructDef" />
+	<!--Failure-->
+	<Definition Name="Die" Nullable="False" SkipIfDefault="False" meta:RefKey="StructDef" />
+	<Definition Name="Time" Nullable="False" SkipIfDefault="False" meta:RefKey="StructDef">
+		<Data Name="Seconds" Min="1" Default="60" SkipIfDefault="False" meta:RefKey="Number" />
+	</Definition>
+	<Definition Name="Turns" Nullable="False" SkipIfDefault="False" meta:RefKey="StructDef">
+		<Data Name="Turns" Type="Int" Min="1" Default="40" SkipIfDefault="False" meta:RefKey="Number" />
+	</Definition>
+	<!--Success-->
+	<Definition Name="Plate" Nullable="False" SkipIfDefault="False" meta:RefKey="StructDef" />
+	<Definition Name="Matches" MinCount="1" SkipIfDefault="False" meta:RefKey="CollectionDef">
+		<Data Name="Orbs" Type="Int" Min="1" Default="10" SkipIfDefault="False" meta:RefKey="Number" />
+	</Definition>
+	<Definition Name="Kill" Nullable="False" SkipIfDefault="False" meta:RefKey="StructDef">
+		<Data Name="All" Default="True" meta:RefKey="Boolean" />
+		<Data Name="Named" VisibleIf="All == false" meta:RefKey="String" />
+	</Definition>
+	<Definition Name="Break" Nullable="False" SkipIfDefault="False" meta:RefKey="StructDef" />
+	<Definition Name="Sink" Nullable="False" SkipIfDefault="False" meta:RefKey="StructDef">
+		<Data Name="Count" Type="Int" Min="1" Default="4" SkipIfDefault="False" meta:RefKey="Number" />
+	</Definition>
+	<Definition Name="CustomOrb" Nullable="False" SkipIfDefault="False" meta:RefKey="StructDef">
+		<Data Name="Count" Type="Int" Min="1" Default="20" SkipIfDefault="False" meta:RefKey="Number" />
+		<Data Name="OrbName" meta:RefKey="String" />
+		<Data Name="Chance" Min="0" Max="1" Default="0.2" SkipIfDefault="False" meta:RefKey="Number" />
+	</Definition>
+	<!--Level Content-->
+	<Definition Name="SpreaderDef" IsGlobal="True" meta:RefKey="StructDef">
+		<Data Name="Name" meta:RefKey="String" />
+		<Data Name="Sprite" Keys="SpriteWrapper" meta:RefKey="Reference" />
+		<Data Name="ParticleEffect" Keys="ParticleEffect" meta:RefKey="Reference" />
+		<Data Name="Effect" EnumValues="Seal,Pop,Damage,Attack" meta:RefKey="Enum" />
+		<Data Name="Damage" Min="0" VisibleIf="Effect == Pop || Effect == Damage" meta:RefKey="Number" />
+		<Data Name="Spreads" Default="True" meta:RefKey="Boolean" />
+		<Data Name="FadeOut" Type="Int" Min="-1" Default="-1" meta:RefKey="Number" />
+		<Data Name="RenderAbove" Default="True" meta:RefKey="Boolean" />
+		<Data Name="AttackCooldownMin" Type="Int" Min="3" VisibleIf="Effect == Attack" meta:RefKey="Number" />
+		<Data Name="AttackCooldownMax" Type="Int" Min="3" Default="10" VisibleIf="Effect == Attack" meta:RefKey="Number" />
+		<Data Name="AttackNumPips" Type="Int" Min="3" Default="7" VisibleIf="Effect == Attack" meta:RefKey="Number" />
+		<Data Name="AttackEffect" Keys="ParticleEffect" VisibleIf="Effect == Attack" meta:RefKey="Reference" />
+	</Definition>
+	<Definition Name="TurnEffects" IsGlobal="True" meta:RefKey="CollectionDef">
+		<Data Name="TurnEffect" meta:RefKey="Struct">
+			<Data Name="Cooldown" Name1="Min" Name2="Max" Min="1" Type="Int" SkipIfDefault="False" meta:RefKey="Vector" />
+			<Data Name="Usages" Type="Int" Min="-1" Default="-1" meta:RefKey="Number" />
+			<Data Name="Target" EnumValues="Neighbour,Random" VisibleIf="Effect != SelfBuff" meta:RefKey="Enum" />
+			<Data Name="Count" Type="Int" Min="1" Default="1" VisibleIf="Effect != SelfBuff" meta:RefKey="Number" />
+			<Data Name="TargetRestriction" EnumValues="Orb,Special,Block,Empty,Sealed,Monster,Attack,Tile,NamedTile,Spreader" VisibleIf="Effect != SelfBuff" meta:RefKey="Enum" />
+			<Data Name="Permuter" EnumValues="Single,AllOfType,NofType,Column,Row,Cross,Block,Diamond,Cone,Random" VisibleIf="Effect != SelfBuff" meta:RefKey="Enum" />
+			<Data Name="Effect" EnumValues="Attack,Seal,CustomOrb,Block,Heal,SealedAttack,Summon,DelayedSummon,Spreader,Debuff" meta:RefKey="Enum" />
+			<Data Name="Data" meta:RefKey="Struct">
+				<!--Attack-->
+				<Data Name="NumPips" Type="Int" Min="1" Default="7" VisibleIf="Parent.Effect==Attack || Parent.Effect==SealedAttack || Parent.Effect == Heal || Parent.Effect == DelayedSummon || Parent.Effect==Dash || Parent.Effect==Debuff" meta:RefKey="Number" />
+				<Data Name="Damage" Type="Int" Min="1" Default="1" VisibleIf="Parent.Effect == Attack || Parent.Effect == SealedAttack" meta:RefKey="Number" />
+				<Data Name="Strength" Type="Int" Min="1" Default="1" VisibleIf="Parent.Effect==Seal || Parent.Effect==Shield || Parent.Effect == SealedAttack || Parent.Effect == Block" meta:RefKey="Number" />
+				<Data Name="Amount" Type="Int" Min="1" Default="10" VisibleIf="Parent.Effect==Heal" meta:RefKey="Number" />
+				<Data Name="Debuff" Keys="Buff" VisibleIf="Parent.Effect == Debuff" meta:RefKey="Reference" />
+				<Data Name="FlightEffect" Keys="ParticleEffect" VisibleIf="Parent.Effect==Attack || Parent.Effect==SealedAttack || Parent.Effect == Heal || Parent.Effect == DelayedSummon || Parent.Effect==Dash" meta:RefKey="Reference" />
+				<Data Name="HitEffect" Keys="ParticleEffect" VisibleIf="Parent.Effect==Attack || Parent.Effect==SealedAttack || Parent.Effect == Heal || Parent.Effect == DelayedSummon || Parent.Effect==Dash" meta:RefKey="Reference" />
+				<Data Name="ShowAttackLeap" Default="True" VisibleIf="Parent.Effect==Attack || Parent.Effect==SealedAttack || Parent.Effect == Heal || Parent.Effect == DelayedSummon || Parent.Effect==Dash" meta:RefKey="Boolean" />
+				<!--Permuter-->
+				<Data Name="AOE" Type="Int" Min="1" Default="1" VisibleIf="Parent.Permuter==Block || Parent.Permuter==Diamond" meta:RefKey="Number" />
+				<Data Name="Count" Type="Int" Min="1" Default="1" VisibleIf="Parent.Permuter==Random || Parent.Permuter==NOfType" meta:RefKey="Number" />
+				<Data Name="Type" VisibleIf="Parent.Permuter==NofType || Parent.Permuter==AllOfType" meta:RefKey="String" />
+				<Data Name="Range" Type="Int" Min="1" Default="9999999" VisibleIf="Parent.Target==Neighbour || Parent.Permuter == Cone" meta:RefKey="Number" />
+				<Data Name="MinRange" Type="Int" Min="0" meta:RefKey="Number" />
+				<Data Name="TileName" VisibleIf="Parent.TargetRestriction==NamedTile" meta:RefKey="String" />
+				<Data Name="Coverage" Min="0" Max="1" Default="1" VisibleIf="Parent.Permuter != Single &amp;&amp; Parent.Permuter != Random" meta:RefKey="Number" />
+				<!--Spreader-->
+				<Data Name="SpreaderName" VisibleIf="Parent.TargetRestriction == Spreader" meta:RefKey="String" />
+				<Data Name="Spreader" Keys="SpreaderDef" VisibleIf="Parent.Effect == Spreader" meta:RefKey="Reference" />
+				<!--Summon-->
+				<Data Name="MonsterDesc" Keys="MonsterDesc" VisibleIf="Parent.Effect == Summon || Parent.Effect == DelayedSummon" meta:RefKey="Reference" />
+				<Data Name="Faction" BasePath="Factions" StripExtension="True" ResourceType="Faction" VisibleIf="Parent.Effect==Summon || Parent.Effect == DelayedSummon" meta:RefKey="File" />
+				<Data Name="Name" VisibleIf="Parent.Effect==Summon || Parent.Effect == DelayedSummon || Parent.Effect==CustomOrb" meta:RefKey="String" />
+				<Data Name="Difficulty" Type="Int" Min="0" VisibleIf="Parent.Effect==Summon || Parent.Effect == DelayedSummon" meta:RefKey="Number" />
+				<Data Name="IsSummon" SkipIfDefault="False" VisibleIf="Parent.Effect == Summon || Parent.Effect == DelayedSummon" meta:RefKey="Boolean" />
+				<Data Name="SpawnEffect" Keys="ParticleEffect" VisibleIf="Parent.Effect == Summon || Parent.Effect == DelayedSummon" meta:RefKey="Reference" />
+			</Data>
+		</Data>
+	</Definition>
+	<!--Level-->
+	<Definition Name="Level" meta:RefKey="Struct">
+		<Data Name="Grid" MinCount="1" meta:RefKey="Collection">
+			<Data Name="Rows" ElementPerLine="True" IsAsciiGrid="True" meta:RefKey="MultilineString" />
+		</Data>
+		<Data Name="Symbols" meta:RefKey="Collection">
+			<Data Name="Symbol" meta:RefKey="Struct">
+				<Data Name="Character" MaxLength="1" SkipIfDefault="False" meta:RefKey="String" />
+				<Data Name="Extends" MaxLength="1" SkipIfDefault="False" meta:RefKey="String" />
+				<Data Name="UsageCondition" Default="1" meta:RefKey="String" />
+				<Data Name="FallbackCharacter" MaxLength="1" Default="." VisibleIf="UsageCondition != 1" meta:RefKey="String" />
+				<Data Name="NameKey" meta:RefKey="String" />
+				<Data Name="Sprite" Keys="SpriteWrapper" meta:RefKey="Reference" />
+				<Data Name="Block" meta:RefKey="Struct">
+					<Data Name="Sprite" Keys="Sprite" meta:RefKey="Reference" />
+					<Data Name="Health" Type="Int" Min="1" Default="1" SkipIfDefault="False" meta:RefKey="Number" />
+					<Data Name="AlwaysShowHP" meta:RefKey="Boolean" />
+					<Data Name="TurnEffects" Keys="TurnEffects" meta:RefKey="Reference" />
+				</Data>
+				<Data Name="Plate" Type="Int" Min="0" SkipIfDefault="False" meta:RefKey="Number" />
+				<Data Name="Seal" Type="Int" Min="0" SkipIfDefault="False" meta:RefKey="Number" />
+				<Data Name="Attack" Type="Int" Min="0" SkipIfDefault="False" meta:RefKey="Number" />
+				<Data Name="Friendly" Keys="Friendly" meta:RefKey="Reference" />
+				<Data Name="IsMonster" SkipIfDefault="False" meta:RefKey="Boolean" />
+				<Data Name="FactionMonster" meta:RefKey="Struct">
+					<Data Name="IsBoss" meta:RefKey="Boolean" />
+					<Data Name="DifficultyModifier" Type="Int" Min="0" meta:RefKey="Number" />
+				</Data>
+				<Data Name="MonsterDesc" Keys="MonsterDesc" meta:RefKey="Reference" />
+				<Data Name="SpecialOrb" EnumValues="None,3x3,4x4,H4,3H4,V4,3V4,5,All" SkipIfDefault="False" meta:RefKey="Enum" />
+				<Data Name="Sinkable" meta:RefKey="Struct">
+					<Data Name="Sprite" Keys="Sprite" SkipIfDefault="False" VisibleIf="UsePlayerSprite == false" meta:RefKey="Reference" />
+					<Data Name="UsePlayerSprite" VisibleIf="Sprite == null" meta:RefKey="Boolean" />
+				</Data>
+				<Data Name="IsChest" meta:RefKey="Boolean" />
+				<Data Name="Container" meta:RefKey="Struct">
+					<Data Name="Sprite" Keys="Sprite" Nullable="False" SkipIfDefault="False" meta:RefKey="Reference" />
+					<Data Name="Health" Type="Int" Min="1" Default="1" meta:RefKey="Number" />
+					<Data Name="AlwaysShowHP" meta:RefKey="Boolean" />
+					<Data Name="TurnEffects" Keys="TurnEffects" meta:RefKey="Reference" />
+				</Data>
+				<Data Name="Spreader" Keys="SpreaderDef" meta:RefKey="Reference" />
+				<Data Name="Type" EnumValues="Floor,Wall,Pit" meta:RefKey="Enum" />
+				<Data Name="TurnEffects" Keys="TurnEffects" meta:RefKey="Reference" />
+			</Data>
+		</Data>
+		<Data Name="Faction" Collapse="True" meta:RefKey="Collection">
+			<Data Name="Faction" BasePath="Factions" StripExtension="True" ResourceType="Faction" meta:RefKey="File" />
+		</Data>
+		<Data Name="Theme" BasePath="Themes" StripExtension="True" ResourceType="Theme" meta:RefKey="File" />
+		<Data Name="CustomMonster" Keys="MonsterDesc" meta:RefKey="Reference" />
+		<Data Name="OrbCount" Type="Int" Min="4" Default="6" meta:RefKey="Number" />
+		<Data Name="SpawnWeightsOverride" meta:RefKey="Struct">
+			<Data Name="SpawnWeights" meta:RefKey="Collection">
+				<Data Name="Spawn" Nullable="False" Collapse="True" meta:RefKey="Struct">
+					<Data Name="Swappable" EnumValues="Orb,Shield,Changer,Attack,Summon" SkipIfDefault="False" meta:RefKey="Enum" />
+					<Data Name="Weight" Type="Int" Min="1" Default="1" SkipIfDefault="False" meta:RefKey="Number" />
+				</Data>
+			</Data>
+		</Data>
+		<Data Name="SealStength" Type="Int" Min="1" Default="1" meta:RefKey="Number" />
+		<Data Name="BlockStength" Type="Int" Min="1" Default="1" meta:RefKey="Number" />
+		<Data Name="AllowedVictories" MinCount="1" meta:RefKey="Collection">
+			<Data Name="Condition" Keys="None,Kill,Matches,Sink,CustomOrb,Plate,Turns,Break" Nullable="False" SkipIfDefault="False" meta:RefKey="Reference" />
+		</Data>
+		<Data Name="AllowedDefeats" MinCount="1" meta:RefKey="Collection">
+			<Data Name="Condition" Keys="None,Die,Kill,Matches,Sink,Plate,Time,Turns,Break" Nullable="False" SkipIfDefault="False" meta:RefKey="Reference" />
+		</Data>
+	</Definition>
+</Definitions>

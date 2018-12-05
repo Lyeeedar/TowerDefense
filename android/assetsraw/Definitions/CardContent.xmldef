@@ -1,0 +1,115 @@
+<Definitions Colour="145,145,145" xmlns:meta="Editor">
+	<Definition Name="CardContent" AllowCircularLinks="True" FlattenData="True" meta:RefKey="GraphStruct">
+		<Data Name="Root" Keys="Node" meta:RefKey="GraphReference" />
+	</Definition>
+	<!--Node-->
+	<Definition Name="Node" meta:RefKey="GraphCollectionDef">
+		<!--Text-->
+		<Data Name="Line" TextColour="241,88,247" meta:RefKey="Struct">
+			<Data Name="MultilineString" meta:RefKey="MultilineString" />
+		</Data>
+		<!--Branches-->
+		<Data Name="Branch" TextColour="192,207,109" meta:RefKey="Collection">
+			<Data Name="Branch" Description="{Condition}" meta:RefKey="Struct">
+				<Data Name="Condition" Default="1" meta:RefKey="String" />
+				<Data Name="Node" Keys="Node" UseParentDescription="True" meta:RefKey="GraphReference" />
+			</Data>
+		</Data>
+		<Data Name="Choice" TextColour="82,204,95" meta:RefKey="Struct">
+			<Data Name="Choices" meta:RefKey="Collection">
+				<Data Name="Choice" Description="{Text} ({Condition})" meta:RefKey="Struct">
+					<Data Name="Text" meta:RefKey="String" />
+					<Data Name="Condition" Default="1" meta:RefKey="String" />
+					<Data Name="Node" Keys="Node" UseParentDescription="True" meta:RefKey="GraphReference" />
+				</Data>
+			</Data>
+		</Data>
+		<Data Name="Node" Keys="Node" meta:RefKey="GraphReference" />
+		<Data Name="Match3" TextColour="82,204,95" meta:RefKey="Struct">
+			<Data Name="Level" StripExtension="True" ResourceType="Level" RelativeToThis="True" SkipIfDefault="False" meta:RefKey="File" />
+			<Data Name="Success" Keys="Node" SkipIfDefault="False" meta:RefKey="GraphReference" />
+			<Data Name="Failure" Keys="Node" SkipIfDefault="False" meta:RefKey="GraphReference" />
+		</Data>
+		<!--Visual-->
+		<Data Name="Flash" TextColour="192,207,109" meta:RefKey="Struct">
+			<Data Name="Colour" SkipIfDefault="False" meta:RefKey="Colour" />
+		</Data>
+		<Data Name="FadeOut" TextColour="192,207,109" meta:RefKey="Struct">
+			<Data Name="Colour" SkipIfDefault="False" meta:RefKey="Colour" />
+			<Data Name="Duration" Min="0" Default="1" SkipIfDefault="False" meta:RefKey="Number" />
+		</Data>
+		<Data Name="ClearFadeOut" TextColour="192,207,109" meta:RefKey="Struct">
+			<Data Name="Duration" Min="0" Default="1" SkipIfDefault="False" meta:RefKey="Number" />
+		</Data>
+		<!--Other-->
+		<Data Name="Define" TextColour="192,207,109" meta:RefKey="Struct">
+			<Data Name="Key" meta:RefKey="String" />
+			<Data Name="Value" meta:RefKey="String" />
+			<Data Name="Storage" EnumValues="Card,Quest,Global" SkipIfDefault="False" meta:RefKey="Enum" />
+		</Data>
+		<Data Name="MarkComplete" SkipIfDefault="False" TextColour="242,183,30" meta:RefKey="Struct">
+			<Data Name="State" EnumValues="Success,Failure,Custom" SkipIfDefault="False" meta:RefKey="Enum" />
+			<Data Name="Key" VisibleIf="State==Custom" meta:RefKey="String" />
+		</Data>
+		<Data Name="Rewards" Keys="Rewards" Nullable="False" meta:RefKey="Reference" />
+		<Data Name="Spend" TextColour="204,173,160" meta:RefKey="Struct">
+			<Data Name="Key" SkipIfDefault="False" meta:RefKey="String" />
+			<Data Name="Count" Default="1" SkipIfDefault="False" meta:RefKey="String" />
+		</Data>
+		<Data Name="Shop" TextColour="188,102,255" meta:RefKey="Struct">
+			<Data Name="CostMultiplier" Default="1" meta:RefKey="String" />
+			<Data Name="Items" meta:RefKey="Collection">
+				<!--Quest-->
+				<Data Name="Equipment" meta:RefKey="Struct">
+					<Data Name="FromDeck" Default="True" VisibleIf="Equipment==null" meta:RefKey="Boolean" />
+					<Data Name="Type" EnumValues="Any,Weapon,Armour,MainHand,OffHand,Head,Body" VisibleIf="Equipment==null" meta:RefKey="Enum" />
+					<Data Name="Equipment" VisibleIf="FromDeck==false" meta:RefKey="File" />
+					<Data Name="OnPurchaseDefine" Keys="OnPurchaseDefine" VisibleIf="FromDeck==false" meta:RefKey="Reference" />
+				</Data>
+				<Data Name="Statistics" meta:RefKey="Struct">
+					<Data Name="Cost" Type="Int" Min="1" Default="1" meta:RefKey="Number" />
+					<Data Name="Statistics" Keys="Statistics" Nullable="False" meta:RefKey="Reference" />
+					<Data Name="OnPurchaseDefine" Keys="OnPurchaseDefine" meta:RefKey="Reference" />
+				</Data>
+				<Data Name="Buff" meta:RefKey="Struct">
+					<Data Name="Cost" Type="Int" Min="1" Default="1" meta:RefKey="Number" />
+					<Data Name="Buff" Keys="Buff" Nullable="False" meta:RefKey="Reference" />
+					<Data Name="OnPurchaseDefine" Keys="OnPurchaseDefine" meta:RefKey="Reference" />
+				</Data>
+				<!--Progression-->
+				<Data Name="Card" meta:RefKey="Struct">
+					<Data Name="Cost" Type="Int" Min="1" Default="1" meta:RefKey="Number" />
+					<Data Name="File" BasePath="Cards" StripExtension="True" ResourceType="Card" SkipIfDefault="False" meta:RefKey="File" />
+					<Data Name="OnPurchaseDefine" Keys="OnPurchaseDefine" meta:RefKey="Reference" />
+				</Data>
+				<Data Name="Quest" meta:RefKey="Struct">
+					<Data Name="Cost" Type="Int" Min="1" Default="1" meta:RefKey="Number" />
+					<Data Name="File" BasePath="Quests" StripExtension="True" ResourceType="Quest" meta:RefKey="File" />
+					<Data Name="OnPurchaseDefine" Keys="OnPurchaseDefine" meta:RefKey="Reference" />
+				</Data>
+				<Data Name="Character" meta:RefKey="Struct">
+					<Data Name="Cost" Type="Int" Min="1" Default="1" meta:RefKey="Number" />
+					<Data Name="File" BasePath="Characters" StripExtension="True" ResourceType="Character" meta:RefKey="File" />
+					<Data Name="OnPurchaseDefine" Keys="OnPurchaseDefine" meta:RefKey="Reference" />
+				</Data>
+			</Data>
+		</Data>
+		<Data Name="ChanceCards" TextColour="29,201,224" meta:RefKey="Struct">
+			<Data Name="ChanceCards" MinCount="4" MaxCount="4" SkipIfDefault="False" meta:RefKey="Collection">
+				<Data Name="Chance" EnumValues="GreatPositive,Positive,Negative,GreatNegative" Default="Positive" SkipIfDefault="False" meta:RefKey="Enum" />
+			</Data>
+			<Data Name="ShuffleSpeedMultiplier" Min="0" Default="1" SkipIfDefault="False" meta:RefKey="Number" />
+			<Data Name="Nodes" meta:RefKey="Collection">
+				<Data Name="Branch" Description="{Chance}" meta:RefKey="Struct">
+					<Data Name="Chance" EnumValues="GreatPositive,Positive,Negative,GreatNegative" Default="Positive" SkipIfDefault="False" meta:RefKey="Enum" />
+					<Data Name="Node" Keys="Node" UseParentDescription="True" meta:RefKey="GraphReference" />
+				</Data>
+			</Data>
+		</Data>
+	</Definition>
+	<Definition Name="OnPurchaseDefine" meta:RefKey="StructDef">
+		<Data Name="Key" meta:RefKey="String" />
+		<Data Name="Value" meta:RefKey="String" />
+		<Data Name="Global" SkipIfDefault="False" meta:RefKey="Boolean" />
+	</Definition>
+</Definitions>

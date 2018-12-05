@@ -1,0 +1,40 @@
+<Definitions Colour="176,242,196" Icon="Sprites/Oryx/Custom/heroes/farmer_f_1.png" xmlns:meta="Editor">
+	<Definition Name="Character" meta:RefKey="Struct">
+		<Data Name="Name" SkipIfDefault="False" meta:RefKey="String" />
+		<Data Name="Description" SkipIfDefault="False" meta:RefKey="String" />
+		<Data Name="Sprite" Keys="Sprite" Nullable="False" SkipIfDefault="False" meta:RefKey="Reference" />
+		<Data Name="Statistics" Keys="Statistics" Nullable="False" SkipIfDefault="False" meta:RefKey="Reference" />
+		<Data Name="StartingEquipment" meta:RefKey="Struct">
+			<Data Name="Head" StripExtension="True" ResourceType="Head" meta:RefKey="File" />
+			<Data Name="Body" StripExtension="True" ResourceType="Body" meta:RefKey="File" />
+			<Data Name="MainHand" StripExtension="True" ResourceType="MainHand" meta:RefKey="File" />
+			<Data Name="OffHand" StripExtension="True" ResourceType="OffHand" meta:RefKey="File" />
+		</Data>
+	</Definition>
+	<Definition Name="Statistics" IsGlobal="True" meta:RefKey="StructDef">
+		<!--Health-->
+		<Data Name="Health" Type="Int" Min="-999999" meta:RefKey="Number" />
+		<Data Name="Regeneration" meta:RefKey="Number" />
+		<!--Damage-->
+		<Data Name="MatchDamage" meta:RefKey="Number" />
+		<Data Name="AbilityDamage" meta:RefKey="Number" />
+		<Data Name="Pierce" Min="0" meta:RefKey="Number" />
+		<Data Name="Berserk" Min="0" meta:RefKey="Number" />
+		<!--Gold-->
+		<Data Name="BonusGold" meta:RefKey="Number" />
+		<Data Name="PriceReduction" Min="0" meta:RefKey="Number" />
+		<!--Defense-->
+		<Data Name="Aegis" Min="0" Max="1" meta:RefKey="Number" />
+		<Data Name="Counter" Min="0" Max="1" meta:RefKey="Number" />
+		<Data Name="Reflect" Min="0" Max="1" meta:RefKey="Number" />
+		<!--Aura-->
+		<Data Name="WeaknessAura" Min="0" meta:RefKey="Number" />
+		<Data Name="NecroticAura" Min="0" meta:RefKey="Number" />
+		<!--Misc-->
+		<Data Name="PowerGain" meta:RefKey="Number" />
+		<Data Name="BuffDuration" Min="0" meta:RefKey="Number" />
+		<Data Name="Haste" meta:RefKey="Number" />
+		<Data Name="ChaoticNature" Min="0" Max="1" meta:RefKey="Number" />
+		<Data Name="Luck" Min="-1" Max="1" meta:RefKey="Number" />
+	</Definition>
+</Definitions>

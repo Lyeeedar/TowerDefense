@@ -1,0 +1,53 @@
+<Definitions Colour="187,126,235" Icon="Sprites/Icons/QuestIcon.png" xmlns:meta="Editor">
+	<Definition Name="QuestNodeDefs" Keys="QuestNode,Branch,CompleteQuest,Define,SetTheme" meta:RefKey="ReferenceDef" />
+	<Definition Name="Quest" AllowCircularLinks="True" FlattenData="True" meta:RefKey="GraphStruct">
+		<Data Name="Title" meta:RefKey="String" />
+		<Data Name="Description" meta:RefKey="String" />
+		<Data Name="Theme" BasePath="Themes" StripExtension="True" ResourceType="Theme" meta:RefKey="File" />
+		<Data Name="QuestCards" meta:RefKey="Collection">
+			<Data Name="Card" StripExtension="True" ResourceType="Card" RelativeToThis="True" meta:RefKey="File" />
+		</Data>
+		<Data Name="BronzeRewards" Keys="Rewards" Nullable="False" SkipIfDefault="False" meta:RefKey="Reference" />
+		<Data Name="SilverRewards" Keys="Rewards" Nullable="False" SkipIfDefault="False" meta:RefKey="Reference" />
+		<Data Name="GoldRewards" Keys="Rewards" Nullable="False" SkipIfDefault="False" meta:RefKey="Reference" />
+		<Data Name="Root" DefKey="QuestNodeDefs" meta:RefKey="GraphReference" />
+	</Definition>
+	<Definition Name="QuestNode" TextColour="240,156,204" meta:RefKey="GraphStructDef">
+		<Data Name="Type" EnumValues="Fixed,Deck" Default="Deck" SkipIfDefault="False" meta:RefKey="Enum" />
+		<!--Deck-->
+		<Data Name="IsShop" meta:RefKey="Boolean" />
+		<Data Name="AllowDeckCards" Default="True" SkipIfDefault="False" VisibleIf="Type==Deck" meta:RefKey="Boolean" />
+		<Data Name="AllowQuestCards" Default="True" SkipIfDefault="False" VisibleIf="Type==Deck" meta:RefKey="Boolean" />
+		<Data Name="AllowThemeCards" Default="True" SkipIfDefault="False" VisibleIf="Type==Deck" meta:RefKey="Boolean" />
+		<!--Fixed-->
+		<Data Name="FixedEvent" StripExtension="True" ResourceType="Card" RelativeToThis="True" SkipIfDefault="False" VisibleIf="Type==Fixed" meta:RefKey="File" />
+		<!--Chain nodes-->
+		<Data Name="Success" DefKey="QuestNodeDefs" meta:RefKey="GraphReference" />
+		<Data Name="Failure" DefKey="QuestNodeDefs" meta:RefKey="GraphReference" />
+		<Data Name="Custom" meta:RefKey="Collection">
+			<Data Name="State" meta:RefKey="Struct">
+				<Data Name="Key" meta:RefKey="String" />
+				<Data Name="Node" DefKey="QuestNodeDefs" UseParentDescription="True" meta:RefKey="GraphReference" />
+			</Data>
+		</Data>
+	</Definition>
+	<Definition Name="Branch" TextColour="208,245,162" meta:RefKey="GraphCollectionDef">
+		<Data Name="Branch" meta:RefKey="Struct">
+			<Data Name="Condition" meta:RefKey="String" />
+			<Data Name="Node" DefKey="QuestNodeDefs" meta:RefKey="GraphReference" />
+		</Data>
+	</Definition>
+	<Definition Name="CompleteQuest" TextColour="245,216,33" meta:RefKey="GraphStructDef">
+		<Data Name="State" EnumValues="Gold,Silver,Bronze,Failure" meta:RefKey="Enum" />
+	</Definition>
+	<Definition Name="Define" TextColour="131,187,174" meta:RefKey="GraphStructDef">
+		<Data Name="Key" meta:RefKey="String" />
+		<Data Name="Value" meta:RefKey="String" />
+		<Data Name="IsGlobal" meta:RefKey="Boolean" />
+		<Data Name="Next" DefKey="QuestNodeDefs" meta:RefKey="GraphReference" />
+	</Definition>
+	<Definition Name="SetTheme" TextColour="96,197,242" meta:RefKey="GraphStructDef">
+		<Data Name="Theme" BasePath="Themes" StripExtension="True" ResourceType="Theme" meta:RefKey="File" />
+		<Data Name="Next" DefKey="QuestNodeDefs" meta:RefKey="GraphReference" />
+	</Definition>
+</Definitions>
