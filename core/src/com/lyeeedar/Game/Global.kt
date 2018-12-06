@@ -13,7 +13,6 @@ import com.badlogic.gdx.utils.ObjectMap
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
-import com.lyeeedar.Game.Player
 import com.lyeeedar.Screens.AbstractScreen
 import com.lyeeedar.UI.*
 import com.lyeeedar.UI.Tooltip
@@ -47,8 +46,6 @@ class Global
 		var screenSize = Point(resolution.x, resolution.y)
 
 		lateinit var controls: Controls
-
-		lateinit var player: Player
 
 		val stage: Stage
 			get() = (game.screen as AbstractScreen).stage

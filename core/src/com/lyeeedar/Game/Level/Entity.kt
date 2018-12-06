@@ -1,6 +1,12 @@
 package com.lyeeedar.Game.Level
 
+import com.lyeeedar.Util.AssetManager
+
 abstract class Entity
 {
-	var tile: Tile? = null
+	lateinit var tile: Tile
+
+	val sprite = AssetManager.loadSprite("white")
+
+	abstract fun update(delta: Float, map: Map)
 }

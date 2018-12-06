@@ -3,53 +3,10 @@ package com.lyeeedar.Util
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Pool
-import com.lyeeedar.Global
 
 /**
  * Created by Philip on 04-Jul-16.
  */
-
-fun String.expandVariables(): String
-{
-	val split = this.split('{')
-	if (split.size == 1)
-	{
-		return this
-	}
-	else
-	{
-		val variables = Global.getVariableMap()
-
-		var output = ""
-
-		var isVar = this[0] == '{'
-		for (word in split)
-		{
-			if (isVar)
-			{
-				val clean = word.replace("}", "").toLowerCase()
-				val variable = variables[clean, 0.0f]
-
-				if (variable.toInt().toFloat() == variable)
-				{
-					output += variable.toInt().toString()
-				}
-				else
-				{
-					output += variable.toString()
-				}
-			}
-			else
-			{
-				output += word
-			}
-
-			isVar = !isVar
-		}
-
-		return output
-	}
-}
 
 fun String.neaten() = this.substring(0, 1).toUpperCase() + this.substring(1).toLowerCase()
 

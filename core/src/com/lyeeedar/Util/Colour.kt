@@ -241,6 +241,16 @@ class Colour()
 		return this
 	}
 
+	fun lerpHSV(target: Colour, t: Float): Colour
+	{
+		val start = HSLColour(this)
+		val end = HSLColour(target)
+
+		val lerped = start.lerp(end, t)
+
+		return lerped.toRGB()
+	}
+
 	fun toFloatBits() : Float
 	{
 		if (cachedR == r && cachedG == g && cachedB == b && cachedA == a) return cachedFB
@@ -295,8 +305,10 @@ class Colour()
 		val LIGHT_GRAY = Colour(Color.LIGHT_GRAY, true)
 		val DARK_GRAY = Colour(Color.DARK_GRAY, true)
 		val GOLD = Colour(Color.GOLD, true)
+		val BLUE = Colour(Color.BLUE, true)
 		val GREEN = Colour(Color.GREEN, true)
 		val RED = Colour(Color.RED, true)
+		val PINK = Colour(Color.PINK, true)
 		val ORANGE = Colour(Color.ORANGE, true)
 		val YELLOW = Colour(Color.YELLOW, true)
 

@@ -3,8 +3,8 @@ package com.lyeeedar
 import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
-import com.lyeeedar.Game.Save
 import com.lyeeedar.Screens.AbstractScreen
+import com.lyeeedar.Screens.MapScreen
 import com.lyeeedar.Screens.ParticleEditorScreen
 import com.lyeeedar.Util.Future
 import java.io.PrintWriter
@@ -16,6 +16,8 @@ class MainGame : Game()
 {
 	enum class ScreenEnum
 	{
+		MAP,
+
 		PARTICLEEDITOR,
 		INVALID
 	}
@@ -71,14 +73,9 @@ class MainGame : Game()
 		}
 		else
 		{
-			//screens.put(ScreenEnum.GRID, GridScreen())
+			screens.put(ScreenEnum.MAP, MapScreen())
 
-			val success = Save.load()
-
-			if (!success)
-			{
-				Global.newGame()
-			}
+			switchScreen(ScreenEnum.MAP)
 		}
 
 	}

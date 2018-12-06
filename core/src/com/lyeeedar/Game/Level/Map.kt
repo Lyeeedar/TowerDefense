@@ -1,14 +1,11 @@
 package com.lyeeedar.Game.Level
 
-import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Array
+import com.badlogic.gdx.utils.ObjectSet
 import com.lyeeedar.Direction
-import com.lyeeedar.Renderables.Animation.MoveAnimation
-import com.lyeeedar.Util.Array2D
-import com.lyeeedar.Util.Point
-import com.lyeeedar.Util.UnsmoothedPath
-import com.lyeeedar.Util.valueAt
-import ktx.math.plus
+import com.lyeeedar.Renderables.Renderable
+import com.lyeeedar.Renderables.Sprite.SpriteWrapper
+import com.lyeeedar.Util.*
 
 class Map
 {
@@ -17,73 +14,68 @@ class Map
 	init
 	{
 		grid = Array2D(20, 20) { x, y -> Tile(x, y) }
+
+		val sinker = Sinker()
+		val spawner = Spawner()
+		spawner.linkedDestination = sinker
+
+		spawner.tile = grid.random()!!
+		spawner.tile.fillingEntity = spawner
+
+		sinker.tile = grid.random()!!
+		sinker.tile.fillingEntity = sinker
+
 		updatePath()
 	}
 
-	val entityList = Array<Entity>()
+	val width: Int
+		get() = grid.width
+
+	val height: Int
+		get() = grid.height
+
+	val entityList = ObjectSet<Entity>()
 	fun update(delta: Float)
 	{
+		var pathsDirty = false
 		for (tile in grid)
 		{
 			entityList.addAll(tile.entities)
-			tile.entities.clear()
+
+			if (tile.fillingEntity != null)
+			{
+				entityList.add(tile.fillingEntity!!)
+			}
+
+			if (tile.tileDirty)
+			{
+				pathsDirty = true
+				tile.tileDirty = false
+			}
+		}
+
+		if (pathsDirty)
+		{
+			updatePath()
 		}
 
 		for (entity in entityList)
 		{
-			if (entity is Enemy)
-			{
-				if (entity.currentPath == null)
-				{
-					// update with a new path
-					val source = entity.source
-					val sourceIndex = source.sourceIndex
-					val dest = source.linkedDestination
-
-					val path = Array<Vector2>()
-					path.add(source.toVec() + entity.chosenOffset)
-
-					var current = entity.tile!!
-					while (current != dest)
-					{
-						path.add(current.toVec() + entity.chosenOffset)
-
-						current = current.nextTile[sourceIndex]
-					}
-
-					entity.currentPath = UnsmoothedPath(path.toArray())
-
-					entity.sprite.animation = null
-					entity.sprite.animation = MoveAnimation.obtain().set(entity.moveSpeed * entity.currentPath!!.approxLength(50), entity.currentPath!!)
-					entity.pathDist = 0f
-				}
-
-				entity.pathDist += delta
-
-				val pos = entity.currentPath!!.valueAt(entity.pathDist)
-				val tile = grid[pos.x.toInt(), pos.y.toInt()]
-
-				
-				tile.entities.add(entity)
-			}
-			else
-			{
-				throw Exception("Unhandled entity type! " + entity.javaClass.name)
-			}
+			entity.update(delta, this)
 		}
 	}
 
-	fun updatePath()
+	private fun updatePath()
 	{
-		val sources = Array<Tile>()
+		val sources = Array<Spawner>()
 
 		for (tile in grid)
 		{
 			tile.nextTile.clear()
 
-			if (tile.isSource)
+			if (tile.fillingEntity is Spawner)
 			{
-				sources.add(tile)
+				sources.add(tile.fillingEntity as Spawner)
 			}
 
 			for (entity in tile.entities)
@@ -103,7 +95,7 @@ class Map
 		for (source in sources)
 		{
 			source.sourceIndex = index++
-			val dest = source.linkedDestination!!
+			val dest = source.linkedDestination.tile!!
 
 			val tempCostGrid = Array2D<PathfindNode?>(grid.width, grid.height)
 			val processQueue = Array<PathfindNode>(false, 32)
@@ -121,24 +113,28 @@ class Map
 				for (offset in Direction.CardinalValues)
 				{
 					val next = current + offset
-					val nextTile = grid[next]
-					if (!nextTile.isSolid)
-					{
-						if (tempCostGrid[next] == null)
-						{
-							tempCostGrid[next] = PathfindNode(nextCost, next.x, next.y)
-							processQueue.add(tempCostGrid[next])
-						}
-						else
-						{
-							val existing = tempCostGrid[next]!!
-							if (nextCost < existing.cost)
-							{
-								existing.cost = nextCost
 
-								if (!existing.inQueue)
+					if (grid.inBounds(next))
+					{
+						val nextTile = grid[next]
+						if (!nextTile.isSolid && nextTile.fillingEntity == null)
+						{
+							if (tempCostGrid[next] == null)
+							{
+								tempCostGrid[next] = PathfindNode(nextCost, next.x, next.y)
+								processQueue.add(tempCostGrid[next])
+							}
+							else
+							{
+								val existing = tempCostGrid[next]!!
+								if (nextCost < existing.cost)
 								{
-									processQueue.add(existing)
+									existing.cost = nextCost
+
+									if (!existing.inQueue)
+									{
+										processQueue.add(existing)
+									}
 								}
 							}
 						}
@@ -149,17 +145,8 @@ class Map
 			// Process grid to find path
 			for (tile in grid)
 			{
-				val node = tempCostGrid[tile]
-
-				if (node != null)
-				{
-					val next = Direction.CardinalValues.mapNotNull { tempCostGrid[node + it] }.minBy { it.cost }!!
-					tile.nextTile.add(grid[next])
-				}
-				else
-				{
-					tile.nextTile.add(tile)
-				}
+				val next = Direction.CardinalValues.filter { tempCostGrid.inBounds(tile + it) }.mapNotNull { tempCostGrid[tile + it] }.minBy { it.cost } ?: tile
+				tile.nextTile.add(grid[next])
 			}
 		}
 	}
@@ -167,7 +154,6 @@ class Map
 
 class PathfindNode(var cost: Int, x: Int, y: Int) : Point(x, y)
 {
-	var processed = false
 	var inQueue = true
 }
 
@@ -177,10 +163,41 @@ class Tile(x: Int, y: Int) : Point(x, y)
 
 	val nextTile = Array<Tile>()
 
-	var isSource = false
+	var fillingEntity: Entity? = null
+		set(value)
+		{
+			field = value
+
+			tileDirty = true
+		}
+
 	var isSolid = false
+		set(value)
+		{
+			field = value
 
-	var sourceIndex = 0
+			if (field)
+			{
+				groundSprite!!.sprite!!.colour = Colour.DARK_GRAY
+			}
+			else
+			{
+				groundSprite!!.sprite!!.colour = Colour.LIGHT_GRAY
+			}
 
-	var linkedDestination: Tile? = null
+			tileDirty = true
+		}
+
+	val effects = Array<Renderable>()
+
+	var groundSprite: SpriteWrapper? = null
+	var wallSprite: SpriteWrapper? = null
+
+	var tileDirty = false
+
+	init
+	{
+		groundSprite = SpriteWrapper()
+		groundSprite!!.sprite = AssetManager.loadSprite("white", colour = Colour.LIGHT_GRAY)
+	}
 }
