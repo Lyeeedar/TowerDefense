@@ -1,0 +1,19 @@
+<Level xmlns:meta="Editor">
+	<Grid>
+		<Line>!!!!!!##.A.##!!</Line>
+		<Line>!!!!!###...###!</Line>
+		<Line>!!!#####.....##</Line>
+		<Line>!!#######.....#</Line>
+		<Line>!!##....###...#</Line>
+		<Line>!##......#....#</Line>
+		<Line>!#...........##</Line>
+		<Line>!#...###....###</Line>
+		<Line>!#...#!######!!</Line>
+		<Line>!#...######!!!!</Line>
+		<Line>!#......####!!!</Line>
+		<Line>!!#........##!!</Line>
+		<Line>!!####......##!</Line>
+		<Line>!!!!!####.a.##!</Line>
+	</Grid>
+	<Theme>GrassyKnoll</Theme>
+</Level>

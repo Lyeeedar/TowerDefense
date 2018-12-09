@@ -20,6 +20,7 @@ import com.lyeeedar.Renderables.Sprite.Sprite
 import com.lyeeedar.Util.AssetManager
 import com.lyeeedar.Util.Colour
 import com.lyeeedar.Util.Point
+import ktx.math.plus
 
 class MapWidget(val map: Map) : Widget()
 {
@@ -180,6 +181,13 @@ class MapWidget(val map: Map) : Widget()
 		return Vector2(xp + point.x * tileSize, renderY + ((map.height - 1) - point.y) * tileSize)
 	}
 
+	fun pointToScreenspace(point: Vector2): Vector2
+	{
+		val xp = x + (width / 2f) - ((map.width * tileSize) / 2f)
+
+		return Vector2(xp + point.x * tileSize, renderY + ((map.height - 1) - point.y) * tileSize)
+	}
+
 	override fun invalidate()
 	{
 		super.invalidate()
@@ -189,6 +197,8 @@ class MapWidget(val map: Map) : Widget()
 
 		tileSize = Math.min(w, h)
 	}
+
+	class TargetLine(val v1: Vector2, val v2: Vector2, val color: Color)
 
 	var renderY = 0f
 	override fun draw(batch: Batch?, parentAlpha: Float)
@@ -201,6 +211,8 @@ class MapWidget(val map: Map) : Widget()
 		floating.begin(Gdx.app.graphics.deltaTime, xp, yp)
 
 		batch!!.color = Color.WHITE
+
+		val lines = com.badlogic.gdx.utils.Array<TargetLine>()
 
 		for (x in 0 until map.width)
 		{
@@ -269,15 +281,42 @@ class MapWidget(val map: Map) : Widget()
 				if (tile.fillingEntity != null)
 				{
 					ground.queueSprite(tile.fillingEntity!!.sprite, xi, yi, ENTITY, 0, tileColour)
+
+					val tower = tile.fillingEntity as? Tower
+					if (tower != null)
+					{
+						for (target in tower.targets)
+						{
+							val pos = target?.pos ?: continue
+
+							lines.add(TargetLine(pointToScreenspace(tile.toVec() + Vector2(0.5f, -0.5f)), pointToScreenspace(pos + Vector2(0.5f, -0.5f)), Color.RED))
+						}
+
+						for (target in tower.enemies)
+						{
+							val pos = target?.pos ?: continue
+
+							lines.add(TargetLine(pointToScreenspace(tile.toVec() + Vector2(0.5f, -0.5f)), pointToScreenspace(pos + Vector2(0.5f, -0.5f)), Color.YELLOW))
+						}
+					}
 				}
 
 				for (entity in tile.entities)
 				{
-					ground.queueSprite(entity.sprite, 0f, 0f, ENTITY, 0, tileColour)
-
 					if (entity is Enemy)
 					{
-						if (entity.hp != entity.maxHP)
+						ground.update(entity.sprite, Gdx.app.graphics.deltaTime)
+
+						if (entity.sprite.animation == null)
+						{
+							ground.queueSprite(entity.sprite, xi, yi, ENTITY, 0, tileColour)
+						}
+						else
+						{
+							ground.queueSprite(entity.sprite, 0f, 0f, ENTITY, 0, tileColour)
+						}
+
+						if (entity.hp != entity.maxHP && entity.sprite.animation != null)
 						{
 							val pos = entity.sprite.animation?.renderOffset(false)!!
 							pos[0] += (1f - entity.sprite.baseScale[0]) / 2f - 0.1f
@@ -289,6 +328,10 @@ class MapWidget(val map: Map) : Widget()
 
 							ground.queueSprite(white, pos[0], pos[1], ENTITY, 0, col, width = a * entity.sprite.baseScale[0] + 0.2f, height = 0.1f)
 						}
+					}
+					else
+					{
+						ground.queueSprite(entity.sprite, 0f, 0f, ENTITY, 0, tileColour)
 					}
 				}
 

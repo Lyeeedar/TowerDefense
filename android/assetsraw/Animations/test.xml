@@ -1,0 +1,139 @@
+<Animation xmlns:meta="Editor">
+	<Bones>
+		<Bone GUID="ebd363b9-c2fd-4ea3-bac0-681d884f966c">
+			<Name>Root</Name>
+			<ZIndex>0</ZIndex>
+			<Translation>-35,184</Translation>
+			<Rotation>1.0050860052541566</Rotation>
+			<LockLength>false</LockLength>
+			<Children>
+				<Child>722e6415-8b9f-4ffb-bb40-fd22f80e3e4e</Child>
+			</Children>
+		</Bone>
+		<Bone GUID="722e6415-8b9f-4ffb-bb40-fd22f80e3e4e">
+			<Name>Body</Name>
+			<ZIndex>3</ZIndex>
+			<Translation>-3.35348027255885,-27.8703098307421</Translation>
+			<Rotation>0</Rotation>
+			<LockLength>true</LockLength>
+			<ImagePath>D:\Users\Philip\workspace\Assets\2dgameartbundle_windows\2dgameartbundle\Anubis\PNG\Vector Parts\Body.png</ImagePath>
+			<Children>
+				<Child>aa6f4a0f-ae77-4baf-b667-ef8b8d24fde6</Child>
+				<Child>2227ba04-3c90-43d0-bccb-738c70ef05d9</Child>
+				<Child>8becdabb-71a8-417f-9d6e-34573b0f57fc</Child>
+				<Child>f5ab9daf-8364-4d16-8b68-bfe9016f8d10</Child>
+				<Child>bec3b48a-2418-494d-b69c-78476d53e6b4</Child>
+			</Children>
+		</Bone>
+		<Bone GUID="aa6f4a0f-ae77-4baf-b667-ef8b8d24fde6">
+			<Name>Head</Name>
+			<ZIndex>4</ZIndex>
+			<Translation>13.2889671436456,-371.151456082628</Translation>
+			<Rotation>0</Rotation>
+			<LockLength>true</LockLength>
+			<ImagePath>D:\Users\Philip\workspace\Assets\2dgameartbundle_windows\2dgameartbundle\Anubis\PNG\Vector Parts\Head.png</ImagePath>
+			<Children>
+				<Child>173f5ea8-1566-43f5-a50d-a8c3f8ce41a0</Child>
+			</Children>
+		</Bone>
+		<Bone GUID="173f5ea8-1566-43f5-a50d-a8c3f8ce41a0">
+			<Name>Face</Name>
+			<ZIndex>5</ZIndex>
+			<Translation>86.1135799978518,141.026420715955</Translation>
+			<Rotation>-144.64482641591655</Rotation>
+			<LockLength>true</LockLength>
+			<ImagePath>D:\Users\Philip\workspace\Assets\2dgameartbundle_windows\2dgameartbundle\Anubis\PNG\Vector Parts\Face 01.png</ImagePath>
+			<Children />
+		</Bone>
+		<Bone GUID="2227ba04-3c90-43d0-bccb-738c70ef05d9">
+			<Name>ShoulderR</Name>
+			<ZIndex>0</ZIndex>
+			<Translation>94.2598471340044,-70.4633324380426</Translation>
+			<Rotation>0</Rotation>
+			<LockLength>false</LockLength>
+			<Children>
+				<Child>459049e3-3b3e-4443-a9b0-d13e74e3df89</Child>
+			</Children>
+		</Bone>
+		<Bone GUID="459049e3-3b3e-4443-a9b0-d13e74e3df89">
+			<Name>ArmR</Name>
+			<ZIndex>2</ZIndex>
+			<Translation>34.786104231498,-3.15070665015922</Translation>
+			<Rotation>137.72981492320665</Rotation>
+			<LockLength>true</LockLength>
+			<ImagePath>D:\Users\Philip\workspace\Assets\2dgameartbundle_windows\2dgameartbundle\Anubis\PNG\Vector Parts\Right Arm.png</ImagePath>
+			<Children>
+				<Child>9d304ec1-7919-4df7-85e8-0805cc8423b6</Child>
+			</Children>
+		</Bone>
+		<Bone GUID="9d304ec1-7919-4df7-85e8-0805cc8423b6">
+			<Name>HandR</Name>
+			<ZIndex>1</ZIndex>
+			<Translation>-20.1663602278535,75.1752480219417</Translation>
+			<Rotation>211.66908187104997</Rotation>
+			<LockLength>true</LockLength>
+			<ImagePath>D:\Users\Philip\workspace\Assets\2dgameartbundle_windows\2dgameartbundle\Anubis\PNG\Vector Parts\Left Hand.png</ImagePath>
+			<Children>
+				<Child>791c4357-519c-46b3-b186-4342f1ce1982</Child>
+			</Children>
+		</Bone>
+		<Bone GUID="791c4357-519c-46b3-b186-4342f1ce1982">
+			<Name>Staff</Name>
+			<ZIndex>0</ZIndex>
+			<Translation>7.06243227586534,16.38003131213</Translation>
+			<Rotation>185.13282215792816</Rotation>
+			<LockLength>false</LockLength>
+			<ImagePath>D:\Users\Philip\workspace\Assets\2dgameartbundle_windows\2dgameartbundle\Anubis\PNG\Vector Parts\Weapon.png</ImagePath>
+			<Children />
+		</Bone>
+		<Bone GUID="8becdabb-71a8-417f-9d6e-34573b0f57fc">
+			<Name>ShoulderL</Name>
+			<ZIndex>0</ZIndex>
+			<Translation>-58.9981914745478,-53.3732041889966</Translation>
+			<Rotation>30.8208745850862</Rotation>
+			<LockLength>false</LockLength>
+			<Children>
+				<Child>585bb8f0-576c-4597-81b7-bc8f1a904c3c</Child>
+			</Children>
+		</Bone>
+		<Bone GUID="585bb8f0-576c-4597-81b7-bc8f1a904c3c">
+			<Name>ArmL</Name>
+			<ZIndex>4</ZIndex>
+			<Translation>-3.31227827703853,26.6651235252241</Translation>
+			<Rotation>-188.15980053801562</Rotation>
+			<LockLength>true</LockLength>
+			<ImagePath>D:\Users\Philip\workspace\Assets\2dgameartbundle_windows\2dgameartbundle\Anubis\PNG\Vector Parts\Left Arm.png</ImagePath>
+			<Children>
+				<Child>dbbe2de2-abbf-47ad-af5d-c88168a9034b</Child>
+			</Children>
+		</Bone>
+		<Bone GUID="dbbe2de2-abbf-47ad-af5d-c88168a9034b">
+			<Name>HandL</Name>
+			<ZIndex>3</ZIndex>
+			<Translation>11.913062145047,66.0710774305255</Translation>
+			<Rotation>-302.671307182739</Rotation>
+			<LockLength>true</LockLength>
+			<ImagePath>D:\Users\Philip\workspace\Assets\2dgameartbundle_windows\2dgameartbundle\Anubis\PNG\Vector Parts\Right Hand.png</ImagePath>
+			<Children />
+		</Bone>
+		<Bone GUID="f5ab9daf-8364-4d16-8b68-bfe9016f8d10">
+			<Name>LegL</Name>
+			<ZIndex>0</ZIndex>
+			<Translation>-73.1525077754115,128.802860902047</Translation>
+			<Rotation>-198.27129314783937</Rotation>
+			<LockLength>true</LockLength>
+			<ImagePath>D:\Users\Philip\workspace\Assets\2dgameartbundle_windows\2dgameartbundle\Anubis\PNG\Vector Parts\Left Leg.png</ImagePath>
+			<Children />
+		</Bone>
+		<Bone GUID="bec3b48a-2418-494d-b69c-78476d53e6b4">
+			<Name>LegR</Name>
+			<ZIndex>0</ZIndex>
+			<Translation>70.757018223258,141.884537158891</Translation>
+			<Rotation>-147.78986775410152</Rotation>
+			<LockLength>true</LockLength>
+			<ImagePath>D:\Users\Philip\workspace\Assets\2dgameartbundle_windows\2dgameartbundle\Anubis\PNG\Vector Parts\Right Leg.png</ImagePath>
+			<Children />
+		</Bone>
+	</Bones>
+	<RootBone>ebd363b9-c2fd-4ea3-bac0-681d884f966c</RootBone>
+</Animation>

@@ -19,6 +19,8 @@ class Tower : Entity()
 
 	val targets: Array<Enemy?> = arrayOfNulls<Enemy?>(multishot)
 
+	val enemies = com.badlogic.gdx.utils.Array<Enemy>()
+
 	init
 	{
 		sprite.colour = Colour.PINK
@@ -28,12 +30,12 @@ class Tower : Entity()
 	{
 		shotAccumulator += delta * shotrate
 
+		// get all enemies in range
+		val allenemies = map.grid.flatMap { it.entities.asSequence() }.mapNotNull { it as? Enemy }.asGdxArray()
+		val enemiesInRange = allenemies.filter { it.actualhp > 0 && it.pos.dst2(tile.toVec()) <= range*range }.asGdxArray()
+
 		if (shotAccumulator > 1f)
 		{
-			// get all enemies in range
-			val tilesInRange = map.grid.filter { it.dist(tile) <= range }
-			val enemiesInRange = tilesInRange.flatMap { it.entities.asSequence() }.mapNotNull { it as? Enemy }.filter { it.actualhp > 0 && it.currentPath != null }.asGdxArray()
-
 			while (shotAccumulator > 1f)
 			{
 				shotAccumulator -= 1f
@@ -42,6 +44,7 @@ class Tower : Entity()
 				{
 					if (enemiesInRange.size == 0)
 					{
+						targets[i] = null
 						continue
 					}
 

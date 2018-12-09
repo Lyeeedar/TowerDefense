@@ -1,0 +1,27 @@
+<Theme xmlns:meta="Editor">
+	<Path meta:RefKey="SpriteWrapper">
+		<Sprite meta:RefKey="Sprite">
+			<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
+		</Sprite>
+		<TilingSprite meta:RefKey="TilingSprite">
+			<Name>Path</Name>
+			<Mode>Masked</Mode>
+			<Mask>Masks/path</Mask>
+			<Sprite meta:RefKey="Sprite">
+				<Name>Oryx/uf_split/uf_terrain/ground_dirt_brown_1</Name>
+			</Sprite>
+		</TilingSprite>
+	</Path>
+	<Wall meta:RefKey="SpriteWrapper">
+		<Sprite meta:RefKey="Sprite">
+			<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
+		</Sprite>
+	</Wall>
+	<Block meta:RefKey="SpriteWrapper">
+		<Sprite meta:RefKey="Sprite">
+			<Name>Oryx/Custom/terrain/tree1</Name>
+			<DrawActualSize>true</DrawActualSize>
+		</Sprite>
+	</Block>
+	<BackgroundTile>Oryx/uf_split/uf_terrain/ground_grass_1</BackgroundTile>
+</Theme>

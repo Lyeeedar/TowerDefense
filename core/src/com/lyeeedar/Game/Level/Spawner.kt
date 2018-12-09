@@ -16,7 +16,7 @@ class Spawner : Entity()
 	var accumulator = 1f
 	override fun update(delta: Float, map: Map)
 	{
-		accumulator += delta * 2f
+		accumulator += delta * 1.5f
 
 		while (accumulator > 1f)
 		{

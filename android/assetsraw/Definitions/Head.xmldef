@@ -1,3 +1,0 @@
-<Definitions Colour="255,238,64" Icon="Sprites/Icons/HeadIcon.png" xmlns:meta="Editor">
-	<Definition Name="Head" Extends="EquipmentBase" meta:RefKey="Struct" />
-</Definitions>

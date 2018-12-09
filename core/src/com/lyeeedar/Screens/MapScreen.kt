@@ -8,7 +8,7 @@ class MapScreen : AbstractScreen()
 	lateinit var map: Map
 	override fun create()
 	{
-		map = Map()
+		map = Map.load("Levels/Test")
 
 		val mapWidget = MapWidget(map)
 

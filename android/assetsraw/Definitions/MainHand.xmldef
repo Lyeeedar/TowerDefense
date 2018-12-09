@@ -1,3 +1,0 @@
-<Definitions Colour="255,238,64" Icon="Sprites/Icons/MainHandIcon.png" xmlns:meta="Editor">
-	<Definition Name="MainHand" Extends="EquipmentBase" meta:RefKey="Struct" />
-</Definitions>

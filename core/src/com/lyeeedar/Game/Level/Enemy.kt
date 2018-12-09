@@ -5,7 +5,7 @@ import com.badlogic.gdx.math.Path
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Array
 import com.lyeeedar.Renderables.Animation.MoveAnimation
-import com.lyeeedar.Util.Colour
+import com.lyeeedar.Util.AssetManager
 import com.lyeeedar.Util.Random
 import com.lyeeedar.Util.UnsmoothedPath
 import com.lyeeedar.Util.valueAt
@@ -19,29 +19,35 @@ class Enemy(val source: Spawner) : Entity()
 	val actualhp: Int
 		get() = hp - queuedDam
 
-	var hp = 10
-	val maxHP = 10
+	var hp = 20
+	val maxHP = 20
 
 	val chosenOffset: Vector2 = Vector2(Random.random() * 0.8f - 0.4f, Random.random() * 0.8f - 0.4f)
 
+	var currentAnim: MoveAnimation? = null
 	var currentPath: Path<Vector2>? = null
 	var pathDist = 0f
 	var pathDuration = 0f
 
-	var moveSpeed = 0.2f
+	var pos: Vector2 = Vector2()
+
+	var moveSpeed = 0.3f
 
 	init
 	{
-		sprite.colour = Colour.RED
-		sprite.baseScale[0] = 0.4f
-		sprite.baseScale[1] = 0.4f
+		sprite = AssetManager.loadSprite("Oryx/uf_split/uf_heroes/goblin")
+		sprite.drawActualSize = true
+		//sprite.baseScale[0] = 0.8f
+		//sprite.baseScale[1] = 0.8f
 	}
 
 	override fun update(delta: Float, map: Map)
 	{
 		if (hp <= 0)
 		{
-			this.tile.entities.removeValue(this, true)
+			val effect = AssetManager.loadParticleEffect("Death")
+			this.tile.effects.add(effect)
+
 			return
 		}
 
@@ -72,31 +78,28 @@ class Enemy(val source: Spawner) : Entity()
 			}
 
 			pathDuration = currentPath!!.approxLength(50) * moveSpeed
+			currentAnim = MoveAnimation.obtain().set(pathDuration, UnsmoothedPath(animPath))
 
 			sprite.animation = null
-			sprite.animation = MoveAnimation.obtain().set(pathDuration, UnsmoothedPath(animPath))
+			sprite.animation = currentAnim
 			pathDist = 0f
 		}
 
 		pathDist += delta
 
-		val a = MathUtils.clamp(pathDist / pathDuration, 0f, 1f)
-		val pos = currentPath!!.valueAt(a)
+		val a = MathUtils.clamp(currentAnim!!.time() / currentAnim!!.duration(), 0f, 1f)
+		val alpha = currentAnim!!.eqn!!.apply(a)
+		pos = currentPath!!.valueAt(alpha)
 		val tile = map.grid[pos.x.toInt(), pos.y.toInt()]
 
 		if (tile.fillingEntity == source.linkedDestination)
 		{
-			this.tile.entities.removeValue(this, true)
 			source.linkedDestination.sink(this)
 		}
 		else
 		{
-			if (tile != this.tile)
-			{
-				this.tile.entities.removeValue(this, true)
-				this.tile = tile
-				tile.entities.add(this)
-			}
+			this.tile = tile
+			tile.entities.add(this)
 		}
 	}
 }

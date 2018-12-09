@@ -6,7 +6,7 @@ abstract class Entity
 {
 	lateinit var tile: Tile
 
-	val sprite = AssetManager.loadSprite("white")
+	var sprite = AssetManager.loadSprite("white")
 
 	abstract fun update(delta: Float, map: Map)
 }
