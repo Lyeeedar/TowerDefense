@@ -48,6 +48,7 @@ class MapWidget(val map: Map) : Widget()
 	val stage_empty: Sprite = AssetManager.loadSprite("GUI/attack_empty")
 	val changer: Sprite = AssetManager.loadSprite("Oryx/Custom/items/changer", drawActualSize = true)
 	val white: Sprite = AssetManager.loadSprite("white")
+	val circle: Sprite = AssetManager.loadSprite("bigcircle")
 
 	val TILE = 0
 	val ENTITY = TILE+1
@@ -77,7 +78,62 @@ class MapWidget(val map: Map) : Widget()
 
 							if (button == Input.Buttons.LEFT)
 							{
-								map.grid[sx, sy].isSolid = !map.grid[sx, sy].isSolid
+								//map.grid[sx, sy].isSolid = !map.grid[sx, sy].isSolid
+
+								val screenPos = pointToScreenspace(Vector2(sx.toFloat(), sy.toFloat()))
+								val menu = RadialMenu()
+
+								val tile = map.grid[sx, sy]
+
+								if (tile.isSolid)
+								{
+									if (tile.fillingEntity != null)
+									{
+										menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Sell tower for 32 gold.", { tile.fillingEntity = null }, RadialMenu.Position.Bottom)
+									}
+									else
+									{
+										menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Build arrow tower.", {
+											val tower = Tower()
+											tower.tile = tile
+											tile.fillingEntity = tower
+										}, RadialMenu.Position.Top)
+
+										menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Build bomb tower.", {
+											val tower = Tower()
+											tower.tile = tile
+											tile.fillingEntity = tower
+										}, RadialMenu.Position.Top)
+
+										menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Build burst tower.", {
+											val tower = Tower()
+											tower.tile = tile
+											tile.fillingEntity = tower
+										}, RadialMenu.Position.Top)
+
+										menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Build blast tower.", {
+											val tower = Tower()
+											tower.tile = tile
+											tile.fillingEntity = tower
+										}, RadialMenu.Position.Top)
+
+										menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Build mage tower.", {
+											val tower = Tower()
+											tower.tile = tile
+											tile.fillingEntity = tower
+										}, RadialMenu.Position.Top)
+
+										menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Build shot tower.", {
+											val tower = Tower()
+											tower.tile = tile
+											tile.fillingEntity = tower
+										}, RadialMenu.Position.Top)
+									}
+								}
+
+								menu.clickPos = screenPos
+
+								menu.show()
 							}
 							else
 							{
@@ -297,6 +353,11 @@ class MapWidget(val map: Map) : Widget()
 							val pos = target?.pos ?: continue
 
 							lines.add(TargetLine(pointToScreenspace(tile.toVec() + Vector2(0.5f, -0.5f)), pointToScreenspace(pos + Vector2(0.5f, -0.5f)), Color.YELLOW))
+						}
+
+						if (tower.selected)
+						{
+							floating.queueSprite(circle, xi, yi, ENTITY, 0, Colour(1f, 1f, 1f, 0.1f), scaleX = tower.range * 2f, scaleY = tower.range * 2f)
 						}
 					}
 				}

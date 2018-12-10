@@ -17,6 +17,8 @@ class Tower : Entity()
 
 	var shotAccumulator = 0f
 
+	var selected = true
+
 	val targets: Array<Enemy?> = arrayOfNulls<Enemy?>(multishot)
 
 	val enemies = com.badlogic.gdx.utils.Array<Enemy>()
@@ -30,12 +32,12 @@ class Tower : Entity()
 	{
 		shotAccumulator += delta * shotrate
 
-		// get all enemies in range
-		val allenemies = map.grid.flatMap { it.entities.asSequence() }.mapNotNull { it as? Enemy }.asGdxArray()
-		val enemiesInRange = allenemies.filter { it.actualhp > 0 && it.pos.dst2(tile.toVec()) <= range*range }.asGdxArray()
-
 		if (shotAccumulator > 1f)
 		{
+			// get all enemies in range
+			val allenemies = map.grid.flatMap { it.entities.asSequence() }.mapNotNull { it as? Enemy }.asGdxArray()
+			val enemiesInRange = allenemies.filter { it.actualhp > 0 && it.pos.dst2(tile.toVec()) <= range*range }.asGdxArray()
+
 			while (shotAccumulator > 1f)
 			{
 				shotAccumulator -= 1f
