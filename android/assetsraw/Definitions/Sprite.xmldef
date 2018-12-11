@@ -64,4 +64,12 @@
 	<Definition Name="Texture" IsGlobal="True" meta:RefKey="StructDef">
 		<Data Name="File" BasePath="Sprites" StripExtension="True" AllowedFileTypes="png" Default="blank" SkipIfDefault="False" meta:RefKey="File" />
 	</Definition>
+	<Definition Name="MoveAnimation" IsGlobal="True" meta:RefKey="StructDef">
+		<Data Name="SpeedMultiplier" Min="0" Default="1" SkipIfDefault="False" meta:RefKey="Number" />
+	</Definition>
+	<Definition Name="LeapAnimation" IsGlobal="True" meta:RefKey="StructDef">
+		<Data Name="SpeedMultiplier" Min="0" Default="1" SkipIfDefault="False" meta:RefKey="Number" />
+		<Data Name="Height" Min="0" Default="2" SkipIfDefault="False" meta:RefKey="Number" />
+	</Definition>
+	<Definition Name="Animations" Keys="MoveAnimation,LeapAnimation" IsGlobal="True" meta:RefKey="ReferenceDef" />
 </Definitions>

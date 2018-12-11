@@ -1,0 +1,49 @@
+<Definitions xmlns:meta="Editor">
+	<!--Effect Types-->
+	<Definition Name="DamageEffect" meta:RefKey="StructDef">
+		<Data Name="Damage" Type="Int" Min="1" Default="1" SkipIfDefault="False" meta:RefKey="Number" />
+		<Data Name="Effect" Keys="ParticleEffect" meta:RefKey="Reference" />
+	</Definition>
+	<Definition Name="ShotEffect" meta:RefKey="StructDef">
+		<Data Name="Range" Min="1" Default="1" SkipIfDefault="False" meta:RefKey="Number" />
+		<Data Name="Count" Type="Int" Min="1" Default="1" SkipIfDefault="False" meta:RefKey="Number" />
+		<Data Name="FlightEffect" Keys="ParticleEffect" meta:RefKey="Reference" />
+		<Data Name="Animation" DefKey="Animations" meta:RefKey="Reference" />
+		<Data Name="Effects" meta:RefKey="Collection">
+			<Data Name="Effect" DefKey="EffectTypes" meta:RefKey="Reference" />
+		</Data>
+	</Definition>
+	<Definition Name="AoeEffect" meta:RefKey="StructDef">
+		<Data Name="Range" Min="1" Default="1" SkipIfDefault="False" meta:RefKey="Number" />
+		<Data Name="Effect" Keys="ParticleEffect" meta:RefKey="Reference" />
+		<Data Name="Effects" meta:RefKey="Collection">
+			<Data Name="Effect" DefKey="EffectTypes" meta:RefKey="Reference" />
+		</Data>
+	</Definition>
+	<Definition Name="EffectTypes" Keys="AoeEffect,ShotEffect,DamageEffect" meta:RefKey="ReferenceDef" />
+	<!--Tower Types-->
+	<Definition Name="TowerBase" meta:RefKey="GraphStructDef">
+		<Data Name="Upgrades" meta:RefKey="Collection">
+			<Data Name="Upgrade" Description="{Cost}" meta:RefKey="Struct">
+				<Data Name="Cost" Type="Int" Min="1" Default="1" SkipIfDefault="False" meta:RefKey="Number" />
+				<Data Name="Upgrade" Keys="Tower,Enhancement" UseParentDescription="True" meta:RefKey="GraphReference" />
+			</Data>
+		</Data>
+	</Definition>
+	<Definition Name="Tower" Extends="TowerBase" TextColour="20,255,80" meta:RefKey="GraphStructDef">
+		<Data Name="Name" meta:RefKey="String" />
+		<Data Name="Icon" Keys="Sprite" meta:RefKey="Reference" />
+		<Data Name="Sprite" Keys="Sprite" meta:RefKey="Reference" />
+		<Data Name="AttacksPerSecond" Min="0" Default="1" SkipIfDefault="False" meta:RefKey="Number" />
+		<Data Name="Effects" meta:RefKey="Collection">
+			<Data Name="Effect" DefKey="EffectTypes" meta:RefKey="Reference" />
+		</Data>
+	</Definition>
+	<Definition Name="Enhancement" Extends="TowerBase" TextColour="247,238,20" meta:RefKey="GraphStructDef">
+		<Data Name="Amount" Min="0" Default="0.1" SkipIfDefault="False" meta:RefKey="Number" />
+	</Definition>
+	<!--Root-->
+	<Definition Name="Tower" FlattenData="True" NodeStoreName="TowerDefs" meta:RefKey="GraphStruct">
+		<Data Name="Root" Keys="Tower" meta:RefKey="GraphReference" />
+	</Definition>
+</Definitions>

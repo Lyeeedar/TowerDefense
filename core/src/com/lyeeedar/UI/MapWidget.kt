@@ -11,16 +11,15 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.InputListener
 import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.badlogic.gdx.scenes.scene2d.ui.Widget
-import com.lyeeedar.Game.Level.Enemy
+import com.lyeeedar.Game.Level.*
 import com.lyeeedar.Game.Level.Map
-import com.lyeeedar.Game.Level.Tower
 import com.lyeeedar.Renderables.Particle.ParticleEffect
 import com.lyeeedar.Renderables.SortedRenderer
 import com.lyeeedar.Renderables.Sprite.Sprite
 import com.lyeeedar.Util.AssetManager
 import com.lyeeedar.Util.Colour
 import com.lyeeedar.Util.Point
-import ktx.math.plus
+import com.lyeeedar.Util.max
 
 class MapWidget(val map: Map) : Widget()
 {
@@ -89,42 +88,31 @@ class MapWidget(val map: Map) : Widget()
 								{
 									if (tile.fillingEntity != null)
 									{
-										menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Sell tower for 32 gold.", { tile.fillingEntity = null }, RadialMenu.Position.Bottom)
+										val tower = tile.fillingEntity as? Tower
+										if (tower != null)
+										{
+											for (upgrade in tower.def.upgrades)
+											{
+												menu.addItem(upgrade.towerDef.icon.textures[0], "Upgrade to " + upgrade.towerDef.name + " (" + upgrade.cost + " gold)", {
+													val tower = Tower(upgrade.towerDef)
+													tower.tile = tile
+													tile.fillingEntity = tower
+												}, RadialMenu.Position.Top)
+											}
+
+											menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Sell tower for 32 gold.", {
+												tile.fillingEntity = null
+											}, RadialMenu.Position.Bottom)
+										}
+
 									}
 									else
 									{
-										menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Build arrow tower.", {
-											val tower = Tower()
-											tower.tile = tile
-											tile.fillingEntity = tower
-										}, RadialMenu.Position.Top)
+										val arrowTower = TowerUpgradeTree.load("Arrow")
+										val root = arrowTower.towerDefMap[arrowTower.root]
 
-										menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Build bomb tower.", {
-											val tower = Tower()
-											tower.tile = tile
-											tile.fillingEntity = tower
-										}, RadialMenu.Position.Top)
-
-										menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Build burst tower.", {
-											val tower = Tower()
-											tower.tile = tile
-											tile.fillingEntity = tower
-										}, RadialMenu.Position.Top)
-
-										menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Build blast tower.", {
-											val tower = Tower()
-											tower.tile = tile
-											tile.fillingEntity = tower
-										}, RadialMenu.Position.Top)
-
-										menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Build mage tower.", {
-											val tower = Tower()
-											tower.tile = tile
-											tile.fillingEntity = tower
-										}, RadialMenu.Position.Top)
-
-										menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Build shot tower.", {
-											val tower = Tower()
+										menu.addItem(root.icon.textures[0], "Build " + root.name, {
+											val tower = Tower(root)
 											tower.tile = tile
 											tile.fillingEntity = tower
 										}, RadialMenu.Position.Top)
@@ -134,13 +122,6 @@ class MapWidget(val map: Map) : Widget()
 								menu.clickPos = screenPos
 
 								menu.show()
-							}
-							else
-							{
-								val tower = Tower()
-								tower.tile = map.grid[sx, sy]
-
-								map.grid[sx, sy].fillingEntity = tower
 							}
 
 							//map.select(Point(sx, sy))
@@ -341,23 +322,21 @@ class MapWidget(val map: Map) : Widget()
 					val tower = tile.fillingEntity as? Tower
 					if (tower != null)
 					{
-						for (target in tower.targets)
-						{
-							val pos = target?.pos ?: continue
-
-							lines.add(TargetLine(pointToScreenspace(tile.toVec() + Vector2(0.5f, -0.5f)), pointToScreenspace(pos + Vector2(0.5f, -0.5f)), Color.RED))
-						}
-
-						for (target in tower.enemies)
-						{
-							val pos = target?.pos ?: continue
-
-							lines.add(TargetLine(pointToScreenspace(tile.toVec() + Vector2(0.5f, -0.5f)), pointToScreenspace(pos + Vector2(0.5f, -0.5f)), Color.YELLOW))
-						}
-
 						if (tower.selected)
 						{
-							floating.queueSprite(circle, xi, yi, ENTITY, 0, Colour(1f, 1f, 1f, 0.1f), scaleX = tower.range * 2f, scaleY = tower.range * 2f)
+							var range = 0f
+							for (effect in tower.def.effects)
+							{
+								if (effect is ShotEffectType)
+								{
+									range = max(range, effect.range)
+								}
+							}
+
+							if (range > 0f)
+							{
+								floating.queueSprite(circle, xi, yi, ENTITY, 0, Colour(1f, 1f, 1f, 0.1f), scaleX = range * 2f, scaleY = range * 2f)
+							}
 						}
 					}
 				}
@@ -388,6 +367,32 @@ class MapWidget(val map: Map) : Widget()
 							val col = Colour.RED.copy().lerpHSV(Colour.GREEN.copy(), a)
 
 							ground.queueSprite(white, pos[0], pos[1], ENTITY, 0, col, width = a * entity.sprite.baseScale[0] + 0.2f, height = 0.1f)
+						}
+
+						for (effect in entity.effects)
+						{
+							if (effect is Sprite)
+							{
+								if (effect.completed)
+								{
+									entity.effects.removeValue(effect, true)
+								}
+								else
+								{
+									floating.queueSprite(effect, xi, yi, EFFECT, 0)
+								}
+							}
+							else if (effect is ParticleEffect)
+							{
+								if (effect.completed)
+								{
+									entity.effects.removeValue(effect, true)
+								}
+								else
+								{
+									floating.queueParticle(effect, xi, yi, EFFECT, 0)
+								}
+							}
 						}
 					}
 					else
