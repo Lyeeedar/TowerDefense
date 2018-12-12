@@ -23,11 +23,47 @@ class Map(val grid: Array2D<Tile>)
 	val height: Int
 		get() = grid.height
 
+	val waves = Array<Wave>()
+	var currentWave = -1
+
 	val enemyList = ObjectSet<Enemy>()
 	val towerList = Array<Tower>()
 	val otherList = Array<Entity>()
 	fun update(delta: Float)
 	{
+		var advanceWave = false
+		if (currentWave == -1)
+		{
+			advanceWave = true
+		}
+		else
+		{
+			if (currentWave < waves.size)
+			{
+				waves[currentWave].remainingDuration -= delta
+				if (waves[currentWave].remainingDuration <= -4)
+				{
+					advanceWave = true
+				}
+			}
+		}
+
+		if (advanceWave)
+		{
+			currentWave++
+			if (currentWave < waves.size)
+			{
+				val wave = waves[currentWave]
+				for (tile in grid)
+				{
+					val spawner = tile.fillingEntity as? Spawner ?: continue
+
+					val spawnerWave = wave.spawners[spawner.character]
+					spawner.currentWave = spawnerWave.copy()
+				}
+			}
+		}
+
 		var pathsDirty = false
 		for (tile in grid)
 		{
@@ -219,6 +255,19 @@ class Map(val grid: Array2D<Tile>)
 				}
 			}
 
+			val spawnerDefs = IntMap<SpawnerDef>()
+			val spawnersEl = xml.getChildByName("Spawners")
+			if (spawnersEl != null)
+			{
+				for (spawnerEl in spawnersEl.children)
+				{
+					val character = spawnerEl.get("Character")[0]
+					val destination = spawnerEl.get("Destination")[0]
+
+					spawnerDefs[character.toInt()] = SpawnerDef(character, destination)
+				}
+			}
+
 			val spawners = ObjectMap<Char, Array<Spawner>>()
 			val sinkers = ObjectMap<Char, Sinker>()
 
@@ -226,7 +275,22 @@ class Map(val grid: Array2D<Tile>)
 
 			fun loadTile(tile: Tile, char: Char)
 			{
-				if (symbolsMap.containsKey(char.toInt()))
+				if (spawnerDefs.containsKey(char.toInt()))
+				{
+					val def = spawnerDefs[char.toInt()]
+
+					val spawner = Spawner(char)
+					tile.fillingEntity = spawner
+					spawner.tile = tile
+
+					if (!spawners.containsKey(def.destination))
+					{
+						spawners[def.destination] = Array()
+					}
+
+					spawners[def.destination].add(spawner)
+				}
+				else if (symbolsMap.containsKey(char.toInt()))
 				{
 					val symbol = symbolsMap[char.toInt()]
 					if (symbol.extends != ' ')
@@ -261,33 +325,16 @@ class Map(val grid: Array2D<Tile>)
 					tile.groundSprite = theme.wall.copy()
 					tile.wallSprite = theme.block.copy()
 				}
-				else if (char.isLetter())
+				else if (char.isDigit())
 				{
 					tile.isSolid = false
 					tile.groundSprite = theme.path.copy()
 
-					if (char.isUpperCase())
-					{
-						val lower = char.toLowerCase()
-						if (!spawners.containsKey(lower))
-						{
-							spawners[lower] = Array()
-						}
+					val sinker = Sinker()
+					tile.fillingEntity = sinker
+					sinker.tile = tile
 
-						val spawner = Spawner()
-						tile.fillingEntity = spawner
-						spawner.tile = tile
-
-						spawners[lower].add(spawner)
-					}
-					else
-					{
-						val sinker = Sinker()
-						tile.fillingEntity = sinker
-						sinker.tile = tile
-
-						sinkers[char] = sinker
-					}
+					sinkers[char] = sinker
 				}
 				else
 				{
@@ -319,10 +366,20 @@ class Map(val grid: Array2D<Tile>)
 			}
 
 			val map = Map(grid)
+
+			val wavesEl = xml.getChildByName("Waves")!!
+			for (waveEl in wavesEl.children)
+			{
+				val wave = Wave.load(waveEl)
+				map.waves.add(wave)
+			}
+
 			return map
 		}
 	}
 }
+
+class SpawnerDef(val char: Char, val destination: Char)
 
 data class Symbol(
 	val char: Char, val extends: Char,
@@ -377,5 +434,109 @@ class Tile(x: Int, y: Int) : Point(x, y)
 	{
 		groundSprite = SpriteWrapper()
 		groundSprite!!.sprite = AssetManager.loadSprite("white", colour = Colour.LIGHT_GRAY)
+	}
+}
+
+class Wave
+{
+	var duration: Float = 0f
+	var remainingDuration: Float = 0f
+
+	val spawners = ObjectMap<Char, SpawnerWave>()
+
+	companion object
+	{
+		fun load(xmlData: XmlData): Wave
+		{
+			val wave = Wave()
+			wave.duration = xmlData.getFloat("Duration")
+			wave.remainingDuration = wave.duration
+
+			val spawnersEl = xmlData.getChildByName("Spawners")!!
+			for (spawnerEl in spawnersEl.children)
+			{
+				val spawner = SpawnerWave.load(spawnerEl, wave.duration)
+				wave.spawners[spawner.character] = spawner
+			}
+
+			return wave
+		}
+	}
+}
+
+class SpawnerWave
+{
+	var character: Char = ' '
+	var duration: Float = 0f
+
+	var remainingDuration: Float = 0f
+
+	val enemies = Array<WaveEnemy>()
+
+	fun copy(): SpawnerWave
+	{
+		val new = SpawnerWave()
+		new.duration = duration
+		new.remainingDuration = duration
+
+		for (enemy in enemies)
+		{
+			new.enemies.add(enemy.copy())
+		}
+
+		return new
+	}
+
+	companion object
+	{
+		fun load(xmlData: XmlData, duration: Float): SpawnerWave
+		{
+			val spawnerWave = SpawnerWave()
+
+			spawnerWave.character = xmlData.get("Character")[0]
+			spawnerWave.duration = duration
+			spawnerWave.remainingDuration = duration
+
+			val enemiesEl = xmlData.getChildByName("Enemies")!!
+			for (enemyEl in enemiesEl.children)
+			{
+				spawnerWave.enemies.add(WaveEnemy.load(enemyEl, duration))
+			}
+
+			return spawnerWave
+		}
+	}
+}
+
+class WaveEnemy
+{
+	lateinit var enemyDef: EnemyDef
+	var count: Int = 0
+	var enemiesASecond: Float = 0f
+
+	var enemyAccumulator: Float = 0f
+
+	fun copy(): WaveEnemy
+	{
+		val new = WaveEnemy()
+		new.enemyDef = enemyDef
+		new.count = count
+		new.enemiesASecond = enemiesASecond
+
+		return new
+	}
+
+	companion object
+	{
+		fun load(xmlData: XmlData, duration: Float): WaveEnemy
+		{
+			val enemy = WaveEnemy()
+
+			enemy.count = xmlData.getInt("Count")
+			enemy.enemyDef = EnemyDef.Companion.load(xmlData.get("Enemy"))
+			enemy.enemiesASecond = enemy.count / duration
+
+			return enemy
+		}
 	}
 }

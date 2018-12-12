@@ -46,8 +46,6 @@ class Sprite(val fileName: String, var animationDelay: Float, var textures: Arra
 	var repeatAccumulator: Float = 0.toFloat()
 	var animationAccumulator: Float = 0.toFloat()
 
-	var faceInMoveDirection: Boolean = false
-	val lastPos: Vector2 = Vector2()
 	var fixPosition: Boolean = false
 
 

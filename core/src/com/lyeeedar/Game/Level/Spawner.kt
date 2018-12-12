@@ -2,9 +2,11 @@ package com.lyeeedar.Game.Level
 
 import com.lyeeedar.Util.Colour
 
-class Spawner : Entity()
+class Spawner(val character: Char) : Entity()
 {
 	var sourceIndex = 0
+
+	var currentWave: SpawnerWave? = null
 
 	lateinit var linkedDestination: Sinker
 
@@ -13,20 +15,32 @@ class Spawner : Entity()
 		sprite.colour = Colour.GREEN
 	}
 
-	var accumulator = 1f
 	override fun update(delta: Float, map: Map)
 	{
-		accumulator += delta * 1.5f
-
-		while (accumulator > 1f)
+		if (currentWave != null)
 		{
-			accumulator -= 1f
+			currentWave!!.remainingDuration -= delta
+			if (currentWave!!.remainingDuration < 0f)
+			{
+				currentWave = null
+				return
+			}
 
-			val enemy = Enemy(this)
-			enemy.tile = tile
-			tile.entities.add(enemy)
+			for (waveEnemy in currentWave!!.enemies)
+			{
+				waveEnemy.enemyAccumulator += delta * waveEnemy.enemiesASecond
 
-			enemy.update(delta, map)
+				while (waveEnemy.enemyAccumulator >= 1)
+				{
+					waveEnemy.enemyAccumulator -= 1
+
+					val enemy = Enemy(this, waveEnemy.enemyDef)
+					enemy.tile = tile
+					tile.entities.add(enemy)
+
+					enemy.update(delta, map)
+				}
+			}
 		}
 	}
 }

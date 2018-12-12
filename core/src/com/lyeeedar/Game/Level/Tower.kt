@@ -15,7 +15,7 @@ class Tower(val def: TowerDefinition) : Entity()
 {
 	var shotAccumulator = 0f
 
-	var selected = true
+	var selected = false
 
 	init
 	{
@@ -259,6 +259,7 @@ class ShotEffectType : AbstractEffectType()
 			path[1].y *= -1
 
 			val effect = flightEffect.copy()
+			effect.faceInMoveDirection = true
 			effect.animation = animDef.getAnimation(flightTime, path)
 
 			entity.tile.effects.add(effect)

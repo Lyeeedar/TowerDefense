@@ -5,23 +5,21 @@ import com.badlogic.gdx.math.Path
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Array
 import com.lyeeedar.Renderables.Animation.MoveAnimation
+import com.lyeeedar.Renderables.Particle.ParticleEffect
 import com.lyeeedar.Renderables.Renderable
-import com.lyeeedar.Util.AssetManager
-import com.lyeeedar.Util.Random
-import com.lyeeedar.Util.UnsmoothedPath
-import com.lyeeedar.Util.valueAt
+import com.lyeeedar.Renderables.Sprite.Sprite
+import com.lyeeedar.Util.*
 import ktx.collections.toGdxArray
 import ktx.math.plus
 
-class Enemy(val source: Spawner) : Entity()
+class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
 {
 	var queuedDam = 0
 
 	val actualhp: Int
 		get() = hp - queuedDam
 
-	var hp = 20
-	val maxHP = 20
+	var hp = def.health
 
 	val chosenOffset: Vector2 = Vector2(Random.random() * 0.8f - 0.4f, Random.random() * 0.8f - 0.4f)
 
@@ -32,23 +30,18 @@ class Enemy(val source: Spawner) : Entity()
 
 	var pos: Vector2 = Vector2()
 
-	var moveSpeed = 0.3f
-
 	var effects = Array<Renderable>()
 
 	init
 	{
-		sprite = AssetManager.loadSprite("Oryx/uf_split/uf_heroes/goblin")
-		sprite.drawActualSize = true
-		//sprite.baseScale[0] = 0.8f
-		//sprite.baseScale[1] = 0.8f
+		sprite = def.sprite.copy()
 	}
 
 	override fun update(delta: Float, map: Map)
 	{
 		if (hp <= 0)
 		{
-			val effect = AssetManager.loadParticleEffect("Death")
+			val effect = def.death.copy()
 			this.tile.effects.add(effect)
 
 			return
@@ -80,7 +73,7 @@ class Enemy(val source: Spawner) : Entity()
 				point.y = (map.grid.height - point.y - 1)
 			}
 
-			pathDuration = currentPath!!.approxLength(50) * moveSpeed
+			pathDuration = currentPath!!.approxLength(50) * def.tilesASecond
 			currentAnim = MoveAnimation.obtain().set(pathDuration, UnsmoothedPath(animPath))
 
 			sprite.animation = null
@@ -103,6 +96,39 @@ class Enemy(val source: Spawner) : Entity()
 		{
 			this.tile = tile
 			tile.entities.add(this)
+		}
+	}
+}
+
+class EnemyDef
+{
+	lateinit var name: String
+	lateinit var description: String
+	lateinit var sprite: Sprite
+	lateinit var death: ParticleEffect
+	var tilesASecond: Float = 0f
+	var health: Int = 0
+
+	companion object
+	{
+		fun load(path: String): EnemyDef
+		{
+			val xml = getXml("Enemies/$path")
+			return load(xml)
+		}
+
+		fun load(xmlData: XmlData): EnemyDef
+		{
+			val def = EnemyDef()
+
+			def.name = xmlData.get("Name")
+			def.description = xmlData.get("Description")
+			def.sprite = AssetManager.loadSprite(xmlData.getChildByName("Sprite")!!)
+			def.death = AssetManager.loadParticleEffect(xmlData.getChildByName("Death")!!)
+			def.tilesASecond = xmlData.getFloat("TilesASecond")
+			def.health = xmlData.getInt("Health")
+
+			return def
 		}
 	}
 }

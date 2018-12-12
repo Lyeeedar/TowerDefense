@@ -1,0 +1,10 @@
+<Definitions Colour="255,34,34" Icon="Sprites/Oryx/Custom/heroes/rat_king_1.png" xmlns:meta="Editor">
+	<Definition Name="Enemy" meta:RefKey="Struct">
+		<Data Name="Name" meta:RefKey="String" />
+		<Data Name="Description" meta:RefKey="String" />
+		<Data Name="Sprite" Keys="Sprite" meta:RefKey="Reference" />
+		<Data Name="Death" Keys="ParticleEffect" meta:RefKey="Reference" />
+		<Data Name="TilesASecond" Min="0" Default="0.2" SkipIfDefault="False" meta:RefKey="Number" />
+		<Data Name="Health" Type="Int" Min="1" Default="10" SkipIfDefault="False" meta:RefKey="Number" />
+	</Definition>
+</Definitions>

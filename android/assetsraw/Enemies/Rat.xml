@@ -1,0 +1,13 @@
+<Enemy xmlns:meta="Editor">
+	<Name>Rat</Name>
+	<Description>Its a rat</Description>
+	<Sprite meta:RefKey="Sprite">
+		<Name>Oryx/uf_split/uf_heroes/rat_giant</Name>
+		<DrawActualSize>true</DrawActualSize>
+	</Sprite>
+	<Death meta:RefKey="ParticleEffect">
+		<Name>Death</Name>
+	</Death>
+	<TilesASecond>0.2</TilesASecond>
+	<Health>10</Health>
+</Enemy>

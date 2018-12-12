@@ -15,7 +15,7 @@ import com.badlogic.gdx.utils.Array
 import com.lyeeedar.Global
 import com.lyeeedar.Util.AssetManager
 
-class RadialMenu : Widget()
+class RadialMenu(val closeAction: () -> Unit) : Widget()
 {
 	val circle = AssetManager.loadTextureRegion("Sprites/bigcircle")!!
 	val white = AssetManager.loadTextureRegion("Sprites/white")!!
@@ -101,6 +101,8 @@ class RadialMenu : Widget()
 	{
 		backgroundTable.remove()
 		remove()
+
+		closeAction.invoke()
 	}
 
 	fun assignAngles()

@@ -1,6 +1,7 @@
 package com.lyeeedar.Renderables
 
 import com.badlogic.gdx.graphics.g2d.Batch
+import com.badlogic.gdx.math.Vector2
 import com.lyeeedar.Renderables.Animation.*
 
 
@@ -20,6 +21,9 @@ abstract class Renderable
 	var flipY: Boolean = false
 
 	var isCentered: Boolean = false
+
+	var faceInMoveDirection: Boolean = false
+	val lastPos: Vector2 = Vector2()
 
 	var animation: AbstractAnimation? = null
 		set(value)

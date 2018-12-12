@@ -339,6 +339,17 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		val x = ix
 		val y = iy
 
+		if (effect.faceInMoveDirection)
+		{
+			val posOffset = effect.animation?.renderOffset(false)
+			val x = x + (posOffset?.get(0) ?: 0f)
+			val y = y + (posOffset?.get(1) ?: 0f)
+
+			val angle = getRotation(effect.lastPos, tempVec.set(x, y))
+			effect.rotation = angle
+			effect.lastPos.set(x, y)
+		}
+
 		//val scale = effect.animation?.renderScale()?.get(0) ?: 1f
 		val animCol = effect.animation?.renderColour() ?: Colour.WHITE
 

@@ -80,8 +80,6 @@ class MapWidget(val map: Map) : Widget()
 								//map.grid[sx, sy].isSolid = !map.grid[sx, sy].isSolid
 
 								val screenPos = pointToScreenspace(Vector2(sx.toFloat(), sy.toFloat()))
-								val menu = RadialMenu()
-
 								val tile = map.grid[sx, sy]
 
 								if (tile.isSolid)
@@ -91,6 +89,10 @@ class MapWidget(val map: Map) : Widget()
 										val tower = tile.fillingEntity as? Tower
 										if (tower != null)
 										{
+											val menu = RadialMenu({
+												tower.selected = false
+																  })
+
 											for (upgrade in tower.def.upgrades)
 											{
 												menu.addItem(upgrade.towerDef.icon.textures[0], "Upgrade to " + upgrade.towerDef.name + " (" + upgrade.cost + " gold)", {
@@ -103,6 +105,11 @@ class MapWidget(val map: Map) : Widget()
 											menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Sell tower for 32 gold.", {
 												tile.fillingEntity = null
 											}, RadialMenu.Position.Bottom)
+
+											tower.selected = true
+
+											menu.clickPos = screenPos
+											menu.show()
 										}
 
 									}
@@ -111,17 +118,20 @@ class MapWidget(val map: Map) : Widget()
 										val arrowTower = TowerUpgradeTree.load("Arrow")
 										val root = arrowTower.towerDefMap[arrowTower.root]
 
+										val menu = RadialMenu({})
+
 										menu.addItem(root.icon.textures[0], "Build " + root.name, {
 											val tower = Tower(root)
 											tower.tile = tile
 											tile.fillingEntity = tower
 										}, RadialMenu.Position.Top)
+
+										menu.clickPos = screenPos
+										menu.show()
 									}
 								}
 
-								menu.clickPos = screenPos
 
-								menu.show()
 							}
 
 							//map.select(Point(sx, sy))
@@ -356,14 +366,14 @@ class MapWidget(val map: Map) : Widget()
 							ground.queueSprite(entity.sprite, 0f, 0f, ENTITY, 0, tileColour)
 						}
 
-						if (entity.hp != entity.maxHP && entity.sprite.animation != null)
+						if (entity.hp != entity.def.health && entity.sprite.animation != null)
 						{
 							val pos = entity.sprite.animation?.renderOffset(false)!!
 							pos[0] += (1f - entity.sprite.baseScale[0]) / 2f - 0.1f
 							pos[1] += 1f - ((1f - entity.sprite.baseScale[1]) / 2f)
 							pos[1] += 0.2f
 
-							val a = entity.hp.toFloat() / entity.maxHP.toFloat()
+							val a = entity.hp.toFloat() / entity.def.health.toFloat()
 							val col = Colour.RED.copy().lerpHSV(Colour.GREEN.copy(), a)
 
 							ground.queueSprite(white, pos[0], pos[1], ENTITY, 0, col, width = a * entity.sprite.baseScale[0] + 0.2f, height = 0.1f)
