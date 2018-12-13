@@ -80,6 +80,8 @@ class MapWidget(val map: Map) : Widget()
 								//map.grid[sx, sy].isSolid = !map.grid[sx, sy].isSolid
 
 								val screenPos = pointToScreenspace(Vector2(sx.toFloat(), sy.toFloat()))
+								screenPos.x += tileSize / 2f
+								screenPos.y += tileSize / 2f
 								val tile = map.grid[sx, sy]
 
 								if (tile.isSolid)
@@ -366,17 +368,17 @@ class MapWidget(val map: Map) : Widget()
 							ground.queueSprite(entity.sprite, 0f, 0f, ENTITY, 0, tileColour)
 						}
 
+						val pos = entity.sprite.animation?.renderOffset(false) ?: floatArrayOf(xi, yi)
+
 						if (entity.hp != entity.def.health && entity.sprite.animation != null)
 						{
-							val pos = entity.sprite.animation?.renderOffset(false)!!
-							pos[0] += (1f - entity.sprite.baseScale[0]) / 2f - 0.1f
-							pos[1] += 1f - ((1f - entity.sprite.baseScale[1]) / 2f)
-							pos[1] += 0.2f
+							val hpbarposx = pos[0] + (1f - entity.sprite.baseScale[0]) / 2f - 0.1f
+							val hpbarposy = pos[1] + 1f - ((1f - entity.sprite.baseScale[1]) / 2f) + 0.2f
 
 							val a = entity.hp.toFloat() / entity.def.health.toFloat()
 							val col = Colour.RED.copy().lerpHSV(Colour.GREEN.copy(), a)
 
-							ground.queueSprite(white, pos[0], pos[1], ENTITY, 0, col, width = a * entity.sprite.baseScale[0] + 0.2f, height = 0.1f)
+							ground.queueSprite(white, hpbarposx, hpbarposy, ENTITY, 0, col, width = a * entity.sprite.baseScale[0] + 0.2f, height = 0.1f)
 						}
 
 						for (effect in entity.effects)
@@ -389,7 +391,7 @@ class MapWidget(val map: Map) : Widget()
 								}
 								else
 								{
-									floating.queueSprite(effect, xi, yi, EFFECT, 0)
+									floating.queueSprite(effect, pos[0], pos[1], EFFECT, 0)
 								}
 							}
 							else if (effect is ParticleEffect)
@@ -400,7 +402,7 @@ class MapWidget(val map: Map) : Widget()
 								}
 								else
 								{
-									floating.queueParticle(effect, xi, yi, EFFECT, 0)
+									floating.queueParticle(effect, pos[0], pos[1], EFFECT, 0)
 								}
 							}
 						}

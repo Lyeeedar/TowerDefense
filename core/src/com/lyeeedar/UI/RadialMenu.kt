@@ -17,7 +17,7 @@ import com.lyeeedar.Util.AssetManager
 
 class RadialMenu(val closeAction: () -> Unit) : Widget()
 {
-	val circle = AssetManager.loadTextureRegion("Sprites/bigcircle")!!
+	val circle = AssetManager.loadTextureRegion("Sprites/GUI/RadialMenuBorder")!!
 	val white = AssetManager.loadTextureRegion("Sprites/white")!!
 
 	enum class Position
