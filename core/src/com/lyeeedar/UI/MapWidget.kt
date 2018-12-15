@@ -82,7 +82,7 @@ class MapWidget(val map: Map) : Widget()
 								val screenPos = pointToScreenspace(Vector2(sx.toFloat(), sy.toFloat()))
 								screenPos.x += tileSize / 2f
 								screenPos.y += tileSize / 2f
-								val tile = map.grid[sx, sy]
+								val tile = if (map.grid.inBounds(sx, sy)) map.grid[sx, sy] else return false
 
 								if (tile.isSolid)
 								{
@@ -97,14 +97,18 @@ class MapWidget(val map: Map) : Widget()
 
 											for (upgrade in tower.def.upgrades)
 											{
-												menu.addItem(upgrade.towerDef.icon.textures[0], "Upgrade to " + upgrade.towerDef.name + " (" + upgrade.cost + " gold)", {
+												menu.addItem(upgrade.towerDef.icon.textures[0], "Upgrade to " + upgrade.towerDef.name + " (" + upgrade.cost + " gold)",
+															 { tile.previewTower = upgrade.towerDef }, { tile.previewTower = null },
+															 {
 													val tower = Tower(upgrade.towerDef)
 													tower.tile = tile
 													tile.fillingEntity = tower
 												}, RadialMenu.Position.Top)
 											}
 
-											menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Sell tower for 32 gold.", {
+											menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Sell tower for 32 gold.",
+														 {}, {},
+														 {
 												tile.fillingEntity = null
 											}, RadialMenu.Position.Bottom)
 
@@ -122,7 +126,7 @@ class MapWidget(val map: Map) : Widget()
 
 										val menu = RadialMenu({})
 
-										menu.addItem(root.icon.textures[0], "Build " + root.name, {
+										menu.addItem(root.icon.textures[0], "Build " + root.name, {tile.previewTower = root}, {tile.previewTower = null}, {
 											val tower = Tower(root)
 											tower.tile = tile
 											tile.fillingEntity = tower
@@ -350,6 +354,28 @@ class MapWidget(val map: Map) : Widget()
 								floating.queueSprite(circle, xi, yi, ENTITY, 0, Colour(1f, 1f, 1f, 0.1f), scaleX = range * 2f, scaleY = range * 2f)
 							}
 						}
+					}
+				}
+
+				if (tile.previewTower != null)
+				{
+					if (tile.fillingEntity == null)
+					{
+						ground.queueSprite(tile.previewTower!!.sprite, xi, yi, ENTITY, 0, tileColour.copy().a(0.5f))
+					}
+
+					var range = 0f
+					for (effect in tile.previewTower!!.effects)
+					{
+						if (effect is ShotEffectType)
+						{
+							range = max(range, effect.range)
+						}
+					}
+
+					if (range > 0f)
+					{
+						floating.queueSprite(circle, xi, yi, ENTITY, 0, Colour(0.8f, 1f, 0.8f, 0.1f), scaleX = range * 2f, scaleY = range * 2f)
 					}
 				}
 

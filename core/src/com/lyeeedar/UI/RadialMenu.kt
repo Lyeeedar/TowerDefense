@@ -4,7 +4,7 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.TextureRegion
-import com.badlogic.gdx.math.MathUtils.lerp
+import com.badlogic.gdx.math.MathUtils.clamp
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.badlogic.gdx.scenes.scene2d.ui.Table
@@ -18,7 +18,11 @@ import com.lyeeedar.Util.AssetManager
 class RadialMenu(val closeAction: () -> Unit) : Widget()
 {
 	val circle = AssetManager.loadTextureRegion("Sprites/GUI/RadialMenuBorder")!!
+	val borderedcircle = AssetManager.loadTextureRegion("Sprites/borderedcircle")!!
 	val white = AssetManager.loadTextureRegion("Sprites/white")!!
+	val tick = AssetManager.loadTextureRegion("Sprites/Oryx/uf_split/uf_interface/uf_interface_680")!!
+
+	var tooltip: Tooltip? = null
 
 	enum class Position
 	{
@@ -26,8 +30,9 @@ class RadialMenu(val closeAction: () -> Unit) : Widget()
 		Top
 	}
 
-	class MenuItem(val icon: TextureRegion, val tooltip: String, val clickAction: () -> Unit, val dockPosition: Position)
+	class MenuItem(val icon: TextureRegion, val tooltip: String, val previewAction: () -> Unit, val depreviewAction: () -> Unit, val clickAction: () -> Unit, val dockPosition: Position)
 	{
+		var previewed = false
 		var assignedAngle: Float = 0f
 		val glyphCache = GlyphLayout()
 	}
@@ -38,9 +43,9 @@ class RadialMenu(val closeAction: () -> Unit) : Widget()
 	var clickPos: Vector2 = Vector2()
 	val items = Array<MenuItem>()
 
-	fun addItem(icon: TextureRegion, tooltip: String, clickAction: () -> Unit, dockPosition: Position)
+	fun addItem(icon: TextureRegion, tooltip: String,  previewAction: () -> Unit, depreviewAction: () -> Unit, clickAction: () -> Unit, dockPosition: Position)
 	{
-		val item = MenuItem(icon, tooltip, clickAction, dockPosition)
+		val item = MenuItem(icon, tooltip, previewAction, depreviewAction, clickAction, dockPosition)
 		items.add(item)
 
 		val font = Global.skin.getFont("default")
@@ -59,11 +64,14 @@ class RadialMenu(val closeAction: () -> Unit) : Widget()
 		backgroundTable.addClickListenerFull {
 				inputEvent, x, y ->
 
-			val menux = clickPos.x - menuSize / 2f
-			val menuy = clickPos.y - menuSize / 2f
+			val menux = clamp(clickPos.x - menuSize / 2f, itemSize/2f, Global.stage.width - menuSize - itemSize/2f)
+			val menuy = clamp(clickPos.y - menuSize / 2f, itemSize/2f, Global.stage.height - menuSize - itemSize/2f)
 
-			val itemx = clickPos.x - itemSize / 2f
-			val itemy = clickPos.y - itemSize / 2f
+			val centerx = (menux + menuSize / 2f)
+			val centery = (menuy + menuSize / 2f)
+
+			val itemx = centerx - itemSize / 2f
+			val itemy = centery - itemSize / 2f
 
 			var clicked = false
 			for (item in items)
@@ -78,8 +86,42 @@ class RadialMenu(val closeAction: () -> Unit) : Widget()
 
 				if (x in minx..maxx && y in miny..maxy)
 				{
-					item.clickAction.invoke()
-					close()
+					if (item.previewed)
+					{
+						item.clickAction.invoke()
+						close()
+					}
+					else
+					{
+						for (i in 0 until items.size)
+						{
+							val item = items[i]
+							if (item.previewed)
+							{
+								item.depreviewAction.invoke()
+								item.previewed = false
+
+								tooltip?.remove()
+							}
+						}
+
+						item.previewed = true
+						item.previewAction.invoke()
+
+						tooltip = Tooltip(item.tooltip, Global.skin, Global.stage)
+						tooltip!!.width = (Global.stage.width / 3f) * 2f
+						tooltip!!.layout()
+
+						val x = centerx - tooltip!!.width / 2f
+						if (centery > Global.stage.height / 2f)
+						{
+							tooltip!!.show(x, centery - menuSize / 2f - itemSize - tooltip!!.height)
+						}
+						else
+						{
+							tooltip!!.show(x, centery + menuSize / 2f + itemSize)
+						}
+					}
 
 					clicked = true
 					inputEvent?.handle()
@@ -99,8 +141,18 @@ class RadialMenu(val closeAction: () -> Unit) : Widget()
 
 	fun close()
 	{
+		for (item in items)
+		{
+			if (item.previewed)
+			{
+				item.depreviewAction.invoke()
+			}
+		}
+
 		backgroundTable.remove()
 		remove()
+
+		tooltip?.remove()
 
 		closeAction.invoke()
 	}
@@ -129,36 +181,29 @@ class RadialMenu(val closeAction: () -> Unit) : Widget()
 
 	override fun draw(batch: Batch, parentAlpha: Float)
 	{
-		val menux = clickPos.x - menuSize / 2f
-		val menuy = clickPos.y - menuSize / 2f
+		val menux = clamp(clickPos.x - menuSize / 2f, itemSize/2f, Global.stage.width - menuSize - itemSize/2f)
+		val menuy = clamp(clickPos.y - menuSize / 2f, itemSize/2f, Global.stage.height - menuSize - itemSize/2f)
 
-		batch.color = Color.DARK_GRAY
+		val centerx = (menux + menuSize / 2f)
+		val centery = (menuy + menuSize / 2f)
+
+		batch.color = Color.WHITE
 		batch.draw(circle, menux, menuy, menuSize, menuSize)
 
-		val itemx = clickPos.x - itemSize / 2f
-		val itemy = clickPos.y - itemSize / 2f
-
-		val font = Global.skin.getFont("default")
+		val itemx = centerx - itemSize / 2f
+		val itemy = centery - itemSize / 2f
 
 		for (item in items)
 		{
 			val vec = Vector2(0f, menuSize/2f)
 			vec.rotate(item.assignedAngle)
 
-			val alphax = (vec.x + menuSize/2f) / menuSize
-			val alphay = (vec.y + menuSize/2f) / menuSize
+			batch.color = Color.DARK_GRAY
+			batch.draw(borderedcircle, itemx + vec.x, itemy + vec.y, itemSize, itemSize)
 
-			batch.color = Color.YELLOW
-			batch.draw(circle, itemx + vec.x, itemy + vec.y, itemSize, itemSize)
-			batch.draw(item.icon, itemx + vec.x, itemy + vec.y, itemSize, itemSize)
-
-			vec.set(0f, menuSize/2f + itemSize)
-			vec.rotate(item.assignedAngle)
-
-			vec.x += lerp( -item.glyphCache.width, 0f, alphax)
-			vec.y += lerp(0f, item.glyphCache.height, alphay)
-
-			font.draw(batch, item.glyphCache, clickPos.x + vec.x, clickPos.y + vec.y)
+			batch.color = Color.WHITE
+			val icon = if (item.previewed) tick else item.icon
+			batch.draw(icon, itemx + vec.x, itemy + vec.y, itemSize, itemSize)
 		}
 	}
 }

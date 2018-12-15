@@ -406,6 +406,8 @@ class Tile(x: Int, y: Int) : Point(x, y)
 			tileDirty = true
 		}
 
+	var previewTower: TowerDefinition? = null
+
 	var isSolid = false
 		set(value)
 		{
