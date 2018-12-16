@@ -1,6 +1,7 @@
 package com.lyeeedar.Util
 
 import com.lyeeedar.Direction
+import kotlin.coroutines.experimental.buildSequence
 
 /**
  * Created by Philip on 08-Apr-16.
@@ -67,6 +68,24 @@ class Array2D<T> (val xSize: Int, val ySize: Int, val array: Array<Array<T>>): S
 
 	inline fun forEachIndexed(operation: (x: Int, y: Int, T) -> Unit) {
 		array.forEachIndexed { x, p -> p.forEachIndexed { y, t -> operation.invoke(x, y, t) } }
+	}
+
+	fun get(p: Point, range: Int): Sequence<T>
+	{
+		return buildSequence {
+			val minx = max(p.x - range, 0)
+			val miny = max(p.y - range, 0)
+			val maxx = min(p.x + range, width-1)
+			val maxy = min(p.y + range, height-1)
+
+			for (x in minx..maxx)
+			{
+				for (y in miny..maxy)
+				{
+					yield(array[x][y])
+				}
+			}
+		}
 	}
 
 	override operator fun iterator(): Iterator<T> =  Array2DIterator(this)

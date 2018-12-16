@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.Interpolation
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.reflect.ClassReflection
 import com.lyeeedar.Util.Colour
+import com.lyeeedar.Util.UnsmoothedPath
 import com.lyeeedar.Util.XmlData
 
 abstract class AbstractAnimation
@@ -87,7 +88,7 @@ class MoveAnimationDefinition : AbstractAnimationDefinition()
 {
 	override fun getAnimation(duration: Float, path: Array<Vector2>): AbstractAnimation
 	{
-		return MoveAnimation.obtain().set(duration * speedMultiplier, path, Interpolation.linear)
+		return MoveAnimation.obtain().set(duration * speedMultiplier, UnsmoothedPath(path), Interpolation.linear)
 	}
 
 	override fun parse(xmlData: XmlData)

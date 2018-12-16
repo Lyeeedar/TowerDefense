@@ -1,4 +1,4 @@
-<Definitions xmlns:meta="Editor">
+<Definitions Colour="196,212,61" Icon="Sprites/EffectSprites/Arrow/Arrow_0.png" xmlns:meta="Editor">
 	<!--Effect Types-->
 	<Definition Name="DamageEffect" meta:RefKey="StructDef">
 		<Data Name="Damage" Type="Int" Min="1" Default="1" SkipIfDefault="False" meta:RefKey="Number" />

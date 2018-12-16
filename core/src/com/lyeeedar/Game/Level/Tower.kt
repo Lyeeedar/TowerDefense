@@ -164,7 +164,8 @@ abstract class AbstractEffectType
 			val effect = when(xmlData.getAttribute("meta:RefKey").toUpperCase())
 			{
 				"DAMAGEEFFECT" -> DamageEffectType()
-				"SHOTEFFECT" -> ShotEffectType();
+				"SHOTEFFECT" -> ShotEffectType()
+				"AOEEFFECT" -> AOEEffectType()
 				else -> throw Exception("Unknown effect type '" + xmlData.getAttribute("meta:RefKey") + "'!")
 			}
 
@@ -214,8 +215,10 @@ class ShotEffectType : AbstractEffectType()
 
 	override fun apply(entity: Entity, map: Map)
 	{
-		val allenemies = map.grid.flatMap { it.entities.asSequence() }.mapNotNull { it as? Enemy }.asGdxArray()
-		val enemiesInRange = allenemies.filter { it != entity && it.actualhp > 0 && it.pos.dst2(entity.tile.toVec()) <= range*range }.asGdxArray()
+		val entityPos = if (entity is Enemy) entity.pos else entity.tile.toVec()
+		val rangeMax = range.ciel()
+		val allenemies = map.grid.get(entity.tile, rangeMax).flatMap { it.entities.asSequence() }.mapNotNull { it as? Enemy }.asGdxArray()
+		val enemiesInRange = allenemies.filter { it != entity && it.actualhp > 0 && it.pos.dst2(entityPos) <= range*range }.asGdxArray()
 
 		for (i in 0 until count)
 		{
@@ -239,7 +242,7 @@ class ShotEffectType : AbstractEffectType()
 				}
 				else
 				{
-					enemy = enemiesInRange.filter { !targetCache!!.targets.contains(it) }.toGdxArray().random()
+					enemy = enemiesInRange.filter { !targetCache!!.targets.contains(it) }.toGdxArray().randomOrNull(Random.random) ?: continue
 					targetCache!!.targets[i] = enemy
 					enemiesInRange.removeValue(enemy, true)
 				}
@@ -255,12 +258,13 @@ class ShotEffectType : AbstractEffectType()
 			val a = MathUtils.clamp((enemy.pathDist + flightTime) / enemy.pathDuration, 0f, 1f)
 			val targetPos = enemy.currentPath!!.valueAt(a)
 
-			val path = arrayOf(Vector2(), targetPos - entity.tile.toVec())
+			val path = arrayOf(Vector2(), targetPos - entityPos)
 			path[1].y *= -1
 
 			val effect = flightEffect.copy()
 			effect.faceInMoveDirection = true
 			effect.animation = animDef.getAnimation(flightTime, path)
+			effect.rotation = getRotation(entityPos, enemy.pos)
 
 			entity.tile.effects.add(effect)
 
@@ -287,4 +291,53 @@ class ShotEffectType : AbstractEffectType()
 		}
 	}
 
+}
+
+class AOEEffectType : AbstractEffectType()
+{
+	var range: Float = 0f
+	lateinit var effect: ParticleEffect
+
+	var effects = com.badlogic.gdx.utils.Array<AbstractEffectType>()
+
+	override fun apply(entity: Entity, map: Map)
+	{
+		val entityPos = if (entity is Enemy) entity.pos else entity.tile.toVec()
+
+		val impactEffect = effect.copy()
+		impactEffect.size[0] = range.ciel()
+		impactEffect.size[1] = range.ciel()
+		impactEffect.isCentered = true
+
+		entity.tile.effects.add(impactEffect)
+
+		for (tile in map.grid.get(entity.tile, range.ciel()))
+		{
+			for (enemy in tile.entities)
+			{
+				if (enemy is Enemy)
+				{
+					if (enemy.pos.dst2(entityPos) <= range*range)
+					{
+						for (effect in effects)
+						{
+							effect.apply(enemy, map)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	override fun parse(xmlData: XmlData)
+	{
+		range = xmlData.getFloat("Range")
+		effect = AssetManager.loadParticleEffect(xmlData.getChildByName("Effect")!!)
+
+		val effectsEl = xmlData.getChildByName("Effects")!!
+		for (el in effectsEl.children)
+		{
+			effects.add(load(el))
+		}
+	}
 }

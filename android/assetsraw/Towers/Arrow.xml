@@ -25,6 +25,46 @@
 						<Name>Arrow</Name>
 						<KillOnAnimComplete>true</KillOnAnimComplete>
 					</FlightEffect>
+					<Animation meta:RefKey="MoveAnimation">
+						<SpeedMultiplier>1</SpeedMultiplier>
+					</Animation>
+					<Effects>
+						<Effect meta:RefKey="DamageEffect">
+							<Damage>1</Damage>
+							<Effect meta:RefKey="ParticleEffect">
+								<Name>Hit</Name>
+							</Effect>
+						</Effect>
+					</Effects>
+				</Effect>
+			</Effects>
+		</Tower>
+		<Tower meta:X="526" meta:Y="0" GUID="8d8f331a-3172-4004-8723-11ee24ffa6ec">
+			<Upgrades>
+				<Upgrade>
+					<Cost>150</Cost>
+					<Upgrade meta:RefKey="Tower">f4591b16-5748-4064-8553-49427b02ecb9</Upgrade>
+				</Upgrade>
+			</Upgrades>
+			<Name>Arrow II</Name>
+			<Icon meta:RefKey="Sprite">
+				<Name>EffectSprites/Arrow/Arrow_0</Name>
+				<Colour>255,0,0,255</Colour>
+			</Icon>
+			<Sprite meta:RefKey="Sprite">
+				<Name>Oryx/uf_split/uf_heroes/archer</Name>
+				<DrawActualSize>true</DrawActualSize>
+				<Colour>255,0,0,255</Colour>
+			</Sprite>
+			<AttacksPerSecond>5</AttacksPerSecond>
+			<Effects>
+				<Effect meta:RefKey="ShotEffect">
+					<Range>5.5</Range>
+					<Count>2</Count>
+					<FlightEffect meta:RefKey="ParticleEffect">
+						<Name>Arrow</Name>
+						<KillOnAnimComplete>true</KillOnAnimComplete>
+					</FlightEffect>
 					<Animation meta:RefKey="LeapAnimation">
 						<SpeedMultiplier>1</SpeedMultiplier>
 						<Height>2</Height>
@@ -40,36 +80,44 @@
 				</Effect>
 			</Effects>
 		</Tower>
-		<Tower meta:X="526" meta:Y="0" GUID="8d8f331a-3172-4004-8723-11ee24ffa6ec">
-			<Name>Arrow II</Name>
+		<Tower meta:X="848" meta:Y="0" GUID="f4591b16-5748-4064-8553-49427b02ecb9">
+			<Name>Blast Arrow</Name>
 			<Icon meta:RefKey="Sprite">
-				<Name>EffectSprites/Arrow/Arrow_0</Name>
-				<Colour>255,0,0,255</Colour>
+				<Name>EffectSprites/Explosion/Explosion_2</Name>
 			</Icon>
 			<Sprite meta:RefKey="Sprite">
 				<Name>Oryx/uf_split/uf_heroes/archer</Name>
 				<DrawActualSize>true</DrawActualSize>
 				<Colour>255,0,0,255</Colour>
 			</Sprite>
-			<AttacksPerSecond>5</AttacksPerSecond>
+			<AttacksPerSecond>2</AttacksPerSecond>
 			<Effects>
 				<Effect meta:RefKey="ShotEffect">
-					<Range>5</Range>
+					<Range>6</Range>
 					<Count>1</Count>
 					<FlightEffect meta:RefKey="ParticleEffect">
 						<Name>Arrow</Name>
+						<Colour>255,0,0,255</Colour>
 						<KillOnAnimComplete>true</KillOnAnimComplete>
 					</FlightEffect>
 					<Animation meta:RefKey="LeapAnimation">
-						<SpeedMultiplier>1</SpeedMultiplier>
-						<Height>2</Height>
+						<SpeedMultiplier>2</SpeedMultiplier>
+						<Height>3</Height>
 					</Animation>
 					<Effects>
-						<Effect meta:RefKey="DamageEffect">
-							<Damage>2</Damage>
+						<Effect meta:RefKey="AoeEffect">
+							<Range>2</Range>
 							<Effect meta:RefKey="ParticleEffect">
-								<Name>Hit</Name>
+								<Name>Explosion</Name>
 							</Effect>
+							<Effects>
+								<Effect meta:RefKey="DamageEffect">
+									<Damage>2</Damage>
+									<Effect meta:RefKey="ParticleEffect">
+										<Name>Hit</Name>
+									</Effect>
+								</Effect>
+							</Effects>
 						</Effect>
 					</Effects>
 				</Effect>
