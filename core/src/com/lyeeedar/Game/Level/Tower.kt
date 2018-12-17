@@ -1,6 +1,5 @@
 package com.lyeeedar.Game.Level
 
-import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.ObjectMap
 import com.lyeeedar.Renderables.Animation.AbstractAnimationDefinition
@@ -255,8 +254,8 @@ class ShotEffectType : AbstractEffectType()
 
 			val flightTime = 0.2f + enemy.tile.euclideanDist(entity.tile) * 0.025f
 
-			val a = MathUtils.clamp((enemy.pathDist + flightTime) / enemy.pathDuration, 0f, 1f)
-			val targetPos = enemy.currentPath!!.valueAt(a)
+			val pos = Enemy.getFuturePos(flightTime, map, enemy)
+			val targetPos = pos.pos
 
 			val path = arrayOf(Vector2(), targetPos - entityPos)
 			path[1].y *= -1

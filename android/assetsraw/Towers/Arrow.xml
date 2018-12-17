@@ -25,8 +25,9 @@
 						<Name>Arrow</Name>
 						<KillOnAnimComplete>true</KillOnAnimComplete>
 					</FlightEffect>
-					<Animation meta:RefKey="MoveAnimation">
+					<Animation meta:RefKey="LeapAnimation">
 						<SpeedMultiplier>1</SpeedMultiplier>
+						<Height>2</Height>
 					</Animation>
 					<Effects>
 						<Effect meta:RefKey="DamageEffect">

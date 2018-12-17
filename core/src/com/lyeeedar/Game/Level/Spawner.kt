@@ -3,11 +3,10 @@ package com.lyeeedar.Game.Level
 import com.lyeeedar.Renderables.Animation.ExpandAnimation
 import com.lyeeedar.Util.AssetManager
 import com.lyeeedar.Util.Colour
+import ktx.math.plus
 
 class Spawner(val character: Char) : Entity()
 {
-	var sourceIndex = 0
-
 	var currentWave: SpawnerWave? = null
 
 	lateinit var linkedDestination: Sinker
@@ -40,6 +39,7 @@ class Spawner(val character: Char) : Entity()
 
 					val enemy = Enemy(this, waveEnemy.enemyDef)
 					enemy.tile = tile
+					enemy.pos = tile.toVec() + enemy.chosenOffset
 					tile.entities.add(enemy)
 
 					val spawnEffect = AssetManager.loadParticleEffect("Heal")

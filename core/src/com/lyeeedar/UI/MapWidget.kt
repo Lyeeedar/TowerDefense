@@ -384,23 +384,15 @@ class MapWidget(val map: Map) : Widget()
 				{
 					if (entity is Enemy)
 					{
-						ground.update(entity.sprite, Gdx.app.graphics.deltaTime)
+						val pos = entity.pos.cpy()
+						pos.y = map.height - 1 - pos.y
 
-						if (entity.sprite.animation == null)
-						{
-							ground.queueSprite(entity.sprite, xi, yi, ENTITY, 0, tileColour)
-						}
-						else
-						{
-							ground.queueSprite(entity.sprite, 0f, 0f, ENTITY, 0, tileColour)
-						}
+						ground.queueSprite(entity.sprite, pos.x, pos.y, ENTITY, 0, tileColour)
 
-						val pos = entity.sprite.animation?.renderOffset(false) ?: floatArrayOf(xi, yi)
-
-						if (entity.hp != entity.def.health && entity.sprite.animation != null)
+						if (entity.hp != entity.def.health)
 						{
-							val hpbarposx = pos[0] + (1f - entity.sprite.baseScale[0]) / 2f - 0.1f
-							val hpbarposy = pos[1] + 1f - ((1f - entity.sprite.baseScale[1]) / 2f) + 0.2f
+							val hpbarposx = pos.x + (1f - entity.sprite.baseScale[0]) / 2f - 0.1f
+							val hpbarposy = pos.y + 1f - ((1f - entity.sprite.baseScale[1]) / 2f) + 0.2f
 
 							val a = entity.hp.toFloat() / entity.def.health.toFloat()
 							val col = Colour.RED.copy().lerpHSV(Colour.GREEN.copy(), a)
@@ -420,7 +412,7 @@ class MapWidget(val map: Map) : Widget()
 								}
 								else
 								{
-									floating.queueSprite(effect, pos[0], pos[1], EFFECT, 0)
+									floating.queueSprite(effect, pos.x, pos.y, EFFECT, 0)
 								}
 							}
 							else if (effect is ParticleEffect)
@@ -431,7 +423,7 @@ class MapWidget(val map: Map) : Widget()
 								}
 								else
 								{
-									floating.queueParticle(effect, pos[0], pos[1], EFFECT, 0)
+									floating.queueParticle(effect, pos.x, pos.y, EFFECT, 0)
 								}
 							}
 						}

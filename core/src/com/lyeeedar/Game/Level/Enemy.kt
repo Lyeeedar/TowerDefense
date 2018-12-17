@@ -1,7 +1,5 @@
 package com.lyeeedar.Game.Level
 
-import com.badlogic.gdx.math.MathUtils
-import com.badlogic.gdx.math.Path
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Array
 import com.lyeeedar.Renderables.Animation.ExpandAnimation
@@ -10,7 +8,7 @@ import com.lyeeedar.Renderables.Particle.ParticleEffect
 import com.lyeeedar.Renderables.Renderable
 import com.lyeeedar.Renderables.Sprite.Sprite
 import com.lyeeedar.Util.*
-import ktx.collections.toGdxArray
+import ktx.math.minus
 import ktx.math.plus
 
 class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
@@ -24,12 +22,8 @@ class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
 
 	val chosenOffset: Vector2 = Vector2(Random.random() * 0.8f - 0.4f, Random.random() * 0.8f - 0.4f)
 
-	var currentAnim: MoveAnimation? = null
-	var currentPath: Path<Vector2>? = null
-	var pathDist = 0f
-	var pathDuration = 0f
-
 	var pos: Vector2 = Vector2()
+	var currentDest: Tile? = null
 
 	var effects = Array<Renderable>()
 
@@ -48,46 +42,11 @@ class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
 			return
 		}
 
-		if (currentPath == null)
-		{
-			// update with a new path
-			val source = source
-			val sourceIndex = source.sourceIndex
-			val dest = source.linkedDestination.tile
+		val futurepos = getFuturePos(delta, map, this)
+		pos = futurepos.pos
+		currentDest = futurepos.destTile
 
-			val path = Array<Vector2>()
-			path.add(tile.toVec())
-
-			var current = tile
-			while (current != dest)
-			{
-				path.add(current.toVec())
-
-				current = current.nextTile[sourceIndex]
-			}
-			path.add(current.toVec())
-
-			currentPath = UnsmoothedPath(path.toArray(Vector2::class.java))
-			val animPath: kotlin.Array<Vector2> = path.map { Vector2(it) + chosenOffset }.toGdxArray().toArray(Vector2::class.java)
-			for (point in animPath)
-			{
-				point.y = (map.grid.height - point.y - 1)
-			}
-
-			pathDuration = currentPath!!.approxLength(50) * def.tilesASecond
-			currentAnim = MoveAnimation.obtain().set(pathDuration, UnsmoothedPath(animPath))
-
-			sprite.animation = null
-			sprite.animation = currentAnim
-			pathDist = 0f
-		}
-
-		pathDist += delta
-
-		val a = MathUtils.clamp(currentAnim!!.time() / currentAnim!!.duration(), 0f, 1f)
-		val alpha = currentAnim!!.eqn!!.apply(a)
-		pos = currentPath!!.valueAt(alpha)
-		val tile = map.grid[pos.x.toInt(), pos.y.toInt()]
+		val tile = map.grid.getClamped(pos.x.toInt(), pos.y.toInt())
 
 		if (tile.fillingEntity == source.linkedDestination)
 		{
@@ -104,6 +63,70 @@ class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
 		{
 			this.tile = tile
 			tile.entities.add(this)
+		}
+	}
+
+	companion object
+	{
+		class FuturePos(val pos: Vector2, val destTile: Tile?)
+		fun getFuturePos(delta: Float, map: Map, enemy: Enemy): FuturePos
+		{
+			var pos = enemy.pos.cpy()
+			var currentDest = enemy.currentDest
+			var tile = enemy.tile
+
+			var moveDist = enemy.def.tilesASecond * delta
+			val pathgrid = map.paths[enemy.source]
+
+			while (moveDist > 0f)
+			{
+				if (currentDest == null)
+				{
+					val surroundingTiles = map.grid.get(tile, 1).filter { pathgrid[it] != null }
+					var minValue = Int.MAX_VALUE
+					for (tile in surroundingTiles)
+					{
+						if (pathgrid[tile]!!.cost < minValue)
+						{
+							minValue = pathgrid[tile]!!.cost
+						}
+					}
+
+					val possibleTiles = Array<Tile>()
+					for (tile in surroundingTiles)
+					{
+						if (pathgrid[tile]!!.cost == minValue)
+						{
+							possibleTiles.add(tile)
+						}
+					}
+
+					currentDest = possibleTiles.random()
+				}
+
+				if (currentDest == null)
+				{
+					break
+				}
+
+				val targetPos = currentDest.toVec() + enemy.chosenOffset
+				val diff = targetPos.cpy() - pos
+				val len = diff.len()
+
+				val move = min(moveDist, len)
+				moveDist -= move
+
+				val alpha = move / len
+				pos.lerp(targetPos, alpha)
+
+				if (moveDist > 0f)
+				{
+					tile = currentDest
+					currentDest = null
+				}
+			}
+
+			return FuturePos(pos, currentDest)
 		}
 	}
 }

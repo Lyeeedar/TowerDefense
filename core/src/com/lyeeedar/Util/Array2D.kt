@@ -1,5 +1,6 @@
 package com.lyeeedar.Util
 
+import com.badlogic.gdx.math.MathUtils.clamp
 import com.lyeeedar.Direction
 import kotlin.coroutines.experimental.buildSequence
 
@@ -41,6 +42,12 @@ class Array2D<T> (val xSize: Int, val ySize: Int, val array: Array<Array<T>>): S
 	}
 
 	operator fun get(x: Int, y: Int, fallback:T?): T? = tryGet(x, y, fallback)
+
+	fun getClamped(x: Int, y: Int): T {
+		val x = clamp(x, 0, width-1)
+		val y = clamp(y, 0, height-1)
+		return array[x][y]
+	}
 
 	operator fun get(x: Int, y: Int): T {
 		return array[x][y]

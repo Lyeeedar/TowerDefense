@@ -12,11 +12,6 @@ import ktx.collections.set
 
 class Map(val grid: Array2D<Tile>)
 {
-	init
-	{
-		updatePath()
-	}
-
 	val width: Int
 		get() = grid.width
 
@@ -25,6 +20,13 @@ class Map(val grid: Array2D<Tile>)
 
 	val waves = Array<Wave>()
 	var currentWave = -1
+
+	val paths = ObjectMap<Spawner, Array2D<PathfindNode?>>()
+
+	init
+	{
+		updatePath()
+	}
 
 	val enemyList = ObjectSet<Enemy>()
 	val towerList = Array<Tower>()
@@ -134,8 +136,6 @@ class Map(val grid: Array2D<Tile>)
 
 		for (tile in grid)
 		{
-			tile.nextTile.clear()
-
 			if (tile.fillingEntity is Spawner)
 			{
 				sources.add(tile.fillingEntity as Spawner)
@@ -145,7 +145,7 @@ class Map(val grid: Array2D<Tile>)
 			{
 				if (entity is Enemy)
 				{
-					entity.currentPath = null
+					entity.currentDest = null
 				}
 				else
 				{
@@ -154,11 +154,10 @@ class Map(val grid: Array2D<Tile>)
 			}
 		}
 
-		var index = 0
+		paths.clear()
 		for (source in sources)
 		{
-			source.sourceIndex = index++
-			val dest = source.linkedDestination.tile!!
+			val dest = source.linkedDestination.tile
 
 			val tempCostGrid = Array2D<PathfindNode?>(grid.width, grid.height)
 			val processQueue = Array<PathfindNode>(false, 32)
@@ -205,12 +204,7 @@ class Map(val grid: Array2D<Tile>)
 				}
 			}
 
-			// Process grid to find path
-			for (tile in grid)
-			{
-				val next = Direction.CardinalValues.filter { tempCostGrid.inBounds(tile + it) }.mapNotNull { tempCostGrid[tile + it] }.minBy { it.cost } ?: tile
-				tile.nextTile.add(grid[next])
-			}
+			paths[source] = tempCostGrid
 		}
 	}
 
@@ -398,8 +392,6 @@ class PathfindNode(var cost: Int, x: Int, y: Int) : Point(x, y)
 class Tile(x: Int, y: Int) : Point(x, y)
 {
 	val entities = Array<Entity>()
-
-	val nextTile = Array<Tile>()
 
 	var fillingEntity: Entity? = null
 		set(value)
