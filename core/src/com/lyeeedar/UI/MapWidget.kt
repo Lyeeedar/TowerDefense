@@ -47,7 +47,7 @@ class MapWidget(val map: Map) : Widget()
 	val stage_empty: Sprite = AssetManager.loadSprite("GUI/attack_empty")
 	val changer: Sprite = AssetManager.loadSprite("Oryx/Custom/items/changer", drawActualSize = true)
 	val white: Sprite = AssetManager.loadSprite("white")
-	val circle: Sprite = AssetManager.loadSprite("bigcircle")
+	val rangeCircle: Sprite = AssetManager.loadSprite("GUI/RangeCircle")
 
 	val TILE = 0
 	val ENTITY = TILE+1
@@ -265,8 +265,6 @@ class MapWidget(val map: Map) : Widget()
 
 		batch!!.color = Color.WHITE
 
-		val lines = com.badlogic.gdx.utils.Array<TargetLine>()
-
 		for (x in 0 until map.width)
 		{
 			for (y in 0 until map.height)
@@ -274,11 +272,6 @@ class MapWidget(val map: Map) : Widget()
 				val tile = map.grid[x, y]
 
 				var tileColour = Colour.WHITE
-
-				if (tile.entities.size > 0)
-				{
-					tileColour = Colour.GOLD
-				}
 
 				val xi = x.toFloat()
 				val yi = (map.height-1) - y.toFloat()
@@ -347,11 +340,15 @@ class MapWidget(val map: Map) : Widget()
 								{
 									range = max(range, effect.range)
 								}
+								else if (effect is AOEEffectType)
+								{
+									range = max(range, effect.range)
+								}
 							}
 
 							if (range > 0f)
 							{
-								floating.queueSprite(circle, xi, yi, ENTITY, 0, Colour(1f, 1f, 1f, 0.1f), scaleX = range * 2f, scaleY = range * 2f)
+								floating.queueSprite(rangeCircle, xi, yi, ENTITY, 0, Colour(1f, 1f, 1f, 0.5f), scaleX = range * 2f, scaleY = range * 2f)
 							}
 						}
 					}
@@ -371,11 +368,15 @@ class MapWidget(val map: Map) : Widget()
 						{
 							range = max(range, effect.range)
 						}
+						else if (effect is AOEEffectType)
+						{
+							range = max(range, effect.range)
+						}
 					}
 
 					if (range > 0f)
 					{
-						floating.queueSprite(circle, xi, yi, ENTITY, 0, Colour(0.8f, 1f, 0.8f, 0.1f), scaleX = range * 2f, scaleY = range * 2f)
+						floating.queueSprite(rangeCircle, xi, yi, ENTITY, 0, Colour(0.3f, 1f, 0.3f, 0.6f), scaleX = range * 2f, scaleY = range * 2f)
 					}
 				}
 
@@ -411,6 +412,8 @@ class MapWidget(val map: Map) : Widget()
 						{
 							if (effect is Sprite)
 							{
+								floating.update(effect)
+
 								if (effect.completed)
 								{
 									entity.effects.removeValue(effect, true)
@@ -443,6 +446,8 @@ class MapWidget(val map: Map) : Widget()
 				{
 					if (effect is Sprite)
 					{
+						floating.update(effect)
+
 						if (effect.completed)
 						{
 							tile.effects.removeValue(effect, true)

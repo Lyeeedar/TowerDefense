@@ -246,10 +246,11 @@ open class Point : Pool.Poolable, Comparable<Point>
 
 	inline fun lerp(p2: Point, alpha: Float) = obtain().set(x + ((p2.x - x) * alpha).toInt(), y + ((p2.y - y) * alpha).toInt())
 
-	inline fun getPosDiff(p: Point, invertY: Boolean = false): kotlin.Array<Vector2> = getPosDiff(p.x, p.y, invertY)
-	inline fun getPosDiff(px: Int, py: Int, invertY: Boolean = false): kotlin.Array<Vector2>
+	inline fun getPosDiff(p: Point, invertY: Boolean = false): kotlin.Array<Vector2> = getPosDiff(p.x.toFloat(), p.y.toFloat(), invertY)
+	inline fun getPosDiff(px: Int, py: Int, invertY: Boolean = false): kotlin.Array<Vector2> = getPosDiff(px.toFloat(), py.toFloat(), invertY)
+	inline fun getPosDiff(px: Float, py: Float, invertY: Boolean = false): kotlin.Array<Vector2>
 	{
-		val oldPos = Vector2(px.toFloat(), py.toFloat())
+		val oldPos = Vector2(px, py)
 		val newPos = Vector2(x.toFloat(), y.toFloat())
 
 		val diff = oldPos.sub(newPos)

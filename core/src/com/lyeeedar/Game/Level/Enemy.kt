@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.math.Path
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Array
+import com.lyeeedar.Renderables.Animation.ExpandAnimation
 import com.lyeeedar.Renderables.Animation.MoveAnimation
 import com.lyeeedar.Renderables.Particle.ParticleEffect
 import com.lyeeedar.Renderables.Renderable
@@ -91,6 +92,13 @@ class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
 		if (tile.fillingEntity == source.linkedDestination)
 		{
 			source.linkedDestination.sink(this)
+
+			val sprite = sprite.copy()
+			sprite.animation = null
+			sprite.animation = ExpandAnimation.obtain().set(0.5f, 1f, 0f)
+			sprite.animation = MoveAnimation.obtain().set(0.5f, source.linkedDestination.tile.getPosDiff(pos.x, pos.y))
+
+			source.linkedDestination.tile.effects.add(sprite)
 		}
 		else
 		{

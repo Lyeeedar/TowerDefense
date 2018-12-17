@@ -1,5 +1,7 @@
 package com.lyeeedar.Game.Level
 
+import com.lyeeedar.Renderables.Animation.ExpandAnimation
+import com.lyeeedar.Util.AssetManager
 import com.lyeeedar.Util.Colour
 
 class Spawner(val character: Char) : Entity()
@@ -12,7 +14,9 @@ class Spawner(val character: Char) : Entity()
 
 	init
 	{
-		sprite.colour = Colour.GREEN
+		sprite = AssetManager.loadSprite("Oryx/Custom/terrain/portal_blue")
+		sprite.baseScale[0] = 2f
+		sprite.size[1] = 2
 	}
 
 	override fun update(delta: Float, map: Map)
@@ -38,7 +42,13 @@ class Spawner(val character: Char) : Entity()
 					enemy.tile = tile
 					tile.entities.add(enemy)
 
+					val spawnEffect = AssetManager.loadParticleEffect("Heal")
+					spawnEffect.colour = Colour(0.2f, 0.5f, 1f, 1f)
+					enemy.effects.add(spawnEffect)
+
 					enemy.update(delta, map)
+
+					enemy.sprite.animation = ExpandAnimation.obtain().set(0.1f, 0f, 1f)
 				}
 			}
 		}
@@ -49,7 +59,9 @@ class Sinker : Entity()
 {
 	init
 	{
-		sprite.colour = Colour.BLUE
+		sprite = AssetManager.loadSprite("Oryx/Custom/terrain/portal_red")
+		sprite.baseScale[0] = 2f
+		sprite.size[1] = 2
 	}
 
 	override fun update(delta: Float, map: Map)

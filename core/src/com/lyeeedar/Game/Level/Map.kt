@@ -289,6 +289,9 @@ class Map(val grid: Array2D<Tile>)
 					}
 
 					spawners[def.destination].add(spawner)
+
+					tile.isSolid = false
+					tile.groundSprite = theme.path.copy()
 				}
 				else if (symbolsMap.containsKey(char.toInt()))
 				{
