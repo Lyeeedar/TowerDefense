@@ -210,9 +210,9 @@ class ParticleEditorScreen : AbstractScreen()
 	{
 		batch.projectionMatrix = stage.camera.combined
 
-		particle.collisionGrid = collision
+		Global.collisionGrid = collision
 
-		spriteRender.begin(delta, 0f, 0f)
+		spriteRender.begin(delta, 0f, 0f, Colour.WHITE)
 
 		for (x in 0..background.xSize-1)
 		{

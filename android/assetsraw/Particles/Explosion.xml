@@ -150,4 +150,17 @@
 			</Particles>
 		</Emitter>
 	</Emitters>
+	<Light>
+		<Colour>
+			<Keyframe>0|253,255,0,255</Keyframe>
+		</Colour>
+		<Brightness>
+			<Keyframe>0|1</Keyframe>
+			<Keyframe>0.2944963|1</Keyframe>
+			<Keyframe>0.799347|0</Keyframe>
+		</Brightness>
+		<Range>
+			<Keyframe>0|5</Keyframe>
+		</Range>
+	</Light>
 </Effect>

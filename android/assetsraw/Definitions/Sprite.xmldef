@@ -4,6 +4,7 @@
 		<Data Name="DrawActualSize" meta:RefKey="Boolean" />
 		<Data Name="UpdateRate" Min="0" Default="0.5" meta:RefKey="Number" />
 		<Data Name="Colour" meta:RefKey="Colour" />
+		<Data Name="Light" Keys="Light" meta:RefKey="Reference" />
 	</Definition>
 	<Definition Name="TilingSprite" IsGlobal="True" meta:RefKey="StructDef">
 		<Data Name="Name" SkipIfDefault="False" meta:RefKey="String" />
@@ -24,6 +25,7 @@
 			<Data Name="SouthEast" Keys="Sprite" meta:RefKey="Reference" />
 			<Data Name="SouthWest" Keys="Sprite" meta:RefKey="Reference" />
 		</Data>
+		<Data Name="Light" Keys="Light" meta:RefKey="Reference" />
 	</Definition>
 	<Definition Name="DirectedSprite" Collapse="True" IsGlobal="True" meta:RefKey="StructDef">
 		<Data Name="Path" BasePath="Sprites" StripExtension="True" AllowedFileTypes="png" SkipIfDefault="False" meta:RefKey="File" />
@@ -72,4 +74,8 @@
 		<Data Name="Height" Min="0" Default="2" SkipIfDefault="False" meta:RefKey="Number" />
 	</Definition>
 	<Definition Name="Animations" Keys="MoveAnimation,LeapAnimation" IsGlobal="True" meta:RefKey="ReferenceDef" />
+	<Definition Name="Light" IsGlobal="True" meta:RefKey="StructDef">
+		<Data Name="Colour" SkipIfDefault="False" meta:RefKey="Colour" />
+		<Data Name="Range" Min="0" Default="3" SkipIfDefault="False" meta:RefKey="Number" />
+	</Definition>
 </Definitions>

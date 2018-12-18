@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.Batch
+import com.badlogic.gdx.graphics.g2d.HDRColourSpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector2
@@ -61,6 +62,8 @@ class MapWidget(val map: Map) : Widget()
 	val tempCol = Colour()
 
 	var hpLossTimer = 0f
+
+	val hdrBatch = HDRColourSpriteBatch()
 
 	init
 	{
@@ -251,19 +254,23 @@ class MapWidget(val map: Map) : Widget()
 		tileSize = Math.min(w, h)
 	}
 
-	class TargetLine(val v1: Vector2, val v2: Vector2, val color: Color)
-
 	var renderY = 0f
 	override fun draw(batch: Batch?, parentAlpha: Float)
 	{
+		batch!!.end()
+
+		hdrBatch.transformMatrix = batch.transformMatrix.cpy()
+		hdrBatch.projectionMatrix = batch.projectionMatrix.cpy()
+		hdrBatch.begin()
+
 		val xp = this.x + (this.width / 2f) - ((map.width * tileSize) / 2f)
 		val yp = this.y
 		renderY = yp
 
-		ground.begin(Gdx.app.graphics.deltaTime, xp, yp)
-		floating.begin(Gdx.app.graphics.deltaTime, xp, yp)
+		ground.begin(Gdx.app.graphics.deltaTime, xp, yp, map.ambient)
+		floating.begin(Gdx.app.graphics.deltaTime, xp, yp, map.ambient)
 
-		batch!!.color = Color.WHITE
+		hdrBatch.color = Color.WHITE
 
 		for (x in 0 until map.width)
 		{
@@ -271,7 +278,7 @@ class MapWidget(val map: Map) : Widget()
 			{
 				val tile = map.grid[x, y]
 
-				var tileColour = Colour.WHITE
+				val tileColour = Colour.WHITE
 
 				val xi = x.toFloat()
 				val yi = (map.height-1) - y.toFloat()
@@ -397,7 +404,7 @@ class MapWidget(val map: Map) : Widget()
 							val a = entity.hp.toFloat() / entity.def.health.toFloat()
 							val col = Colour.RED.copy().lerpHSV(Colour.GREEN.copy(), a)
 
-							ground.queueSprite(white, hpbarposx, hpbarposy, ENTITY, 0, col, width = a * entity.sprite.baseScale[0] + 0.2f, height = 0.1f)
+							ground.queueSprite(white, hpbarposx, hpbarposy, ENTITY, 0, col, width = a * entity.sprite.baseScale[0] + 0.2f, height = 0.1f, lit = false)
 						}
 
 						for (effect in entity.effects)
@@ -464,7 +471,11 @@ class MapWidget(val map: Map) : Widget()
 			}
 		}
 
-		ground.flush(batch)
-		floating.flush(batch)
+		ground.flush(hdrBatch)
+		floating.flush(hdrBatch)
+
+		hdrBatch.end()
+
+		batch.begin()
 	}
 }

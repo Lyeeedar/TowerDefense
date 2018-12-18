@@ -5,7 +5,6 @@ import com.badlogic.gdx.graphics.g2d.HDRColourSpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.math.Matrix3
-import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.Array
 import com.lyeeedar.Renderables.Animation.AbstractColourAnimation
@@ -47,7 +46,6 @@ class Sprite(val fileName: String, var animationDelay: Float, var textures: Arra
 	var animationAccumulator: Float = 0.toFloat()
 
 	var fixPosition: Boolean = false
-
 
 	var completed = false
 
@@ -285,6 +283,7 @@ class Sprite(val fileName: String, var animationDelay: Float, var textures: Arra
 		sprite.animation = animation?.copy()
 		sprite.colourAnimation = colourAnimation?.copy() as? AbstractColourAnimation
 		sprite.disableHDR = disableHDR
+		sprite.light = light?.copy()
 
 		return sprite
 	}

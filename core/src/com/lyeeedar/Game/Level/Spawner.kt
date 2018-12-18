@@ -1,6 +1,7 @@
 package com.lyeeedar.Game.Level
 
 import com.lyeeedar.Renderables.Animation.ExpandAnimation
+import com.lyeeedar.Renderables.Light
 import com.lyeeedar.Util.AssetManager
 import com.lyeeedar.Util.Colour
 import ktx.math.plus
@@ -16,6 +17,8 @@ class Spawner(val character: Char) : Entity()
 		sprite = AssetManager.loadSprite("Oryx/Custom/terrain/portal_blue")
 		sprite.baseScale[0] = 2f
 		sprite.size[1] = 2
+
+		sprite.light = Light(Colour(0.5f, 0.7f, 1.0f, 1.0f), 4f)
 	}
 
 	override fun update(delta: Float, map: Map)
@@ -40,7 +43,6 @@ class Spawner(val character: Char) : Entity()
 					val enemy = Enemy(this, waveEnemy.enemyDef)
 					enemy.tile = tile
 					enemy.pos = tile.toVec() + enemy.chosenOffset
-					tile.entities.add(enemy)
 
 					val spawnEffect = AssetManager.loadParticleEffect("Heal")
 					spawnEffect.colour = Colour(0.2f, 0.5f, 1f, 1f)

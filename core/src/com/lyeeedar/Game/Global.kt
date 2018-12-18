@@ -16,10 +16,7 @@ import com.esotericsoftware.kryo.io.Output
 import com.lyeeedar.Screens.AbstractScreen
 import com.lyeeedar.UI.*
 import com.lyeeedar.UI.Tooltip
-import com.lyeeedar.Util.AbstractApplicationChanger
-import com.lyeeedar.Util.AssetManager
-import com.lyeeedar.Util.Controls
-import com.lyeeedar.Util.Point
+import com.lyeeedar.Util.*
 import ktx.collections.set
 
 /**
@@ -44,6 +41,8 @@ class Global
 
 		var resolution = Point(360, 640)
 		var screenSize = Point(resolution.x, resolution.y)
+
+		var collisionGrid: Array2D<Boolean>? = null
 
 		lateinit var controls: Controls
 

@@ -35,5 +35,6 @@
 			</Data>
 		</Data>
 		<Data Name="Theme" BasePath="Themes" StripExtension="True" ResourceType="Theme" meta:RefKey="File" />
+		<Data Name="Ambient" HasAlpha="False" Default="204,204,204,255" SkipIfDefault="False" meta:RefKey="Colour" />
 	</Definition>
 </Definitions>

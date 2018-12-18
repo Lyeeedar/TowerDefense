@@ -6,7 +6,6 @@ import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
 import com.lyeeedar.Direction
-import com.lyeeedar.Util.Array2D
 import com.lyeeedar.Util.Random
 import com.lyeeedar.Util.XmlData
 import com.lyeeedar.Util.ciel
@@ -118,7 +117,7 @@ class Emitter(val particleEffect: ParticleEffect)
 		}
 	}
 
-	fun update(delta: Float, collisionGrid: Array2D<Boolean>?)
+	fun update(delta: Float)
 	{
 		time += delta
 
@@ -173,7 +172,7 @@ class Emitter(val particleEffect: ParticleEffect)
 
 		for (particle in particles)
 		{
-			particle.simulate(scaledDelta, collisionGrid, gravity)
+			particle.simulate(scaledDelta, gravity)
 		}
 
 		if (!stopped)

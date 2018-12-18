@@ -13,6 +13,7 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFont
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.ObjectMap
 import com.lyeeedar.Renderables.Animation.AbstractAnimation
+import com.lyeeedar.Renderables.Light
 import com.lyeeedar.Renderables.Particle.ParticleEffect
 import com.lyeeedar.Renderables.Renderable
 import com.lyeeedar.Renderables.Sprite.DirectionalSprite
@@ -183,7 +184,7 @@ class AssetManager
 			return loadSprite(name, updateTime, Colour(1f, 1f, 1f, 1f), false, reverse)
 		}
 
-		@JvmOverloads fun loadSprite(name: String, updateTime: Float = 0.5f, colour: Colour = Colour(1f, 1f, 1f, 1f), drawActualSize: Boolean = false, reverse: Boolean = false): Sprite
+		@JvmOverloads fun loadSprite(name: String, updateTime: Float = 0.5f, colour: Colour = Colour(1f, 1f, 1f, 1f), drawActualSize: Boolean = false, reverse: Boolean = false, light: Light? = null): Sprite
 		{
 			var updateTime = updateTime
 			val textures = Array<TextureRegion>(false, 1, TextureRegion::class.java)
@@ -252,6 +253,7 @@ class AssetManager
 			}
 
 			val sprite = Sprite(name, updateTime, textures, colour, drawActualSize)
+			sprite.light = light
 
 			return sprite
 		}
@@ -301,6 +303,12 @@ class AssetManager
 				sprite.animation = AbstractAnimation.load(animationElement.getChild(0))
 			}
 
+			val lightEl = xml.getChildByName("Light")
+			if (lightEl != null)
+			{
+				sprite.light = loadLight(lightEl)
+			}
+
 			return sprite
 		}
 
@@ -338,8 +346,22 @@ class AssetManager
 				sprite.animation = AbstractAnimation.load(animationElement.getChild(0))
 			}
 
+			val lightEl = xml.getChildByName("Light")
+			if (lightEl != null)
+			{
+				sprite.light = loadLight(lightEl)
+			}
 
 			return sprite
+		}
+
+		fun loadLight(xml: XmlData): Light
+		{
+			val light = Light()
+			light.colour.set(loadColour(xml.getChildByName("Colour")!!))
+			light.range = xml.getFloat("Range")
+
+			return light
 		}
 
 		fun loadColour(stringCol: String, colour: Colour = Colour()): Colour

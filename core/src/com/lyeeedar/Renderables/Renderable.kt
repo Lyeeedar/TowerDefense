@@ -25,6 +25,8 @@ abstract class Renderable
 	var faceInMoveDirection: Boolean = false
 	val lastPos: Vector2 = Vector2()
 
+	open var light: Light? = null
+
 	var animation: AbstractAnimation? = null
 		set(value)
 		{

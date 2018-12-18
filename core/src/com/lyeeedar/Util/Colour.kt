@@ -256,13 +256,18 @@ class Colour()
 		if (cachedR == r && cachedG == g && cachedB == b && cachedA == a) return cachedFB
 		else
 		{
+			val r = r.clamp(0f, 1f)
+			val g = g.clamp(0f, 1f)
+			val b = b.clamp(0f, 1f)
+			val a = a.clamp(0f, 1f)
+
 			val intBits = (255 * a).toInt() shl 24 or ((255 * b).toInt() shl 16) or ((255 * g).toInt() shl 8) or (255 * r).toInt()
 			cachedFB = NumberUtils.intToFloatColor(intBits)
 
-			cachedR = r
-			cachedB = b
-			cachedG = g
-			cachedA = a
+			cachedR = this.r
+			cachedB = this.b
+			cachedG = this.g
+			cachedA = this.a
 
 			return cachedFB
 		}

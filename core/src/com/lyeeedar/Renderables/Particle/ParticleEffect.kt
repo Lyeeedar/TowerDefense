@@ -11,6 +11,7 @@ import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
 import com.lyeeedar.Direction
+import com.lyeeedar.Renderables.Light
 import com.lyeeedar.Renderables.Renderable
 import com.lyeeedar.Util.*
 import ktx.collections.set
@@ -39,11 +40,16 @@ class ParticleEffect : Renderable()
 	var facing: Direction = Direction.NORTH
 	var useFacing = true
 
-	var collisionGrid: Array2D<Boolean>? = null
 	var collisionFun: ((x: Int, y: Int) -> Unit)? = null
 
 	var isShortened = false
 	var timeMultiplier = 1f
+
+	var particleLight: ParticleLight? = null
+
+	override var light: Light?
+		get() = particleLight?.light
+		set(value) { throw Exception("Cannot set particle light!") }
 
 	val time: Float
 		get() = (animation?.time() ?: emitters.minBy { it.time }!!.time)
@@ -110,11 +116,11 @@ class ParticleEffect : Renderable()
 			val steps = (warmupTime / deltaStep).toInt()
 			for (i in 0..steps-1)
 			{
-				for (emitter in emitters) emitter.update(deltaStep, collisionGrid)
+				for (emitter in emitters) emitter.update(deltaStep)
 			}
 		}
 
-		for (emitter in emitters) emitter.update(delta, collisionGrid)
+		for (emitter in emitters) emitter.update(delta)
 
 		if (collisionFun != null)
 		{
@@ -137,6 +143,8 @@ class ParticleEffect : Renderable()
 				complete = false
 			}
 		}
+
+		particleLight?.update(time)
 
 		return complete
 	}
@@ -322,6 +330,12 @@ class ParticleEffect : Renderable()
 		{
 			emitter.store(kryo, output)
 		}
+
+		output.writeBoolean(particleLight != null)
+		if (particleLight != null)
+		{
+			particleLight!!.store(kryo, output)
+		}
 	}
 
 	fun restore(kryo: Kryo, input: Input)
@@ -336,6 +350,13 @@ class ParticleEffect : Renderable()
 			val emitter = Emitter(this)
 			emitter.restore(kryo, input)
 			emitters.add(emitter)
+		}
+
+		val hasLight = input.readBoolean()
+		if (hasLight)
+		{
+			particleLight = ParticleLight()
+			particleLight!!.restore(kryo, input)
 		}
 	}
 
@@ -369,6 +390,12 @@ class ParticleEffect : Renderable()
 				effect.emitters.add(emitter)
 			}
 
+			val lightEl = xml.getChildByName("Light")
+			if (lightEl != null)
+			{
+				effect.particleLight = ParticleLight.load(lightEl)
+			}
+
 			return effect
 		}
 
@@ -396,6 +423,137 @@ class ParticleEffect : Renderable()
 
 				return effect
 			}
+		}
+	}
+}
+
+class ParticleLight
+{
+	val light = Light()
+
+	val colour = ColourTimeline()
+	val brightness = LerpTimeline()
+	val range = LerpTimeline()
+
+	fun update(time: Float)
+	{
+		val col = colour.valAt(0, time)
+		light.colour.set(col)
+
+		val brightness = brightness.valAt(0, time)
+		light.colour.mul(brightness, brightness, brightness, 1f)
+
+		val range = range.valAt(0, time)
+		light.range = range
+	}
+
+	fun store(kryo: Kryo, output: Output)
+	{
+		output.writeInt(colour.streams.size)
+		for (stream in colour.streams)
+		{
+			output.writeInt(stream.size)
+			for (keyframe in stream)
+			{
+				output.writeFloat(keyframe.first)
+				output.writeFloat(keyframe.second.r)
+				output.writeFloat(keyframe.second.g)
+				output.writeFloat(keyframe.second.b)
+				output.writeFloat(keyframe.second.a)
+			}
+		}
+
+		output.writeInt(brightness.streams.size)
+		for (stream in brightness.streams)
+		{
+			output.writeInt(stream.size)
+			for (keyframe in stream)
+			{
+				output.writeFloat(keyframe.first)
+				output.writeFloat(keyframe.second)
+			}
+		}
+
+		output.writeInt(range.streams.size)
+		for (stream in range.streams)
+		{
+			output.writeInt(stream.size)
+			for (keyframe in stream)
+			{
+				output.writeFloat(keyframe.first)
+				output.writeFloat(keyframe.second)
+			}
+		}
+	}
+
+	fun restore(kryo: Kryo, input: Input)
+	{
+		val numColourStreams = input.readInt()
+		for (i in 0 until numColourStreams)
+		{
+			val stream = Array<Pair<Float, Colour>>()
+			colour.streams.add(stream)
+
+			val numKeyframes = input.readInt()
+			for (ii in 0 until numKeyframes)
+			{
+				val time = input.readFloat()
+				val r = input.readFloat()
+				val g = input.readFloat()
+				val b = input.readFloat()
+				val a = input.readFloat()
+
+				stream.add(Pair(time, Colour(r, g, b, a)))
+			}
+		}
+
+		val numBrightnessStreams = input.readInt()
+		for (i in 0 until numBrightnessStreams)
+		{
+			val stream = Array<Pair<Float, Float>>()
+			brightness.streams.add(stream)
+
+			val numKeyframes = input.readInt()
+			for (ii in 0 until numKeyframes)
+			{
+				val time = input.readFloat()
+				val value = input.readFloat()
+				stream.add(Pair(time, value))
+			}
+		}
+
+		val numRangeStreams = input.readInt()
+		for (i in 0 until numRangeStreams)
+		{
+			val stream = Array<Pair<Float, Float>>()
+			range.streams.add(stream)
+
+			val numKeyframes = input.readInt()
+			for (ii in 0 until numKeyframes)
+			{
+				val time = input.readFloat()
+				val value = input.readFloat()
+				stream.add(Pair(time, value))
+			}
+		}
+	}
+
+	companion object
+	{
+		fun load(xml: XmlData): ParticleLight
+		{
+			val light = ParticleLight()
+
+			val colourEls = xml.getChildByName("Colour")!!
+			light.colour.parse(colourEls, { AssetManager.loadColour(it) })
+
+			val brightnessEls = xml.getChildByName("Brightness")!!
+			light.brightness.parse(brightnessEls, { it.toFloat() })
+
+			val rangeEls = xml.getChildByName("Range")!!
+			light.range.parse(rangeEls, { it.toFloat() })
+
+			return light
 		}
 	}
 }

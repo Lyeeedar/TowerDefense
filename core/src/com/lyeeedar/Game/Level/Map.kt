@@ -5,7 +5,6 @@ import com.badlogic.gdx.utils.IntMap
 import com.badlogic.gdx.utils.ObjectMap
 import com.badlogic.gdx.utils.ObjectSet
 import com.lyeeedar.Direction
-import com.lyeeedar.Renderables.Renderable
 import com.lyeeedar.Renderables.Sprite.SpriteWrapper
 import com.lyeeedar.Util.*
 import ktx.collections.set
@@ -20,6 +19,8 @@ class Map(val grid: Array2D<Tile>)
 
 	val waves = Array<Wave>()
 	var currentWave = -1
+
+	val ambient = Colour()
 
 	val paths = ObjectMap<Spawner, Array2D<PathfindNode?>>()
 
@@ -179,8 +180,14 @@ class Map(val grid: Array2D<Tile>)
 					if (grid.inBounds(next))
 					{
 						val nextTile = grid[next]
+						var nextCost = nextCost
 						if (!nextTile.isSolid && nextTile.fillingEntity == null)
 						{
+							if (grid.get(nextTile, 1).any { it.isSolid || nextTile.fillingEntity != null })
+							{
+								nextCost++
+							}
+
 							if (tempCostGrid[next] == null)
 							{
 								tempCostGrid[next] = PathfindNode(nextCost, next.x, next.y)
@@ -371,6 +378,8 @@ class Map(val grid: Array2D<Tile>)
 				map.waves.add(wave)
 			}
 
+			map.ambient.set(AssetManager.loadColour(xml.getChildByName("Ambient")!!))
+
 			return map
 		}
 	}
@@ -387,153 +396,4 @@ data class Symbol(
 class PathfindNode(var cost: Int, x: Int, y: Int) : Point(x, y)
 {
 	var inQueue = true
-}
-
-class Tile(x: Int, y: Int) : Point(x, y)
-{
-	val entities = Array<Entity>()
-
-	var fillingEntity: Entity? = null
-		set(value)
-		{
-			field = value
-
-			tileDirty = true
-		}
-
-	var previewTower: TowerDefinition? = null
-
-	var isSolid = false
-		set(value)
-		{
-			field = value
-
-			if (field)
-			{
-				groundSprite!!.sprite!!.colour = Colour.DARK_GRAY
-			}
-			else
-			{
-				groundSprite!!.sprite!!.colour = Colour.LIGHT_GRAY
-			}
-
-			tileDirty = true
-		}
-
-	val effects = Array<Renderable>()
-
-	var groundSprite: SpriteWrapper? = null
-	var wallSprite: SpriteWrapper? = null
-
-	var tileDirty = false
-
-	init
-	{
-		groundSprite = SpriteWrapper()
-		groundSprite!!.sprite = AssetManager.loadSprite("white", colour = Colour.LIGHT_GRAY)
-	}
-}
-
-class Wave
-{
-	var duration: Float = 0f
-	var remainingDuration: Float = 0f
-
-	val spawners = ObjectMap<Char, SpawnerWave>()
-
-	companion object
-	{
-		fun load(xmlData: XmlData): Wave
-		{
-			val wave = Wave()
-			wave.duration = xmlData.getFloat("Duration")
-			wave.remainingDuration = wave.duration
-
-			val spawnersEl = xmlData.getChildByName("Spawners")!!
-			for (spawnerEl in spawnersEl.children)
-			{
-				val spawner = SpawnerWave.load(spawnerEl, wave.duration)
-				wave.spawners[spawner.character] = spawner
-			}
-
-			return wave
-		}
-	}
-}
-
-class SpawnerWave
-{
-	var character: Char = ' '
-	var duration: Float = 0f
-
-	var remainingDuration: Float = 0f
-
-	val enemies = Array<WaveEnemy>()
-
-	fun copy(): SpawnerWave
-	{
-		val new = SpawnerWave()
-		new.duration = duration
-		new.remainingDuration = duration
-
-		for (enemy in enemies)
-		{
-			new.enemies.add(enemy.copy())
-		}
-
-		return new
-	}
-
-	companion object
-	{
-		fun load(xmlData: XmlData, duration: Float): SpawnerWave
-		{
-			val spawnerWave = SpawnerWave()
-
-			spawnerWave.character = xmlData.get("Character")[0]
-			spawnerWave.duration = duration
-			spawnerWave.remainingDuration = duration
-
-			val enemiesEl = xmlData.getChildByName("Enemies")!!
-			for (enemyEl in enemiesEl.children)
-			{
-				spawnerWave.enemies.add(WaveEnemy.load(enemyEl, duration))
-			}
-
-			return spawnerWave
-		}
-	}
-}
-
-class WaveEnemy
-{
-	lateinit var enemyDef: EnemyDef
-	var count: Int = 0
-	var enemiesASecond: Float = 0f
-
-	var enemyAccumulator: Float = 0f
-
-	fun copy(): WaveEnemy
-	{
-		val new = WaveEnemy()
-		new.enemyDef = enemyDef
-		new.count = count
-		new.enemiesASecond = enemiesASecond
-
-		return new
-	}
-
-	companion object
-	{
-		fun load(xmlData: XmlData, duration: Float): WaveEnemy
-		{
-			val enemy = WaveEnemy()
-
-			enemy.count = xmlData.getInt("Count")
-			enemy.enemyDef = EnemyDef.Companion.load(xmlData.get("Enemy"))
-			enemy.enemiesASecond = enemy.count / duration
-
-			return enemy
-		}
-	}
 }

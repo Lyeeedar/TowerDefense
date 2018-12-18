@@ -29,7 +29,7 @@ import squidpony.squidmath.LightRNG
 
 class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, val layers: Int, val alwaysOnscreen: Boolean)
 {
-	var batchID: Int = 0
+	var batchID: Int = random.nextInt()
 
 	val tempVec = Vector2()
 	val tempPoint = Point()
@@ -41,14 +41,22 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	var spriteArray = Array<RenderSprite?>(startingArraySize) { null }
 	var queuedSprites = 0
 
-	var tilingMap: ObjectMap<Point, ObjectSet<Long>> = ObjectMap()
+	val tilingMap: ObjectMap<Point, ObjectSet<Long>> = ObjectMap()
 
 	val setPool: Pool<ObjectSet<Long>> = object : Pool<ObjectSet<Long>>() {
 		override fun newObject(): ObjectSet<Long>
 		{
 			return ObjectSet()
 		}
+	}
 
+	val lightTileMap: ObjectMap<Point, LightTile> = ObjectMap()
+
+	val lightTilePool: Pool<LightTile> = object : Pool<LightTile>() {
+		override fun newObject(): LightTile
+		{
+			return LightTile()
+		}
 	}
 
 	var screenShakeRadius: Float = 0f
@@ -77,11 +85,14 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	var offsetx: Float = 0f
 	var offsety: Float = 0f
 
+	val ambientLight = Colour()
+
 	// ----------------------------------------------------------------------
-	fun begin(deltaTime: Float, offsetx: Float, offsety: Float)
+	fun begin(deltaTime: Float, offsetx: Float, offsety: Float, ambientLight: Colour)
 	{
 		if (inBegin) throw Exception("Begin called again before flush!")
 
+		this.ambientLight.set(ambientLight)
 		delta = deltaTime
 		this.offsetx = offsetx
 		this.offsety = offsety
@@ -145,8 +156,44 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 			batch.setBlendFunction(rs.blend.src, rs.blend.dst)
 
-			if (batch is HDRColourSpriteBatch) batch.setColor(rs.colour)
-			else batch.setColor(rs.colour.toFloatBits())
+			val colour = tempCol.set(rs.colour)
+
+			if (rs.isLit)
+			{
+				val tile = lightTileMap[rs.point]
+				if (tile != null)
+				{
+					if (!tile.evaluatedColour)
+					{
+						tile.evaluatedColour = true
+						tile.colour.set(ambientLight)
+
+						for (light in tile.lights)
+						{
+							val dst2 = rs.point.euclideanDist2(light.pos.x, light.pos.y)
+
+							var alpha = 1f - dst2 / (light.range * light.range)
+							if (alpha < 0.001f) alpha = 0f
+
+							tempCol2.set(light.colour)
+							tempCol2 *= alpha
+							tempCol2 *= tempCol2.a
+							tempCol2.a = 1f
+
+							tile.colour += tempCol2
+						}
+					}
+
+					colour.mul(tile.colour)
+				}
+				else
+				{
+					colour.mul(ambientLight)
+				}
+			}
+
+			if (batch is HDRColourSpriteBatch) batch.setColor(colour)
+			else batch.setColor(colour.toFloatBits())
 
 			rs.sprite?.render(batch, localx, localy, localw, localh, rs.scaleX, rs.scaleY, rs.rotation)
 
@@ -247,6 +294,13 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			}
 			tilingMap.clear()
 
+			for (entry in lightTileMap)
+			{
+				entry.key.free()
+				lightTilePool.free(entry.value)
+			}
+			lightTileMap.clear()
+
 			if (queuedSprites < spriteArray.size / 4)
 			{
 				spriteArray = spriteArray.copyOf(spriteArray.size / 4)
@@ -302,30 +356,72 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	}
 
 	// ----------------------------------------------------------------------
-	fun queueParticle(effect: ParticleEffect, ix: Float, iy: Float, layer: Int, index: Int, colour: Colour = Colour.WHITE, width: Float = 1f, height: Float = 1f)
+	fun addLight(light: Light)
+	{
+		if (light.batchID != batchID)
+		{
+			light.batchID = batchID
+			light.update(delta)
+
+			for (point in light.cache.currentShadowCast)
+			{
+				val point = Point.obtain().set(point)
+
+				var tile = lightTileMap[point]
+				if (tile == null)
+				{
+					tile = lightTilePool.obtain()
+					tile.lights.clear()
+					tile.evaluatedColour = false
+
+					lightTileMap[point] = tile
+				}
+
+				tile.lights.add(light)
+			}
+		}
+		else
+		{
+			throw Exception("Light already added to renderer!")
+		}
+	}
+
+	// ----------------------------------------------------------------------
+	fun queueParticle(effect: ParticleEffect, ix: Float, iy: Float, layer: Int, index: Int, colour: Colour = Colour.WHITE, width: Float = 1f, height: Float = 1f, lit: Boolean = true)
 	{
 		if (!inBegin) throw Exception("Queue called before begin!")
 
 		if (debugDraw && inDebugFrame) return
 
+		var lx = ix
+		var ly = iy
+
 		if (effect.lockPosition)
 		{
 
 		}
-		else if (effect.facing.x != 0)
-		{
-			effect.setPosition(ix + effect.size[1].toFloat() * 0.5f, iy + effect.size[0].toFloat() * 0.5f)
-		}
 		else
 		{
-			if (effect.isCentered)
+			if (effect.facing.x != 0)
 			{
-				effect.setPosition(ix + 0.5f, iy + 0.5f)
+				lx = ix + effect.size[1].toFloat() * 0.5f
+				ly = iy + effect.size[0].toFloat() * 0.5f
 			}
 			else
 			{
-				effect.setPosition(ix + effect.size[0].toFloat() * 0.5f, iy + effect.size[1].toFloat() * 0.5f)
+				if (effect.isCentered)
+				{
+					lx = ix + 0.5f
+					ly = iy + 0.5f
+				}
+				else
+				{
+					lx = ix + effect.size[0].toFloat() * 0.5f
+					ly = iy + effect.size[1].toFloat() * 0.5f
+				}
 			}
+
+			effect.setPosition(lx, ly)
 		}
 
 		update(effect)
@@ -336,18 +432,21 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			return
 		}
 
-		val x = ix
-		val y = iy
+		val posOffset = effect.animation?.renderOffset(false)
+		lx += (posOffset?.get(0) ?: 0f)
+		ly += (posOffset?.get(1) ?: 0f)
 
 		if (effect.faceInMoveDirection)
 		{
-			val posOffset = effect.animation?.renderOffset(false)
-			val x = x + (posOffset?.get(0) ?: 0f)
-			val y = y + (posOffset?.get(1) ?: 0f)
-
-			val angle = getRotation(effect.lastPos, tempVec.set(x, y))
+			val angle = getRotation(effect.lastPos, tempVec.set(lx, ly))
 			effect.rotation = angle
-			effect.lastPos.set(x, y)
+			effect.lastPos.set(lx, ly)
+		}
+
+		if (effect.light != null)
+		{
+			effect.light!!.pos.set(lx, ly)
+			addLight(effect.light!!)
 		}
 
 		//val scale = effect.animation?.renderScale()?.get(0) ?: 1f
@@ -412,7 +511,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 					val comparisonVal = getComparisonVal((drawx-sizex*0.5f).toInt(), (drawy-sizey*0.5f).toInt(), layer, index, particle.blend)
 
-					val rs = RenderSprite.obtain().set( null, null, tex1.second, null, drawx * tileSize, drawy * tileSize, tempVec.x, tempVec.y, col, sizex, sizey, rotation, 1f, 1f, effect.flipX, effect.flipY, particle.blend, comparisonVal )
+					val rs = RenderSprite.obtain().set( null, null, tex1.second, null, drawx * tileSize, drawy * tileSize, tempVec.x, tempVec.y, col, sizex, sizey, rotation, 1f, 1f, effect.flipX, effect.flipY, particle.blend, lit, comparisonVal )
 
 					if (particle.blendKeyframes)
 					{
@@ -436,13 +535,14 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		{
 			keys = setPool.obtain()
 			keys.clear()
+
+			tilingMap[point] = keys
 		}
 		keys.add(tilingSprite.checkID)
-		tilingMap[point] = keys
 	}
 
 	// ----------------------------------------------------------------------
-	fun queueSprite(tilingSprite: TilingSprite, ix: Float, iy: Float, layer: Int, index: Int, colour: Colour = Colour.WHITE, width: Float = 1f, height: Float = 1f)
+	fun queueSprite(tilingSprite: TilingSprite, ix: Float, iy: Float, layer: Int, index: Int, colour: Colour = Colour.WHITE, width: Float = 1f, height: Float = 1f, lit: Boolean = true)
 	{
 		if (!inBegin) throw Exception("Queue called before begin!")
 
@@ -478,18 +578,24 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		addToMap(tilingSprite, ix, iy)
 
+		if (tilingSprite.light != null)
+		{
+			tilingSprite.light!!.pos.set(lx, ly)
+			addLight(tilingSprite.light!!)
+		}
+
 		// check if onscreen
 		if (!alwaysOnscreen && !isSpriteOnscreen(tilingSprite, x, y, width, height)) return
 
 		val comparisonVal = getComparisonVal(lx.toInt(), ly.toInt(), layer, index, BlendMode.MULTIPLICATIVE)
 
-		val rs = RenderSprite.obtain().set(null, tilingSprite, null, null, x, y, ix, iy, colour, width, height, 0f, 1f, 1f, false, false, BlendMode.MULTIPLICATIVE, comparisonVal)
+		val rs = RenderSprite.obtain().set(null, tilingSprite, null, null, x, y, ix, iy, colour, width, height, 0f, 1f, 1f, false, false, BlendMode.MULTIPLICATIVE, lit, comparisonVal)
 
 		storeRenderSprite(rs)
 	}
 
 	// ----------------------------------------------------------------------
-	fun queueSprite(sprite: Sprite, ix: Float, iy: Float, layer: Int, index: Int, colour: Colour = Colour.WHITE, width: Float = 1f, height: Float = 1f, scaleX: Float = 1f, scaleY: Float = 1f)
+	fun queueSprite(sprite: Sprite, ix: Float, iy: Float, layer: Int, index: Int, colour: Colour = Colour.WHITE, width: Float = 1f, height: Float = 1f, scaleX: Float = 1f, scaleY: Float = 1f, lit: Boolean = true)
 	{
 		if (!inBegin) throw Exception("Queue called before begin!")
 
@@ -557,18 +663,24 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			sprite.lastPos.set(x, y)
 		}
 
+		if (sprite.light != null)
+		{
+			sprite.light!!.pos.set(lx, ly)
+			addLight(sprite.light!!)
+		}
+
 		// check if onscreen
 		if (!alwaysOnscreen && !isSpriteOnscreen(sprite, x, y, width, height, scaleX, scaleY)) return
 
 		val comparisonVal = getComparisonVal(lx.toInt(), ly.toInt(), layer, index, BlendMode.MULTIPLICATIVE)
 
-		val rs = RenderSprite.obtain().set(sprite, null, null, null, x, y, ix, iy, colour, width, height, rotation, scaleX, scaleY, false, false, BlendMode.MULTIPLICATIVE, comparisonVal)
+		val rs = RenderSprite.obtain().set(sprite, null, null, null, x, y, ix, iy, colour, width, height, rotation, scaleX, scaleY, false, false, BlendMode.MULTIPLICATIVE, lit, comparisonVal)
 
 		storeRenderSprite(rs)
 	}
 
 	// ----------------------------------------------------------------------
-	fun queueTexture(texture: TextureRegion, ix: Float, iy: Float, layer: Int, index: Int, colour: Colour = Colour.WHITE, width: Float = 1f, height: Float = 1f, scaleX: Float = 1f, scaleY: Float = 1f, sortX: Float? = null, sortY: Float? = null)
+	fun queueTexture(texture: TextureRegion, ix: Float, iy: Float, layer: Int, index: Int, colour: Colour = Colour.WHITE, width: Float = 1f, height: Float = 1f, scaleX: Float = 1f, scaleY: Float = 1f, sortX: Float? = null, sortY: Float? = null, lit: Boolean = true)
 	{
 		if (!inBegin) throw Exception("Queue called before begin!")
 
@@ -591,13 +703,13 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		val comparisonVal = getComparisonVal((sortX ?: lx).toInt(), (sortY ?: ly).toInt(), layer, index, BlendMode.MULTIPLICATIVE)
 
-		val rs = RenderSprite.obtain().set(null, null, texture, null, x, y, ix, iy, colour, width, height, 0f, scaleX, scaleY, false, false, BlendMode.MULTIPLICATIVE, comparisonVal)
+		val rs = RenderSprite.obtain().set(null, null, texture, null, x, y, ix, iy, colour, width, height, 0f, scaleX, scaleY, false, false, BlendMode.MULTIPLICATIVE, lit, comparisonVal)
 
 		storeRenderSprite(rs)
 	}
 
 	// ----------------------------------------------------------------------
-	fun queueNinepatch(ninePatch: NinePatch, ix: Float, iy: Float, layer: Int, index: Int, colour: Colour = Colour.WHITE, width: Float = 1f, height: Float = 1f, scaleX: Float = 1f, scaleY: Float = 1f)
+	fun queueNinepatch(ninePatch: NinePatch, ix: Float, iy: Float, layer: Int, index: Int, colour: Colour = Colour.WHITE, width: Float = 1f, height: Float = 1f, scaleX: Float = 1f, scaleY: Float = 1f, lit: Boolean = true)
 	{
 		if (!inBegin) throw Exception("Queue called before begin!")
 
@@ -620,7 +732,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		val comparisonVal = getComparisonVal(lx.toInt(), ly.toInt(), layer, index, BlendMode.MULTIPLICATIVE)
 
-		val rs = RenderSprite.obtain().set(null, null, null, ninePatch, x, y, ix, iy, colour, width, height, 0f, scaleX, scaleY, false, false, BlendMode.MULTIPLICATIVE, comparisonVal)
+		val rs = RenderSprite.obtain().set(null, null, null, ninePatch, x, y, ix, iy, colour, width, height, 0f, scaleX, scaleY, false, false, BlendMode.MULTIPLICATIVE, lit, comparisonVal)
 
 		storeRenderSprite(rs)
 	}
@@ -737,6 +849,7 @@ class RenderSprite(val parentBlock: RenderSpriteBlock, val parentBlockIndex: Int
 	var flipX: Boolean = false
 	var flipY: Boolean = false
 	var blend: BlendMode = BlendMode.MULTIPLICATIVE
+	var isLit: Boolean = true
 
 	var comparisonVal: Int = 0
 
@@ -749,7 +862,7 @@ class RenderSprite(val parentBlock: RenderSpriteBlock, val parentBlockIndex: Int
 					 rotation: Float,
 					 scaleX: Float, scaleY: Float,
 					 flipX: Boolean, flipY: Boolean,
-					 blend: BlendMode,
+					 blend: BlendMode, lit: Boolean,
 					 comparisonVal: Int): RenderSprite
 	{
 		this.point.x = ix.toInt()
@@ -773,6 +886,7 @@ class RenderSprite(val parentBlock: RenderSpriteBlock, val parentBlockIndex: Int
 		this.scaleY = scaleY
 		this.flipX = flipX
 		this.flipY = flipY
+		this.isLit = lit
 
 		nextTexture = null
 
@@ -851,6 +965,15 @@ class RenderSpriteBlock
 			}
 		}
 	}
+}
+
+// ----------------------------------------------------------------------
+class LightTile
+{
+	val lights = com.badlogic.gdx.utils.Array<Light>()
+	val colour = Colour()
+
+	var evaluatedColour = false
 }
 
 // ----------------------------------------------------------------------
