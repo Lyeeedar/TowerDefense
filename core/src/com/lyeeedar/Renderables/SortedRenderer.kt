@@ -6,7 +6,7 @@ import com.badlogic.gdx.graphics.g2d.HDRColourSpriteBatch
 import com.badlogic.gdx.graphics.g2d.NinePatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.Vector2
-import com.badlogic.gdx.utils.ObjectMap
+import com.badlogic.gdx.utils.IntMap
 import com.badlogic.gdx.utils.ObjectSet
 import com.badlogic.gdx.utils.Pool
 import com.lyeeedar.BlendMode
@@ -35,13 +35,19 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	val tempPoint = Point()
 	val tempCol = Colour()
 	val tempCol2 = Colour()
+	val tempCol3 = Colour()
+	val tempCol4 = Colour()
+	val tlCol = Colour()
+	val trCol = Colour()
+	val blCol = Colour()
+	val brCol = Colour()
 	val bitflag = EnumBitflag<Direction>()
 
 	val startingArraySize = 128
 	var spriteArray = Array<RenderSprite?>(startingArraySize) { null }
 	var queuedSprites = 0
 
-	val tilingMap: ObjectMap<Point, ObjectSet<Long>> = ObjectMap()
+	val tilingMap: IntMap<ObjectSet<Long>> = IntMap()
 
 	val setPool: Pool<ObjectSet<Long>> = object : Pool<ObjectSet<Long>>() {
 		override fun newObject(): ObjectSet<Long>
@@ -50,7 +56,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		}
 	}
 
-	val lightTileMap: ObjectMap<Point, LightTile> = ObjectMap()
+	val lightTileMap: IntMap<LightTile> = IntMap()
 
 	val lightTilePool: Pool<LightTile> = object : Pool<LightTile>() {
 		override fun newObject(): LightTile
@@ -160,36 +166,45 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 			if (rs.isLit)
 			{
-				val tile = lightTileMap[rs.point]
-				if (tile != null)
+				fun getLight(point: Point, direction: Direction): Colour
 				{
-					if (!tile.evaluatedColour)
+					tempPoint.set(point).plusAssign(direction)
+
+					tempCol3.set(1f, 1f, 1f, 1f)
+
+					val tile = lightTileMap[tempPoint.hashCode()]
+					if (tile != null)
 					{
-						tile.evaluatedColour = true
-						tile.colour.set(ambientLight)
-
-						for (light in tile.lights)
+						if (!tile.evaluatedColour)
 						{
-							val dst2 = rs.point.euclideanDist2(light.pos.x, light.pos.y)
-
-							var alpha = 1f - dst2 / (light.range * light.range)
-							if (alpha < 0.001f) alpha = 0f
-
-							tempCol2.set(light.colour)
-							tempCol2 *= alpha
-							tempCol2 *= tempCol2.a
-							tempCol2.a = 1f
-
-							tile.colour += tempCol2
+							tile.evaluate(tempPoint, tempCol2, ambientLight)
+							tile.evaluatedColour = true
 						}
+
+						tempCol3.mul(tile.colour)
+					}
+					else
+					{
+						tempCol3.mul(ambientLight)
 					}
 
-					colour.mul(tile.colour)
+					return tempCol3
 				}
-				else
-				{
-					colour.mul(ambientLight)
-				}
+
+				tlCol.set(getLight(rs.point, Direction.CENTER))
+				trCol.set(getLight(rs.point, Direction.EAST))
+				blCol.set(getLight(rs.point, Direction.NORTH))
+				brCol.set(getLight(rs.point, Direction.NORTHEAST))
+
+				val xa = rs.x / tileSize - rs.point.x
+				val ya = rs.y / tileSize - rs.point.y
+
+				val topCol = tlCol.lerp(trCol, xa)
+				val botCol = blCol.lerp(brCol, xa)
+
+				val finalCol = topCol.lerp(botCol, ya)
+
+				colour.mul(finalCol)
 			}
 
 			if (batch is HDRColourSpriteBatch) batch.setColor(colour)
@@ -203,7 +218,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 				for (dir in Direction.Values)
 				{
 					tempPoint.set(rs.point).plusAssign(dir)
-					val keys = tilingMap[tempPoint]
+					val keys = tilingMap[tempPoint.hashCode()]
 
 					if (keys?.contains(rs.tilingSprite!!.checkID) != true)
 					{
@@ -289,14 +304,12 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 			for (entry in tilingMap)
 			{
-				entry.key.free()
 				setPool.free(entry.value)
 			}
 			tilingMap.clear()
 
 			for (entry in lightTileMap)
 			{
-				entry.key.free()
 				lightTilePool.free(entry.value)
 			}
 			lightTileMap.clear()
@@ -365,16 +378,14 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 			for (point in light.cache.currentShadowCast)
 			{
-				val point = Point.obtain().set(point)
-
-				var tile = lightTileMap[point]
+				var tile = lightTileMap[point.hashCode()]
 				if (tile == null)
 				{
 					tile = lightTilePool.obtain()
 					tile.lights.clear()
 					tile.evaluatedColour = false
 
-					lightTileMap[point] = tile
+					lightTileMap[point.hashCode()] = tile
 				}
 
 				tile.lights.add(light)
@@ -529,14 +540,14 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	fun addToMap(tilingSprite: TilingSprite, ix: Float, iy: Float)
 	{
 		// Add to map
-		val point = Point.obtain().set(ix.toInt(), iy.toInt())
-		var keys = tilingMap[point]
+		val point = tempPoint.set(ix.toInt(), iy.toInt())
+		var keys = tilingMap[point.hashCode()]
 		if (keys == null)
 		{
 			keys = setPool.obtain()
 			keys.clear()
 
-			tilingMap[point] = keys
+			tilingMap[point.hashCode()] = keys
 		}
 		keys.add(tilingSprite.checkID)
 	}
@@ -974,6 +985,26 @@ class LightTile
 	val colour = Colour()
 
 	var evaluatedColour = false
+
+	fun evaluate(point: Point, tempColour: Colour, ambientLight: Colour)
+	{
+		colour.set(ambientLight)
+
+		for (light in lights)
+		{
+			val dst2 = point.euclideanDist2(light.pos.x, light.pos.y)
+
+			var alpha = 1f - dst2 / (light.range * light.range)
+			if (alpha < 0.001f) alpha = 0f
+
+			tempColour.set(light.colour)
+			tempColour *= alpha
+			tempColour *= tempColour.a
+			tempColour.a = 1f
+
+			colour += tempColour
+		}
+	}
 }
 
 // ----------------------------------------------------------------------

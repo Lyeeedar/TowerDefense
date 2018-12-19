@@ -152,12 +152,15 @@
 	</Emitters>
 	<Light>
 		<Colour>
-			<Keyframe>0|253,255,0,255</Keyframe>
+			<Keyframe>0|255,255,255,255</Keyframe>
+			<Keyframe>0.1539179|253,255,0,255</Keyframe>
+			<Keyframe>0.5934886|255,49,0,255</Keyframe>
 		</Colour>
 		<Brightness>
-			<Keyframe>0|1</Keyframe>
+			<Keyframe>0|0</Keyframe>
+			<Keyframe>0.04822761|1</Keyframe>
 			<Keyframe>0.2944963|1</Keyframe>
-			<Keyframe>0.799347|0</Keyframe>
+			<Keyframe>0.6980744|0</Keyframe>
 		</Brightness>
 		<Range>
 			<Keyframe>0|5</Keyframe>
