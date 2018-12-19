@@ -69,57 +69,90 @@ open class Point : Pool.Poolable, Comparable<Point>
 	}
     constructor( other: Point ) : this(other.x, other.y)
 
-	lateinit var obtainPath: String
-//	protected fun finalize()
-//	{
-//		if (obtained)
-//		{
-//			if (leakMap.containsKey(obtainPath))
-//			{
-//				var oldVal = leakMap[obtainPath]
-//				oldVal++
-//				leakMap[obtainPath] = oldVal
-//			}
-//			else
-//			{
-//				leakMap[obtainPath] = 1
-//			}
-//		}
-//	}
+	constructor(block: PointBlock)
+	{
+		parentBlock = block
+	}
+
+	var parentBlock: PointBlock? = null
 
     companion object
     {
-		//private val leakMap = ObjectMap<String, Long>()
-
 		@JvmField val ZERO = Point(0, 0, true)
 		@JvmField val ONE = Point(1, 1, true)
 		@JvmField val MINUS_ONE = Point(-1, -1, true)
 		@JvmField val MAX = Point(Int.MAX_VALUE, Int.MAX_VALUE, true)
 		@JvmField val MIN = Point(-Int.MAX_VALUE, -Int.MAX_VALUE, true)
 
-        private val pool: Pool<Point> = object : Pool<Point>() {
-			override fun newObject(): Point
+		// ----------------------------------------------------------------------
+		class PointBlock
+		{
+			var count = 0
+			var index: Int = 0
+			val points = Array(blockSize) { Point(this) }
+
+			fun obtain(): Point
 			{
-				return Point()
+				val point = points[index]
+				index++
+				count++
+
+				return point
+			}
+
+			fun free(data: Point)
+			{
+				count--
+
+				if (count == 0 && index == blockSize)
+				{
+					pool.free(this)
+					index = 0
+				}
+			}
+
+			companion object
+			{
+				public const val blockSize: Int = 128
+
+				fun obtain(): PointBlock
+				{
+					val block = pool.obtain()
+					return block
+				}
+
+				private val pool: Pool<PointBlock> = object : Pool<PointBlock>() {
+					override fun newObject(): PointBlock
+					{
+						return PointBlock()
+					}
+				}
 			}
 		}
 
-        @JvmStatic fun obtain(): Point
+		var currentBlock: PointBlock = PointBlock.obtain()
+
+		@JvmStatic fun obtain(): Point
 		{
-			val point = pool.obtain()
+			val point = currentBlock.obtain()
+
+			if (currentBlock.index == PointBlock.blockSize)
+			{
+				currentBlock = PointBlock.obtain()
+			}
+
 			point.fromPool = true
 			point.locked = false
 
 			if (point.obtained) throw RuntimeException()
-
-			//point.obtainPath = Thread.currentThread().stackTrace.joinToString(separator = "\n") { it.toString() }
 			point.obtained = true
+
 			return point
 		}
 
 		fun obtainTS(): Point
 		{
-			synchronized(pool)
+			synchronized(currentBlock)
 			{
 				return obtain()
 			}
@@ -129,10 +162,23 @@ open class Point : Pool.Poolable, Comparable<Point>
 
 		fun freeAllTS(items: Iterable<Point>)
 		{
-			synchronized(pool)
+			synchronized(currentBlock)
 			{
 				freeAll(items)
 			}
+		}
+
+		inline fun getHashcode(x: Int, y: Int): Int
+		{
+			return x * X_HASH_SIZE + y
+		}
+
+		inline fun getHashcode(point: Point, direction: Direction): Int
+		{
+			val x = point.x + direction.x
+			val y = point.y + direction.y
+
+			return x * X_HASH_SIZE + y
 		}
     }
 
@@ -169,11 +215,18 @@ open class Point : Pool.Poolable, Comparable<Point>
 
 	inline fun copy() = Point.obtain().set(this)
 
-	fun free() { if (obtained) { Point.pool.free(this); obtained = false; obtainPath = "" } }
+	fun free()
+	{
+		if (obtained)
+		{
+			parentBlock?.free(this)
+			obtained = false
+		}
+	}
 
 	fun freeTS()
 	{
-		synchronized(pool)
+		synchronized(currentBlock)
 		{
 			free()
 		}

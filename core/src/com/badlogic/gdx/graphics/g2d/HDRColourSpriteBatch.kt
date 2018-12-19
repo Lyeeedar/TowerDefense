@@ -328,6 +328,27 @@ class HDRColourSpriteBatch
 		}
 	}
 
+	fun getVertexArray() = vertices
+
+	fun prepareDrawVertices(texture: Texture, count: Int): Int
+	{
+		if (!drawing) throw IllegalStateException("SpriteBatch.begin must be called before draw.")
+
+		if (texture !== lastTexture)
+		{
+			switchTexture(texture)
+		}
+		else if (idx+count >= vertices.size)
+		{
+			flush()
+		}
+
+		val index = idx
+		idx += count
+
+		return index
+	}
+
 	fun drawVertices(texture: Texture, spriteVertices: FloatArray, offset: Int, count: Int)
 	{
 		var offset = offset
@@ -564,6 +585,7 @@ varying float v_blendAlpha;
 void main()
 {
 	v_color = ${ShaderProgram.COLOR_ATTRIBUTE};
+	v_color.a = min(v_color.a, 1.0);
 	v_texCoords1 = ${ShaderProgram.TEXCOORD_ATTRIBUTE}0;
 	v_texCoords2 = ${ShaderProgram.TEXCOORD_ATTRIBUTE}1;
 	v_blendAlpha = a_blendAlpha;

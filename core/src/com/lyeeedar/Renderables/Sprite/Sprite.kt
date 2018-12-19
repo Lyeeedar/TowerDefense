@@ -67,10 +67,10 @@ class Sprite(val fileName: String, var animationDelay: Float, var textures: Arra
 	}
 
 	val lifetime: Float
-		get() = if (animation != null) animation!!.duration() else animationDelay * textures.size
+		get() = if (hasAnim) animation!!.duration() else animationDelay * textures.size
 
 	val remainingLifetime: Float
-		get() = if (animation != null) animation!!.duration() - animation!!.time() else animationDelay * (textures.size - texIndex)
+		get() = if (hasAnim) animation!!.duration() - animation!!.time() else animationDelay * (textures.size - texIndex)
 
 	override fun doUpdate(delta: Float): Boolean
 	{
@@ -104,7 +104,7 @@ class Sprite(val fileName: String, var animationDelay: Float, var textures: Arra
 			}
 		}
 
-		if (animation != null)
+		if (hasAnim)
 		{
 			if (animationStage == AnimationStage.INVALID) animationStage = AnimationStage.START
 			looped = animation!!.update(delta)
@@ -151,7 +151,7 @@ class Sprite(val fileName: String, var animationDelay: Float, var textures: Arra
 		var scaleX = baseScale[0]
 		var scaleY = baseScale[1]
 
-		if (animation != null)
+		if (hasAnim)
 		{
 			val scale = animation!!.renderScale()
 			if (scale != null)
@@ -169,7 +169,7 @@ class Sprite(val fileName: String, var animationDelay: Float, var textures: Arra
 		var scaleX = baseScale[0] * scaleX
 		var scaleY = baseScale[1] * scaleY
 
-		if (animation != null)
+		if (hasAnim)
 		{
 			val scale = animation!!.renderScale()
 			if (scale != null)

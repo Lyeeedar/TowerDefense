@@ -76,6 +76,7 @@
 	<Definition Name="Animations" Keys="MoveAnimation,LeapAnimation" IsGlobal="True" meta:RefKey="ReferenceDef" />
 	<Definition Name="Light" IsGlobal="True" meta:RefKey="StructDef">
 		<Data Name="Colour" SkipIfDefault="False" meta:RefKey="Colour" />
+		<Data Name="Brightness" Min="0" Default="1" SkipIfDefault="False" meta:RefKey="Number" />
 		<Data Name="Range" Min="0" Default="3" SkipIfDefault="False" meta:RefKey="Number" />
 	</Definition>
 </Definitions>

@@ -27,6 +27,7 @@ abstract class Renderable
 
 	open var light: Light? = null
 
+	var hasAnim = false
 	var animation: AbstractAnimation? = null
 		set(value)
 		{
@@ -71,6 +72,8 @@ abstract class Renderable
 			{
 				field = value
 			}
+
+			hasAnim = field != null
 		}
 
 	fun update(delta: Float): Boolean

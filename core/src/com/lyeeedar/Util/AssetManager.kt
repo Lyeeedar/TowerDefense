@@ -359,6 +359,8 @@ class AssetManager
 		{
 			val light = Light()
 			light.colour.set(loadColour(xml.getChildByName("Colour")!!))
+			val brightness = xml.getFloat("Brightness")
+			light.colour.mul(brightness, brightness, brightness, 1.0f)
 			light.range = xml.getFloat("Range")
 
 			return light

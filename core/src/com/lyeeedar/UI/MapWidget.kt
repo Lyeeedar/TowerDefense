@@ -355,7 +355,7 @@ class MapWidget(val map: Map) : Widget()
 
 							if (range > 0f)
 							{
-								floating.queueSprite(rangeCircle, xi, yi, ENTITY, 0, Colour(1f, 1f, 1f, 0.5f), scaleX = range * 2f, scaleY = range * 2f)
+								ground.queueSprite(rangeCircle, xi, yi, ENTITY, 0, Colour(1f, 1f, 1f, 0.5f), scaleX = range * 2f, scaleY = range * 2f, lit = false)
 							}
 						}
 					}
@@ -383,7 +383,7 @@ class MapWidget(val map: Map) : Widget()
 
 					if (range > 0f)
 					{
-						floating.queueSprite(rangeCircle, xi, yi, ENTITY, 0, Colour(0.3f, 1f, 0.3f, 0.6f), scaleX = range * 2f, scaleY = range * 2f)
+						ground.queueSprite(rangeCircle, xi, yi, EFFECT, 0, Colour(0.3f, 1f, 0.3f, 0.6f), scaleX = range * 2f, scaleY = range * 2f, lit = false)
 					}
 				}
 
@@ -411,7 +411,7 @@ class MapWidget(val map: Map) : Widget()
 						{
 							if (effect is Sprite)
 							{
-								floating.update(effect)
+								ground.update(effect)
 
 								if (effect.completed)
 								{
@@ -419,7 +419,7 @@ class MapWidget(val map: Map) : Widget()
 								}
 								else
 								{
-									floating.queueSprite(effect, pos.x, pos.y, EFFECT, 0)
+									ground.queueSprite(effect, pos.x, pos.y, EFFECT, 0)
 								}
 							}
 							else if (effect is ParticleEffect)
@@ -430,7 +430,7 @@ class MapWidget(val map: Map) : Widget()
 								}
 								else
 								{
-									floating.queueParticle(effect, pos.x, pos.y, EFFECT, 0)
+									ground.queueParticle(effect, pos.x, pos.y, EFFECT, 0)
 								}
 							}
 						}
@@ -445,7 +445,7 @@ class MapWidget(val map: Map) : Widget()
 				{
 					if (effect is Sprite)
 					{
-						floating.update(effect)
+						ground.update(effect)
 
 						if (effect.completed)
 						{
@@ -453,7 +453,7 @@ class MapWidget(val map: Map) : Widget()
 						}
 						else
 						{
-							floating.queueSprite(effect, xi, yi, EFFECT, 0)
+							ground.queueSprite(effect, xi, yi, EFFECT, 0)
 						}
 					}
 					else if (effect is ParticleEffect)
@@ -464,7 +464,7 @@ class MapWidget(val map: Map) : Widget()
 						}
 						else
 						{
-							floating.queueParticle(effect, xi, yi, EFFECT, 0)
+							ground.queueParticle(effect, xi, yi, EFFECT, 0)
 						}
 					}
 				}

@@ -36,4 +36,13 @@ class Light(colour: Colour? = null, range: Float = 3f)
 		val light = Light(colour, range)
 		return light
 	}
+
+	override fun hashCode(): Int
+	{
+		val posHash = ((pos.x * 1000 + pos.y) * 1000).toInt()
+		val colHash = colour.hashCode()
+		val rangeHash = (range * 1000).toInt()
+
+		return posHash + colHash + rangeHash
+	}
 }

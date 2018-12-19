@@ -1,46 +1,7 @@
 <Tower meta:X="0" meta:Y="0" GUID="7887f250-972c-446b-9f1e-6871361d95d3" xmlns:meta="Editor">
-	<Root meta:RefKey="Tower">1e558a49-55a7-4a0b-b7fc-47777ffd21cf</Root>
+	<Root meta:RefKey="Tower">f4591b16-5748-4064-8553-49427b02ecb9</Root>
 	<TowerDefs>
-		<Tower meta:X="204" meta:Y="0" GUID="1e558a49-55a7-4a0b-b7fc-47777ffd21cf">
-			<Upgrades>
-				<Upgrade>
-					<Cost>100</Cost>
-					<Upgrade meta:RefKey="Tower">8d8f331a-3172-4004-8723-11ee24ffa6ec</Upgrade>
-				</Upgrade>
-			</Upgrades>
-			<Name>Arrow I</Name>
-			<Icon meta:RefKey="Sprite">
-				<Name>EffectSprites/Arrow/Arrow_0</Name>
-			</Icon>
-			<Sprite meta:RefKey="Sprite">
-				<Name>Oryx/uf_split/uf_heroes/archer</Name>
-				<DrawActualSize>true</DrawActualSize>
-			</Sprite>
-			<AttacksPerSecond>3</AttacksPerSecond>
-			<Effects>
-				<Effect meta:RefKey="ShotEffect">
-					<Range>5</Range>
-					<Count>1</Count>
-					<FlightEffect meta:RefKey="ParticleEffect">
-						<Name>Arrow</Name>
-						<KillOnAnimComplete>true</KillOnAnimComplete>
-					</FlightEffect>
-					<Animation meta:RefKey="LeapAnimation">
-						<SpeedMultiplier>1</SpeedMultiplier>
-						<Height>2</Height>
-					</Animation>
-					<Effects>
-						<Effect meta:RefKey="DamageEffect">
-							<Damage>1</Damage>
-							<Effect meta:RefKey="ParticleEffect">
-								<Name>Hit</Name>
-							</Effect>
-						</Effect>
-					</Effects>
-				</Effect>
-			</Effects>
-		</Tower>
-		<Tower meta:X="526" meta:Y="0" GUID="8d8f331a-3172-4004-8723-11ee24ffa6ec">
+		<Tower meta:X="490.45722311810925" meta:Y="232.07342552293355" GUID="8d8f331a-3172-4004-8723-11ee24ffa6ec">
 			<Upgrades>
 				<Upgrade>
 					<Cost>150</Cost>

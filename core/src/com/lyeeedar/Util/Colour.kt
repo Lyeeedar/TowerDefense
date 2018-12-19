@@ -8,37 +8,19 @@ import com.badlogic.gdx.utils.Pool
  * Created by Philip on 30-Mar-16.
  */
 
+const val componentRange = 100
+const val bRange = componentRange
+const val gRange = bRange * componentRange
+const val rRange = gRange * componentRange
+
 class Colour()
 {
 	var fixed: Boolean = false
 
 	var r: Float = 0f
-		set(value)
-		{
-			if (fixed) throw Exception("Tried to modify fixed colour!")
-			field = value
-		}
-
 	var g: Float = 0f
-		set(value)
-		{
-			if (fixed) throw Exception("Tried to modify fixed colour!")
-			field = value
-		}
-
 	var b: Float = 0f
-		set(value)
-		{
-			if (fixed) throw Exception("Tried to modify fixed colour!")
-			field = value
-		}
-
 	var a: Float = 0f
-		set(value)
-		{
-			if (fixed) throw Exception("Tried to modify fixed colour!")
-			field = value
-		}
 
 	constructor(col: Float, fixed: Boolean = false) : this()
 	{
@@ -74,30 +56,40 @@ class Colour()
 
 	fun r(r: Float): Colour
 	{
+		if (fixed) throw Exception("Tried to modify fixed colour!")
+
 		this.r = r
 		return this
 	}
 
 	fun g(g: Float): Colour
 	{
+		if (fixed) throw Exception("Tried to modify fixed colour!")
+
 		this.g = g
 		return this
 	}
 
 	fun b(b: Float): Colour
 	{
+		if (fixed) throw Exception("Tried to modify fixed colour!")
+
 		this.b = b
 		return this
 	}
 
 	fun a(a: Float): Colour
 	{
+		if (fixed) throw Exception("Tried to modify fixed colour!")
+
 		this.a = a
 		return this
 	}
 
 	fun set(other: Colour): Colour
 	{
+		if (fixed) throw Exception("Tried to modify fixed colour!")
+
 		r = other.r
 		g = other.g
 		b = other.b
@@ -108,6 +100,8 @@ class Colour()
 
 	fun set(col: Float): Colour
 	{
+		if (fixed) throw Exception("Tried to modify fixed colour!")
+
 		r = col
 		g = col
 		b = col
@@ -118,6 +112,8 @@ class Colour()
 
 	fun set(col: Color, packed: Float? = null): Colour
 	{
+		if (fixed) throw Exception("Tried to modify fixed colour!")
+
 		r = col.r
 		g = col.g
 		b = col.b
@@ -137,6 +133,8 @@ class Colour()
 
 	fun set(r: Float, g:Float, b:Float, a:Float): Colour
 	{
+		if (fixed) throw Exception("Tried to modify fixed colour!")
+
 		this.r = r
 		this.g = g
 		this.b = b
@@ -147,6 +145,8 @@ class Colour()
 
 	fun clamp()
 	{
+		if (fixed) throw Exception("Tried to modify fixed colour!")
+
 		r = r.clamp(0f, 1f)
 		g = g.clamp(0f, 1f)
 		b = b.clamp(0f, 1f)
@@ -155,12 +155,16 @@ class Colour()
 
 	fun mul(other: Colour) : Colour
 	{
+		if (fixed) throw Exception("Tried to modify fixed colour!")
+
 		timesAssign(other)
 		return this
 	}
 
 	fun mul(r: Float, g: Float, b: Float, a: Float): Colour
 	{
+		if (fixed) throw Exception("Tried to modify fixed colour!")
+
 		this.r *= r
 		this.g *= g
 		this.b *= b
@@ -193,6 +197,8 @@ class Colour()
 
 	operator fun timesAssign(other: Colour)
 	{
+		if (fixed) throw Exception("Tried to modify fixed colour!")
+
 		r *= other.r
 		g *= other.g
 		b *= other.b
@@ -201,6 +207,8 @@ class Colour()
 
 	operator fun timesAssign(other: Color)
 	{
+		if (fixed) throw Exception("Tried to modify fixed colour!")
+
 		r *= other.r
 		g *= other.g
 		b *= other.b
@@ -209,6 +217,8 @@ class Colour()
 
 	operator fun timesAssign(alpha: Float)
 	{
+		if (fixed) throw Exception("Tried to modify fixed colour!")
+
 		r *= alpha
 		g *= alpha
 		b *= alpha
@@ -217,6 +227,8 @@ class Colour()
 
 	operator fun plusAssign(other: Colour)
 	{
+		if (fixed) throw Exception("Tried to modify fixed colour!")
+
 		r += other.r
 		g += other.g
 		b += other.b
@@ -225,6 +237,8 @@ class Colour()
 
 	operator fun divAssign(value: Float)
 	{
+		if (fixed) throw Exception("Tried to modify fixed colour!")
+
 		r /= value
 		g /= value
 		b /= value
@@ -233,6 +247,8 @@ class Colour()
 
 	fun lerp(target: Colour, t: Float) : Colour
 	{
+		if (fixed) throw Exception("Tried to modify fixed colour!")
+
 		this.r += t * (target.r - this.r)
 		this.g += t * (target.g - this.g)
 		this.b += t * (target.b - this.b)
@@ -293,6 +309,11 @@ class Colour()
 		if (other.a != a) return false
 
 		return true
+	}
+
+	override fun hashCode(): Int
+	{
+		return ((r * rRange + g * gRange + b * bRange + a) * 255).toInt()
 	}
 
 	fun freeTS()

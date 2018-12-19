@@ -1,6 +1,5 @@
 package com.lyeeedar.Renderables
 
-import com.badlogic.gdx.utils.ObjectSet
 import com.lyeeedar.Global.Companion.collisionGrid
 import com.lyeeedar.Util.Point
 import squidpony.squidgrid.FOV
@@ -39,7 +38,6 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 	private val opaqueTiles = com.badlogic.gdx.utils.Array<Point>()
 	private val clearTiles = com.badlogic.gdx.utils.Array<Point>()
 	val currentShadowCast = com.badlogic.gdx.utils.Array<Point>()
-	val currentShadowCastSet = ObjectSet<Point>()
 
 	@JvmOverloads fun getShadowCast(x: Int, y: Int, range: Int): com.badlogic.gdx.utils.Array<Point>
 	{
@@ -59,9 +57,8 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 
 			if (recalculate)
 			{
-				Point.freeAllTS(currentShadowCast)
+				Point.freeAll(currentShadowCast)
 				currentShadowCast.clear()
-				currentShadowCastSet.clear()
 
 				for (ix in 0 until range * 2)
 				{
@@ -70,11 +67,14 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 						val gx = ix + x - range
 						val gy = iy + y - range
 
-						val point = Point.obtainTS().set(gx, gy)
+						val point = Point.obtain().set(gx, gy)
 						currentShadowCast.add(point)
-						currentShadowCastSet.add(point)
 					}
 				}
+
+				lastx = x
+				lasty = y
+				lastrange = range
 			}
 
 			return currentShadowCast
@@ -117,9 +117,8 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 
 		if (recalculate)
 		{
-			Point.freeAllTS(currentShadowCast)
+			Point.freeAll(currentShadowCast)
 			currentShadowCast.clear()
-			currentShadowCastSet.clear()
 
 			// build grid
 			var anySolid = false
@@ -159,9 +158,8 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 
 					if ((!anySolid || rawOutput!![ix][iy] > 0) && collisionGrid.inBounds(gx, gy))
 					{
-						val point = Point.obtainTS().set(gx, gy)
+						val point = Point.obtain().set(gx, gy)
 						currentShadowCast.add(point)
-						currentShadowCastSet.add(point)
 					}
 				}
 			}

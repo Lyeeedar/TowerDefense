@@ -153,17 +153,19 @@
 	<Light>
 		<Colour>
 			<Keyframe>0|255,255,255,255</Keyframe>
-			<Keyframe>0.1539179|253,255,0,255</Keyframe>
-			<Keyframe>0.5934886|255,49,0,255</Keyframe>
+			<Keyframe>0.08572235|253,255,0,255</Keyframe>
+			<Keyframe>0.3398011|255,49,0,255</Keyframe>
 		</Colour>
 		<Brightness>
 			<Keyframe>0|0</Keyframe>
-			<Keyframe>0.04822761|1</Keyframe>
-			<Keyframe>0.2944963|1</Keyframe>
-			<Keyframe>0.6980744|0</Keyframe>
+			<Keyframe>0.02913286|1</Keyframe>
+			<Keyframe>0.06935542|1</Keyframe>
+			<Keyframe>0.1006814|0.2</Keyframe>
+			<Keyframe>0.6894569|0</Keyframe>
 		</Brightness>
 		<Range>
 			<Keyframe>0|5</Keyframe>
+			<Keyframe>0.6894569|3</Keyframe>
 		</Range>
 	</Light>
 </Effect>
