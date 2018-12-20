@@ -4,12 +4,12 @@ import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.g2d.HDRColourSpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.MathUtils
-import com.badlogic.gdx.math.Matrix3
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.Array
 import com.lyeeedar.Renderables.Animation.AbstractColourAnimation
 import com.lyeeedar.Renderables.Renderable
 import com.lyeeedar.Util.Colour
+import com.lyeeedar.Util.doDraw
 import com.lyeeedar.Util.draw
 import com.lyeeedar.Util.drawBlend
 
@@ -60,6 +60,9 @@ class Sprite(val fileName: String, var animationDelay: Float, var textures: Arra
 	var frameBlend = false
 
 	var texIndex: Int = 0
+
+	private val tempColour = Colour()
+	private val tempVec = Vector3()
 
 	init
 	{
@@ -248,7 +251,7 @@ class Sprite(val fileName: String, var animationDelay: Float, var textures: Arra
 
 		if (rotation != 0f && fixPosition)
 		{
-			val offset = getPositionCorrectionOffsets(x, y, width / 2.0f, height / 2.0f, width, height, scaleX, scaleY, rotation)
+			val offset = getPositionCorrectionOffsets(x, y, width / 2.0f, height / 2.0f, width, height, scaleX, scaleY, rotation, tempVec)
 			x -= offset.x
 			y -= offset.y
 		}
@@ -264,6 +267,93 @@ class Sprite(val fileName: String, var animationDelay: Float, var textures: Arra
 		{
 			draw(batch, texture, x, y, width / 2.0f, height / 2.0f, width, height, scaleX, scaleY, rotation, flipX, flipY, removeAmount)
 		}
+	}
+
+	fun getRenderColour(): Colour
+	{
+		val renderCol = when
+		{
+			(colourAnimation != null) -> colourAnimation!!.renderColour()!!
+			(animation?.renderColour() != null) -> animation!!.renderColour()!!
+			else -> this.colour
+		}
+
+		return renderCol
+	}
+
+	fun render(vertices: FloatArray, offset: Int, colour: Colour, x: Float, y: Float, width: Float, height: Float, scaleX: Float, scaleY: Float, rotation: Float)
+	{
+		var scaleX = baseScale[0] * scaleX
+		var scaleY = baseScale[1] * scaleY
+
+		if (hasAnim)
+		{
+			val scale = animation!!.renderScale()
+			if (scale != null)
+			{
+				scaleX *= scale[0]
+				scaleY *= scale[1]
+			}
+		}
+
+		val rotation = rotation + this.rotation
+
+		var x = x
+		var y = y
+		var width = width
+		var height = height
+
+		width *= size[0]
+		height *= size[1]
+
+		val texture = textures[texIndex]
+
+		if (drawActualSize)
+		{
+			val widthRatio = width / 32f
+			val heightRatio = height / 32f
+
+			val regionWidth = referenceSize ?: texture.regionWidth.toFloat()
+			val regionHeight = referenceSize ?: texture.regionHeight.toFloat()
+
+			val trueWidth = regionWidth * widthRatio
+			val trueHeight = regionHeight * heightRatio
+
+			val widthOffset = (trueWidth - width) / 2
+
+			x -= widthOffset
+			width = trueWidth
+			height = trueHeight
+		}
+
+		if (rotation != 0f && fixPosition)
+		{
+			val tempVec = Vector3()
+			val offset = getPositionCorrectionOffsets(x, y, width / 2.0f, height / 2.0f, width, height, scaleX, scaleY, rotation, tempVec)
+			x -= offset.x
+			y -= offset.y
+		}
+
+		val tex1: TextureRegion
+		val tex2: TextureRegion
+		val texAlpha: Float
+		if (frameBlend && textures.size > 1)
+		{
+			val alpha = animationAccumulator / animationDelay
+			val nextIndex = if (texIndex+1 == textures.size) 0 else texIndex+1
+
+			tex1 = texture
+			tex2 = textures[nextIndex]
+			texAlpha = alpha
+		}
+		else
+		{
+			tex1 = texture
+			tex2 = texture
+			texAlpha = 0f
+		}
+
+		doDraw(vertices, offset, tex1, tex2, colour, x, y, width / 2.0f, height / 2.0f, width, height, scaleX, scaleY, rotation, flipX, flipY, removeAmount, texAlpha)
 	}
 
 	val currentTexture: TextureRegion
@@ -290,14 +380,8 @@ class Sprite(val fileName: String, var animationDelay: Float, var textures: Arra
 
 	companion object
 	{
-
-		private val tempColour = Colour()
-
-		private val tempVec = Vector3()
-		private val tempMat = Matrix3()
-
-		fun getPositionCorrectionOffsets(x: Float, y: Float, originX: Float, originY: Float, width: Float, height: Float,
-												 scaleX: Float, scaleY: Float, rotation: Float): Vector3
+		inline fun getPositionCorrectionOffsets(x: Float, y: Float, originX: Float, originY: Float, width: Float, height: Float,
+												 scaleX: Float, scaleY: Float, rotation: Float, tempVec: Vector3): Vector3
 		{
 			// bottom left and top right corner points relative to origin
 			val worldOriginX = x + originX

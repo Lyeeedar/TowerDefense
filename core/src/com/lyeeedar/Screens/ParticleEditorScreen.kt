@@ -239,9 +239,7 @@ class ParticleEditorScreen : AbstractScreen()
 		spriteRender.queueParticle(particle, particlePos.x.toFloat(), particlePos.y.toFloat(), 1, 0)
 
 		batch.color = Color.WHITE
-		batch.begin()
-		spriteRender.flush(batch)
-		batch.end()
+		spriteRender.end(batch)
 
 		if (debugButton.isChecked)
 		{

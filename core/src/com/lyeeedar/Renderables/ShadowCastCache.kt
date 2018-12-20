@@ -57,7 +57,7 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 
 			if (recalculate)
 			{
-				Point.freeAll(currentShadowCast)
+				Point.freeAllTS(currentShadowCast)
 				currentShadowCast.clear()
 
 				for (ix in 0 until range * 2)
@@ -67,7 +67,7 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 						val gx = ix + x - range
 						val gy = iy + y - range
 
-						val point = Point.obtain().set(gx, gy)
+						val point = Point.obtainTS().set(gx, gy)
 						currentShadowCast.add(point)
 					}
 				}
@@ -117,7 +117,7 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 
 		if (recalculate)
 		{
-			Point.freeAll(currentShadowCast)
+			Point.freeAllTS(currentShadowCast)
 			currentShadowCast.clear()
 
 			// build grid
@@ -158,7 +158,7 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 
 					if ((!anySolid || rawOutput!![ix][iy] > 0) && collisionGrid.inBounds(gx, gy))
 					{
-						val point = Point.obtain().set(gx, gy)
+						val point = Point.obtainTS().set(gx, gy)
 						currentShadowCast.add(point)
 					}
 				}

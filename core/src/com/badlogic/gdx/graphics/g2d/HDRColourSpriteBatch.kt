@@ -429,7 +429,7 @@ class HDRColourSpriteBatch
 			if (blendSrcFunc != -1) Gdx.gl.glBlendFunc(blendSrcFunc, blendDstFunc)
 		}
 
-		mesh.render(if (customShader != null) customShader!! else shader, GL20.GL_TRIANGLES, count)
+		//mesh.render(if (customShader != null) customShader!! else shader, GL20.GL_TRIANGLES, count)
 
 		idx = 0
 	}

@@ -1,8 +1,6 @@
 package com.lyeeedar.Util
 
 import com.badlogic.gdx.graphics.g2d.Batch
-import com.badlogic.gdx.graphics.g2d.HDRColourSpriteBatch
-import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.MathUtils
 
@@ -11,18 +9,7 @@ internal inline fun draw(batch: Batch, region: TextureRegion,
 		 width: Float, height: Float, scaleX: Float, scaleY: Float,
 		 rotation: Float, flipX: Boolean, flipY: Boolean, removeAmount: Float)
 {
-	if (batch is SpriteBatch)
-	{
-		doDraw(batch, region, batch.packedColor, x, y, originX, originY, width, height, scaleX, scaleY, rotation, flipX, flipY, removeAmount)
-	}
-	else if (batch is HDRColourSpriteBatch)
-	{
-		doDraw(batch, region, region, batch.colour, x, y, originX, originY, width, height, scaleX, scaleY, rotation, flipX, flipY, removeAmount, 0f)
-	}
-	else
-	{
-		//throw Exception("Unknown Batch type '" + batch.javaClass.canonicalName + "'!")
-	}
+	doDraw(batch, region, batch.packedColor, x, y, originX, originY, width, height, scaleX, scaleY, rotation, flipX, flipY, removeAmount)
 }
 
 val tempCol1 = Colour()
@@ -34,33 +21,22 @@ internal inline fun drawBlend(batch: Batch, region1: TextureRegion, region2: Tex
 {
 	val blendAlpha = blendAlpha.clamp(0f, 1f)
 
-	if (batch is SpriteBatch)
-	{
-		tempCol1.set(batch.color, batch.packedColor)
+	tempCol1.set(batch.color, batch.packedColor)
 
-		tempCol2.set(tempCol1)
-		tempCol2.a *= 1f - blendAlpha
+	tempCol2.set(tempCol1)
+	tempCol2.a *= 1f - blendAlpha
 
-		doDraw(batch, region1, tempCol2.toFloatBits(), x, y, originX, originY, width, height, scaleX, scaleY, rotation, flipX, flipY, removeAmount)
+	doDraw(batch, region1, tempCol2.toFloatBits(), x, y, originX, originY, width, height, scaleX, scaleY, rotation, flipX, flipY, removeAmount)
 
-		tempCol2.set(tempCol1)
-		tempCol2.a *= blendAlpha
+	tempCol2.set(tempCol1)
+	tempCol2.a *= blendAlpha
 
-		doDraw(batch, region2, tempCol2.toFloatBits(), x, y, originX, originY, width, height, scaleX, scaleY, rotation, flipX, flipY, removeAmount)
-	}
-	else if (batch is HDRColourSpriteBatch)
-	{
-		doDraw(batch, region1, region2, batch.colour, x, y, originX, originY, width, height, scaleX, scaleY, rotation, flipX, flipY, removeAmount, blendAlpha)
-	}
-	else
-	{
-		//throw Exception("Unknown Batch type '" + batch.javaClass.canonicalName + "'!")
-	}
+	doDraw(batch, region2, tempCol2.toFloatBits(), x, y, originX, originY, width, height, scaleX, scaleY, rotation, flipX, flipY, removeAmount)
 }
 
 // 4 vertices of order x, y, colour, u, v
 val verticesSpriteBatch: FloatArray by lazy { FloatArray(4 * 5) }
-internal inline fun doDraw(batch: SpriteBatch, region: TextureRegion, packedColor: Float,
+internal inline fun doDraw(batch: Batch, region: TextureRegion, packedColor: Float,
 		   x: Float, y: Float, originX: Float, originY: Float,
 		   width: Float, height: Float, scaleX: Float, scaleY: Float,
 		   rotation: Float, flipX: Boolean, flipY: Boolean, removeAmount: Float)
@@ -229,7 +205,7 @@ internal inline fun doDraw(batch: SpriteBatch, region: TextureRegion, packedColo
 	batch.draw(region.texture, vertices, 0, 20)
 }
 
-internal inline fun doDraw(batch: HDRColourSpriteBatch, region1: TextureRegion, region2: TextureRegion, colour: Colour,
+internal inline fun doDraw(vertices: FloatArray, offset: Int, region1: TextureRegion, region2: TextureRegion, colour: Colour,
 		   x: Float, y: Float, originX: Float, originY: Float,
 		   width: Float, height: Float, scaleX: Float, scaleY: Float,
 		   rotation: Float, flipX: Boolean, flipY: Boolean, removeAmount: Float, blendAlpha: Float)
@@ -327,30 +303,30 @@ internal inline fun doDraw(batch: HDRColourSpriteBatch, region1: TextureRegion, 
 	{
 		r1u = region1.u2
 		r1u2 = region1.u
-		r2u = r1u
-		r2u2 = r1u2
+		r2u = region2.u2
+		r2u2 = region2.u
 	}
 	else
 	{
 		r1u = region1.u
 		r1u2 = region1.u2
-		r2u = r1u
-		r2u2 = r1u2
+		r2u = region2.u
+		r2u2 = region2.u2
 	}
 
 	if (flipY)
 	{
 		r1v = region1.v
 		r1v2 = region1.v2
-		r2v = r1v
-		r2v2 = r1v2
+		r2v = region2.v
+		r2v2 = region2.v2
 	}
 	else
 	{
 		r1v = region1.v2
 		r1v2 = region1.v
-		r2v = r1v
-		r2v2 = r1v2
+		r2v = region2.v2
+		r2v2 = region2.v
 	}
 
 	if (removeAmount > 0f)
@@ -375,8 +351,7 @@ internal inline fun doDraw(batch: HDRColourSpriteBatch, region1: TextureRegion, 
 	val b = colour.b//.clamp(0f, 1f)
 	val a = colour.a//.clamp(0f, 1f)
 
-	val i = batch.prepareDrawVertices(region1.texture, 44)
-	val vertices = batch.getVertexArray()
+	val i = offset
 	vertices[i+0] = x1
 	vertices[i+1] = y1
 	vertices[i+2] = r

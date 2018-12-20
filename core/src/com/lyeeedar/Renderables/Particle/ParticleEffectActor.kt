@@ -39,6 +39,6 @@ open class ParticleEffectActor(val particle: ParticleEffect, var completionFunc:
 
 		renderer.begin(0f, 0f, 0f, Colour.WHITE)
 		renderer.queueParticle(particle, x, y, 0, 0, colour, width, height)
-		renderer.flush(batch!!)
+		renderer.end(batch!!)
 	}
 }

@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.Batch
-import com.badlogic.gdx.graphics.g2d.HDRColourSpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector2
@@ -28,8 +27,7 @@ class MapWidget(val map: Map) : Widget()
 		set(value)
 		{
 			field = value
-			ground.tileSize = value
-			floating.tileSize = value
+			renderer.tileSize = value
 		}
 
 	val glow: Sprite = AssetManager.loadSprite("glow")
@@ -54,16 +52,13 @@ class MapWidget(val map: Map) : Widget()
 	val ENTITY = TILE+1
 	val EFFECT = ENTITY+1
 
-	val ground = SortedRenderer(tileSize, map.width.toFloat(), map.height.toFloat(), EFFECT+1, true)
-	val floating = SortedRenderer(tileSize, map.width.toFloat(), map.height.toFloat(), EFFECT+1, true)
+	val renderer = SortedRenderer(tileSize, map.width.toFloat(), map.height.toFloat(), EFFECT+1, true)
 
 	val shapeRenderer = ShapeRenderer()
 
 	val tempCol = Colour()
 
 	var hpLossTimer = 0f
-
-	val hdrBatch = HDRColourSpriteBatch()
 
 	init
 	{
@@ -171,16 +166,6 @@ class MapWidget(val map: Map) : Widget()
 							//	map.dragEnd(point)
 							//}
 						}
-
-						override fun keyTyped(event: InputEvent?, character: Char): Boolean
-						{
-							if (character == 'd')
-							{
-								ground.debugDraw = !ground.debugDraw
-							}
-
-							return false
-						}
 					})
 
 		atk_empty.baseScale = floatArrayOf(0.14f, 0.14f)
@@ -261,18 +246,11 @@ class MapWidget(val map: Map) : Widget()
 	{
 		batch!!.end()
 
-		hdrBatch.transformMatrix = batch.transformMatrix.cpy()
-		hdrBatch.projectionMatrix = batch.projectionMatrix.cpy()
-		hdrBatch.begin()
-
 		val xp = this.x + (this.width / 2f) - ((map.width * tileSize) / 2f)
 		val yp = this.y
 		renderY = yp
 
-		ground.begin(Gdx.app.graphics.deltaTime, xp, yp, map.ambient)
-		floating.begin(Gdx.app.graphics.deltaTime, xp, yp, map.ambient)
-
-		hdrBatch.color = Color.WHITE
+		renderer.begin(Gdx.app.graphics.deltaTime, xp, yp, map.ambient)
 
 		for (x in 0 until map.width)
 		{
@@ -298,13 +276,13 @@ class MapWidget(val map: Map) : Widget()
 					val sprite = groundSprite.chosenSprite
 					if (sprite != null)
 					{
-						ground.queueSprite(sprite, xi, yi, TILE, tileHeight, tileColour)
+						renderer.queueSprite(sprite, xi, yi, TILE, tileHeight, tileColour)
 					}
 
 					val tilingSprite = groundSprite.chosenTilingSprite
 					if (tilingSprite != null)
 					{
-						ground.queueSprite(tilingSprite, xi, yi, TILE, tileHeight, tileColour)
+						renderer.queueSprite(tilingSprite, xi, yi, TILE, tileHeight, tileColour)
 					}
 
 					tileHeight++
@@ -321,13 +299,13 @@ class MapWidget(val map: Map) : Widget()
 					val sprite = wallSprite.chosenSprite
 					if (sprite != null)
 					{
-						ground.queueSprite(sprite, xi, yi, TILE, tileHeight, tileColour)
+						renderer.queueSprite(sprite, xi, yi, TILE, tileHeight, tileColour)
 					}
 
 					val tilingSprite = wallSprite.chosenTilingSprite
 					if (tilingSprite != null)
 					{
-						ground.queueSprite(tilingSprite, xi, yi, TILE, tileHeight, tileColour)
+						renderer.queueSprite(tilingSprite, xi, yi, TILE, tileHeight, tileColour)
 					}
 
 					tileHeight++
@@ -335,7 +313,7 @@ class MapWidget(val map: Map) : Widget()
 
 				if (tile.fillingEntity != null)
 				{
-					ground.queueSprite(tile.fillingEntity!!.sprite, xi, yi, ENTITY, 0, tileColour)
+					renderer.queueSprite(tile.fillingEntity!!.sprite, xi, yi, ENTITY, 0, tileColour)
 
 					val tower = tile.fillingEntity as? Tower
 					if (tower != null)
@@ -357,7 +335,7 @@ class MapWidget(val map: Map) : Widget()
 
 							if (range > 0f)
 							{
-								ground.queueSprite(rangeCircle, xi, yi, ENTITY, 0, Colour(1f, 1f, 1f, 0.5f), scaleX = range * 2f, scaleY = range * 2f, lit = false)
+								renderer.queueSprite(rangeCircle, xi, yi, ENTITY, 0, Colour(1f, 1f, 1f, 0.5f), scaleX = range * 2f, scaleY = range * 2f, lit = false)
 							}
 						}
 					}
@@ -367,7 +345,7 @@ class MapWidget(val map: Map) : Widget()
 				{
 					if (tile.fillingEntity == null)
 					{
-						ground.queueSprite(tile.previewTower!!.sprite, xi, yi, ENTITY, 0, tileColour.copy().a(0.5f))
+						renderer.queueSprite(tile.previewTower!!.sprite, xi, yi, ENTITY, 0, tileColour.copy().a(0.5f))
 					}
 
 					var range = 0f
@@ -385,7 +363,7 @@ class MapWidget(val map: Map) : Widget()
 
 					if (range > 0f)
 					{
-						ground.queueSprite(rangeCircle, xi, yi, EFFECT, 0, Colour(0.3f, 1f, 0.3f, 0.6f), scaleX = range * 2f, scaleY = range * 2f, lit = false)
+						renderer.queueSprite(rangeCircle, xi, yi, EFFECT, 0, Colour(0.3f, 1f, 0.3f, 0.6f), scaleX = range * 2f, scaleY = range * 2f, lit = false)
 					}
 				}
 
@@ -396,7 +374,7 @@ class MapWidget(val map: Map) : Widget()
 						val pos = entity.pos.cpy()
 						pos.y = map.height - 1 - pos.y
 
-						ground.queueSprite(entity.sprite, pos.x, pos.y, ENTITY, 0, tileColour)
+						renderer.queueSprite(entity.sprite, pos.x, pos.y, ENTITY, 0, tileColour)
 
 						if (entity.hp != entity.def.health)
 						{
@@ -406,14 +384,14 @@ class MapWidget(val map: Map) : Widget()
 							val a = entity.hp.toFloat() / entity.def.health.toFloat()
 							val col = Colour.RED.copy().lerpHSV(Colour.GREEN.copy(), a)
 
-							ground.queueSprite(white, hpbarposx, hpbarposy, ENTITY, 0, col, width = a * entity.sprite.baseScale[0] + 0.2f, height = 0.1f, lit = false)
+							renderer.queueSprite(white, hpbarposx, hpbarposy, ENTITY, 0, col, width = a * entity.sprite.baseScale[0] + 0.2f, height = 0.1f, lit = false)
 						}
 
 						for (effect in entity.effects)
 						{
 							if (effect is Sprite)
 							{
-								ground.update(effect)
+								renderer.update(effect)
 
 								if (effect.completed)
 								{
@@ -421,7 +399,7 @@ class MapWidget(val map: Map) : Widget()
 								}
 								else
 								{
-									ground.queueSprite(effect, pos.x, pos.y, EFFECT, 0)
+									renderer.queueSprite(effect, pos.x, pos.y, EFFECT, 0)
 								}
 							}
 							else if (effect is ParticleEffect)
@@ -432,14 +410,14 @@ class MapWidget(val map: Map) : Widget()
 								}
 								else
 								{
-									ground.queueParticle(effect, pos.x, pos.y, EFFECT, 0)
+									renderer.queueParticle(effect, pos.x, pos.y, EFFECT, 0)
 								}
 							}
 						}
 					}
 					else
 					{
-						ground.queueSprite(entity.sprite, 0f, 0f, ENTITY, 0, tileColour)
+						renderer.queueSprite(entity.sprite, 0f, 0f, ENTITY, 0, tileColour)
 					}
 				}
 
@@ -447,7 +425,7 @@ class MapWidget(val map: Map) : Widget()
 				{
 					if (effect is Sprite)
 					{
-						ground.update(effect)
+						renderer.update(effect)
 
 						if (effect.completed)
 						{
@@ -455,7 +433,7 @@ class MapWidget(val map: Map) : Widget()
 						}
 						else
 						{
-							ground.queueSprite(effect, xi, yi, EFFECT, 0)
+							renderer.queueSprite(effect, xi, yi, EFFECT, 0)
 						}
 					}
 					else if (effect is ParticleEffect)
@@ -466,17 +444,14 @@ class MapWidget(val map: Map) : Widget()
 						}
 						else
 						{
-							ground.queueParticle(effect, xi, yi, EFFECT, 0)
+							renderer.queueParticle(effect, xi, yi, EFFECT, 0)
 						}
 					}
 				}
 			}
 		}
 
-		ground.flush(hdrBatch)
-		floating.flush(hdrBatch)
-
-		hdrBatch.end()
+		renderer.end(batch)
 
 		batch.begin()
 	}

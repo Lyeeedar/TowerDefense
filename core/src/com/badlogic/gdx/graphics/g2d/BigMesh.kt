@@ -44,15 +44,15 @@ class BigMesh
 		indices.unbind()
 	}
 
-	fun render(shader: ShaderProgram, primitiveType: Int, count: Int)
+	fun render(shader: ShaderProgram, primitiveType: Int, offset: Int, count: Int)
 	{
 		if (count == 0) return
 
-		bind(shader)
+		//bind(shader)
 
-		Gdx.gl20.glDrawElements(primitiveType, count, GL20.GL_UNSIGNED_INT, 0)
+		Gdx.gl20.glDrawElements(primitiveType, count, GL20.GL_UNSIGNED_INT, offset * 4)
 
-		unbind(shader)
+		//unbind(shader)
 	}
 
 	fun dispose()
