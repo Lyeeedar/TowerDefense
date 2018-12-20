@@ -6,3 +6,13 @@ sourceSets.main.java.srcDirs = ["src/"]
 eclipse.project {
     name = appName + "-core"
 }
+
+compileKotlin() {
+    kotlinOptions {
+        freeCompilerArgs = [
+                '-Xno-param-assertions',
+                '-Xno-call-assertions',
+                '-Xno-receiver-assertions'
+        ]
+    }
+}

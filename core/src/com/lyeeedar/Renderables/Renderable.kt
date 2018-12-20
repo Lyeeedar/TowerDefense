@@ -15,10 +15,10 @@ abstract class Renderable
 
 	val size = intArrayOf(1, 1)
 
-	var rotation: Float = 0f
+	internal var rotation: Float = 0f
 
-	var flipX: Boolean = false
-	var flipY: Boolean = false
+	internal var flipX: Boolean = false
+	internal var flipY: Boolean = false
 
 	var isCentered: Boolean = false
 
@@ -27,7 +27,7 @@ abstract class Renderable
 
 	open var light: Light? = null
 
-	var hasAnim = false
+	protected var hasAnim = false
 	var animation: AbstractAnimation? = null
 		set(value)
 		{

@@ -6,7 +6,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.MathUtils
 
-inline fun draw(batch: Batch, region: TextureRegion,
+internal inline fun draw(batch: Batch, region: TextureRegion,
 		 x: Float, y: Float, originX: Float, originY: Float,
 		 width: Float, height: Float, scaleX: Float, scaleY: Float,
 		 rotation: Float, flipX: Boolean, flipY: Boolean, removeAmount: Float)
@@ -27,7 +27,7 @@ inline fun draw(batch: Batch, region: TextureRegion,
 
 val tempCol1 = Colour()
 val tempCol2 = Colour()
-inline fun drawBlend(batch: Batch, region1: TextureRegion, region2: TextureRegion, blendAlpha: Float,
+internal inline fun drawBlend(batch: Batch, region1: TextureRegion, region2: TextureRegion, blendAlpha: Float,
 				x: Float, y: Float, originX: Float, originY: Float,
 				width: Float, height: Float, scaleX: Float, scaleY: Float,
 				rotation: Float, flipX: Boolean, flipY: Boolean, removeAmount: Float)
@@ -60,7 +60,7 @@ inline fun drawBlend(batch: Batch, region1: TextureRegion, region2: TextureRegio
 
 // 4 vertices of order x, y, colour, u, v
 val verticesSpriteBatch: FloatArray by lazy { FloatArray(4 * 5) }
-inline fun doDraw(batch: SpriteBatch, region: TextureRegion, packedColor: Float,
+internal inline fun doDraw(batch: SpriteBatch, region: TextureRegion, packedColor: Float,
 		   x: Float, y: Float, originX: Float, originY: Float,
 		   width: Float, height: Float, scaleX: Float, scaleY: Float,
 		   rotation: Float, flipX: Boolean, flipY: Boolean, removeAmount: Float)
@@ -144,15 +144,45 @@ inline fun doDraw(batch: SpriteBatch, region: TextureRegion, packedColor: Float,
 	x4 += worldOriginX
 	y4 += worldOriginY
 
-	val r1u = if (flipX) region.u2 else region.u
-	var r1v = if (flipY) region.v else region.v2
-	val r1u2 = if (flipX) region.u else region.u2
-	val r1v2 = if (flipY) region.v2 else region.v
+	val r1u: Float
+	var r1v: Float
+	val r1u2: Float
+	val r1v2: Float
 
-	val r2u = if (flipX) region.u2 else region.u
-	var r2v = if (flipY) region.v else region.v2
-	val r2u2 = if (flipX) region.u else region.u2
-	val r2v2 = if (flipY) region.v2 else region.v
+	val r2u: Float
+	var r2v: Float
+	val r2u2: Float
+	val r2v2 : Float
+
+	if (flipX)
+	{
+		r1u = region.u2
+		r1u2 = region.u
+		r2u = r1u
+		r2u2 = r1u2
+	}
+	else
+	{
+		r1u = region.u
+		r1u2 = region.u2
+		r2u = r1u
+		r2u2 = r1u2
+	}
+
+	if (flipY)
+	{
+		r1v = region.v
+		r1v2 = region.v2
+		r2v = r1v
+		r2v2 = r1v2
+	}
+	else
+	{
+		r1v = region.v2
+		r1v2 = region.v
+		r2v = r1v
+		r2v2 = r1v2
+	}
 
 	if (removeAmount > 0f)
 	{
@@ -199,7 +229,7 @@ inline fun doDraw(batch: SpriteBatch, region: TextureRegion, packedColor: Float,
 	batch.draw(region.texture, vertices, 0, 20)
 }
 
-inline fun doDraw(batch: HDRColourSpriteBatch, region1: TextureRegion, region2: TextureRegion, colour: Colour,
+internal inline fun doDraw(batch: HDRColourSpriteBatch, region1: TextureRegion, region2: TextureRegion, colour: Colour,
 		   x: Float, y: Float, originX: Float, originY: Float,
 		   width: Float, height: Float, scaleX: Float, scaleY: Float,
 		   rotation: Float, flipX: Boolean, flipY: Boolean, removeAmount: Float, blendAlpha: Float)
@@ -283,15 +313,45 @@ inline fun doDraw(batch: HDRColourSpriteBatch, region1: TextureRegion, region2: 
 	x4 += worldOriginX
 	y4 += worldOriginY
 
-	val r1u = if (flipX) region1.u2 else region1.u
-	var r1v = if (flipY) region1.v else region1.v2
-	val r1u2 = if (flipX) region1.u else region1.u2
-	val r1v2 = if (flipY) region1.v2 else region1.v
+	val r1u: Float
+	var r1v: Float
+	val r1u2: Float
+	val r1v2: Float
 
-	val r2u = if (flipX) region2.u2 else region2.u
-	var r2v = if (flipY) region2.v else region2.v2
-	val r2u2 = if (flipX) region2.u else region2.u2
-	val r2v2 = if (flipY) region2.v2 else region2.v
+	val r2u: Float
+	var r2v: Float
+	val r2u2: Float
+	val r2v2 : Float
+
+	if (flipX)
+	{
+		r1u = region1.u2
+		r1u2 = region1.u
+		r2u = r1u
+		r2u2 = r1u2
+	}
+	else
+	{
+		r1u = region1.u
+		r1u2 = region1.u2
+		r2u = r1u
+		r2u2 = r1u2
+	}
+
+	if (flipY)
+	{
+		r1v = region1.v
+		r1v2 = region1.v2
+		r2v = r1v
+		r2v2 = r1v2
+	}
+	else
+	{
+		r1v = region1.v2
+		r1v2 = region1.v
+		r2v = r1v
+		r2v2 = r1v2
+	}
 
 	if (removeAmount > 0f)
 	{

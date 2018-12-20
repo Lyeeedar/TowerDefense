@@ -17,10 +17,10 @@ class Colour()
 {
 	var fixed: Boolean = false
 
-	var r: Float = 0f
-	var g: Float = 0f
-	var b: Float = 0f
-	var a: Float = 0f
+	internal var r: Float = 0f
+	internal var g: Float = 0f
+	internal var b: Float = 0f
+	internal var a: Float = 0f
 
 	constructor(col: Float, fixed: Boolean = false) : this()
 	{
@@ -326,17 +326,17 @@ class Colour()
 
 	companion object
 	{
-		val BLACK = Colour(Color.BLACK, true)
-		val WHITE = Colour(Color.WHITE, true)
-		val LIGHT_GRAY = Colour(Color.LIGHT_GRAY, true)
-		val DARK_GRAY = Colour(Color.DARK_GRAY, true)
-		val GOLD = Colour(Color.GOLD, true)
-		val BLUE = Colour(Color.BLUE, true)
-		val GREEN = Colour(Color.GREEN, true)
-		val RED = Colour(Color.RED, true)
-		val PINK = Colour(Color.PINK, true)
-		val ORANGE = Colour(Color.ORANGE, true)
-		val YELLOW = Colour(Color.YELLOW, true)
+		internal val BLACK = Colour(Color.BLACK, true)
+		internal val WHITE = Colour(Color.WHITE, true)
+		internal val LIGHT_GRAY = Colour(Color.LIGHT_GRAY, true)
+		internal val DARK_GRAY = Colour(Color.DARK_GRAY, true)
+		internal val GOLD = Colour(Color.GOLD, true)
+		internal val BLUE = Colour(Color.BLUE, true)
+		internal val GREEN = Colour(Color.GREEN, true)
+		internal val RED = Colour(Color.RED, true)
+		internal val PINK = Colour(Color.PINK, true)
+		internal val ORANGE = Colour(Color.ORANGE, true)
+		internal val YELLOW = Colour(Color.YELLOW, true)
 
 		fun random(s: Float = 0.9f, l: Float = 0.7f): Colour
 		{

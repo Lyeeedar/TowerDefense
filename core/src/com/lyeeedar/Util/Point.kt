@@ -21,7 +21,7 @@ open class Point : Pool.Poolable, Comparable<Point>
 	var locked: Boolean = false
 	var fromPool: Boolean = false
 
-	var x: Int = 0
+	internal var x: Int = 0
 		set(value)
 		{
 			if (locked) throw RuntimeException("Tried to edit a locked point")
@@ -30,7 +30,7 @@ open class Point : Pool.Poolable, Comparable<Point>
 			field = value
 		}
 
-	var y: Int = 0
+	internal var y: Int = 0
 		set(value)
 		{
 			if (locked) throw RuntimeException("Tried to edit a locked point")
@@ -173,7 +173,12 @@ open class Point : Pool.Poolable, Comparable<Point>
 			return x * X_HASH_SIZE + y
 		}
 
-		inline fun getHashcode(point: Point, direction: Direction): Int
+		inline fun getHashcode(x: Int, y: Int, direction: Direction): Int
+		{
+			return (x + direction.x) * X_HASH_SIZE + (y + direction.y)
+		}
+
+		internal inline fun getHashcode(point: Point, direction: Direction): Int
 		{
 			val x = point.x + direction.x
 			val y = point.y + direction.y
@@ -211,9 +216,9 @@ open class Point : Pool.Poolable, Comparable<Point>
 
 	inline fun set(other: Vector2) = set(other.x.toInt(), other.y.toInt())
 
-	inline fun set(other: Point) = set(other.x, other.y)
+	internal inline fun set(other: Point) = set(other.x, other.y)
 
-	inline fun copy() = Point.obtain().set(this)
+	internal inline fun copy() = Point.obtain().set(this)
 
 	fun free()
 	{
@@ -232,17 +237,17 @@ open class Point : Pool.Poolable, Comparable<Point>
 		}
 	}
 
-	inline fun lineTo(other: Point) = Bresenham.line2D_(x, y, other.x, other.y).map { Point.obtain().set(it.x, it.y) }
+	internal inline fun lineTo(other: Point) = Bresenham.line2D_(x, y, other.x, other.y).map { Point.obtain().set(it.x, it.y) }
 
-	inline fun taxiDist(other: Point) = Math.max( Math.abs(other.x - x), Math.abs(other.y - y) )
-	inline fun dist(other: Point) = Math.abs(other.x - x) + Math.abs(other.y - y)
-	inline fun dist(ox: Int, oy: Int) = Math.abs(ox - x) + Math.abs(oy - y)
-	inline fun euclideanDist(other: Point) = Vector2.dst(x.toFloat(), y.toFloat(), other.x.toFloat(), other.y.toFloat())
-	inline fun euclideanDist(ox: Float, oy:Float) = Vector2.dst(x.toFloat(), y.toFloat(), ox, oy)
-	inline fun euclideanDist2(other: Point) = Vector2.dst2(x.toFloat(), y.toFloat(), other.x.toFloat(), other.y.toFloat())
-	inline fun euclideanDist2(ox: Float, oy:Float) = Vector2.dst2(x.toFloat(), y.toFloat(), ox, oy)
+	internal inline fun taxiDist(other: Point) = Math.max( Math.abs(other.x - x), Math.abs(other.y - y) )
+	internal inline fun dist(other: Point) = Math.abs(other.x - x) + Math.abs(other.y - y)
+	internal inline fun dist(ox: Int, oy: Int) = Math.abs(ox - x) + Math.abs(oy - y)
+	internal inline fun euclideanDist(other: Point) = Vector2.dst(x.toFloat(), y.toFloat(), other.x.toFloat(), other.y.toFloat())
+	internal inline fun euclideanDist(ox: Float, oy:Float) = Vector2.dst(x.toFloat(), y.toFloat(), ox, oy)
+	internal inline fun euclideanDist2(other: Point) = Vector2.dst2(x.toFloat(), y.toFloat(), other.x.toFloat(), other.y.toFloat())
+	internal inline fun euclideanDist2(ox: Float, oy:Float) = Vector2.dst2(x.toFloat(), y.toFloat(), ox, oy)
 
-	inline fun liesInRect(min: Point, max: Point): Boolean = x >= min.x && x <= max.x && y >= min.y&& y <= max.y
+	internal inline fun liesInRect(min: Point, max: Point): Boolean = x >= min.x && x <= max.x && y >= min.y&& y <= max.y
 
 	fun liesOnLine(p1: Point, p2: Point): Boolean
 	{
@@ -297,11 +302,11 @@ open class Point : Pool.Poolable, Comparable<Point>
 		return false
 	}
 
-	inline fun lerp(p2: Point, alpha: Float) = obtain().set(x + ((p2.x - x) * alpha).toInt(), y + ((p2.y - y) * alpha).toInt())
+	internal inline fun lerp(p2: Point, alpha: Float) = obtain().set(x + ((p2.x - x) * alpha).toInt(), y + ((p2.y - y) * alpha).toInt())
 
-	inline fun getPosDiff(p: Point, invertY: Boolean = false): kotlin.Array<Vector2> = getPosDiff(p.x.toFloat(), p.y.toFloat(), invertY)
-	inline fun getPosDiff(px: Int, py: Int, invertY: Boolean = false): kotlin.Array<Vector2> = getPosDiff(px.toFloat(), py.toFloat(), invertY)
-	inline fun getPosDiff(px: Float, py: Float, invertY: Boolean = false): kotlin.Array<Vector2>
+	internal inline fun getPosDiff(p: Point, invertY: Boolean = false): kotlin.Array<Vector2> = getPosDiff(p.x.toFloat(), p.y.toFloat(), invertY)
+	internal inline fun getPosDiff(px: Int, py: Int, invertY: Boolean = false): kotlin.Array<Vector2> = getPosDiff(px.toFloat(), py.toFloat(), invertY)
+	internal inline fun getPosDiff(px: Float, py: Float, invertY: Boolean = false): kotlin.Array<Vector2>
 	{
 		val oldPos = Vector2(px, py)
 		val newPos = Vector2(x.toFloat(), y.toFloat())

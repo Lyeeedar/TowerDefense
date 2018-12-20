@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.ObjectMap
+import com.badlogic.gdx.utils.ObjectSet
 import com.badlogic.gdx.utils.Pools
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.Input
@@ -186,7 +187,7 @@ class ParticleEffect : Renderable()
 			val emitterx = emitter.position.x * tileSize + offsetx
 			val emittery = emitter.position.y * tileSize + offsety
 
-			temp.set(emitter.offset.valAt(0, emitter.time))
+			temp.set(emitter.keyframe1.offset.lerp(emitter.keyframe2.offset, emitter.keyframeAlpha))
 			temp.scl(emitter.size)
 			temp.rotate(emitter.rotation)
 
@@ -245,6 +246,8 @@ class ParticleEffect : Renderable()
 
 			if (drawParticles)
 			{
+				val emitterOffset = emitter.keyframe1.offset.lerp(emitter.keyframe2.offset, emitter.keyframeAlpha)
+
 				for (particle in emitter.particles)
 				{
 					var px = 0f
@@ -252,7 +255,7 @@ class ParticleEffect : Renderable()
 
 					if (emitter.simulationSpace == Emitter.SimulationSpace.LOCAL)
 					{
-						temp.set(emitter.offset.valAt(0, emitter.time))
+						temp.set(emitterOffset)
 						temp.scl(emitter.size)
 						temp.rotate(emitter.rotation)
 
@@ -427,114 +430,103 @@ class ParticleEffect : Renderable()
 	}
 }
 
+class ParticleLightKeyframe(
+	val time: Float = 0f,
+	val colour: Colour = Colour(),
+	val brightness: Float = 0f,
+	val range: Float = 0f)
+{
+
+}
+
 class ParticleLight
 {
 	val light = Light()
 
-	val colour = ColourTimeline()
-	val brightness = LerpTimeline()
-	val range = LerpTimeline()
+	var keyframeIndex: Int = 0
+	lateinit var keyframe1: ParticleLightKeyframe
+	lateinit var keyframe2: ParticleLightKeyframe
+	var keyframeAlpha: Float = 0f
+	var keyframes: kotlin.Array<ParticleLightKeyframe> = emptyArray()
 
 	fun update(time: Float)
 	{
-		val col = colour.valAt(0, time)
+		var keyframeIndex = keyframeIndex
+		while (keyframeIndex < keyframes.size-1)
+		{
+			if (time >= keyframes[keyframeIndex+1].time)
+			{
+				keyframeIndex++
+			}
+			else
+			{
+				break
+			}
+		}
+
+		keyframe1 = keyframes[keyframeIndex]
+		val alpha: Float
+
+		if (keyframeIndex < keyframes.size-1)
+		{
+			keyframe2 = keyframes[keyframeIndex+1]
+			alpha = (time - keyframe1.time) / (keyframe2.time - keyframe1.time)
+		}
+		else
+		{
+			keyframe2 = keyframes[keyframeIndex]
+			alpha = 0f
+		}
+
+		keyframeAlpha = alpha
+
+		val col = keyframe1.colour.lerp(keyframe2.colour, keyframeAlpha)
 		light.colour.set(col)
 
-		val brightness = brightness.valAt(0, time)
+		val brightness = keyframe1.brightness.lerp(keyframe2.brightness, keyframeAlpha)
 		light.colour.mul(brightness, brightness, brightness, 1f)
 
-		val range = range.valAt(0, time)
+		val range = (keyframe1.range.lerp(keyframe2.range, keyframeAlpha))
 		light.range = range
 	}
 
 	fun store(kryo: Kryo, output: Output)
 	{
-		output.writeInt(colour.streams.size)
-		for (stream in colour.streams)
+		output.writeInt(keyframes.size)
+		for (keyframe in keyframes)
 		{
-			output.writeInt(stream.size)
-			for (keyframe in stream)
-			{
-				output.writeFloat(keyframe.first)
-				output.writeFloat(keyframe.second.r)
-				output.writeFloat(keyframe.second.g)
-				output.writeFloat(keyframe.second.b)
-				output.writeFloat(keyframe.second.a)
-			}
-		}
+			output.writeFloat(keyframe.time)
 
-		output.writeInt(brightness.streams.size)
-		for (stream in brightness.streams)
-		{
-			output.writeInt(stream.size)
-			for (keyframe in stream)
-			{
-				output.writeFloat(keyframe.first)
-				output.writeFloat(keyframe.second)
-			}
-		}
+			output.writeFloat(keyframe.colour.r)
+			output.writeFloat(keyframe.colour.g)
+			output.writeFloat(keyframe.colour.b)
+			output.writeFloat(keyframe.colour.a)
 
-		output.writeInt(range.streams.size)
-		for (stream in range.streams)
-		{
-			output.writeInt(stream.size)
-			for (keyframe in stream)
-			{
-				output.writeFloat(keyframe.first)
-				output.writeFloat(keyframe.second)
-			}
+			output.writeFloat(keyframe.brightness)
+
+			output.writeFloat(keyframe.range)
 		}
 	}
 
 	fun restore(kryo: Kryo, input: Input)
 	{
-		val numColourStreams = input.readInt()
-		for (i in 0 until numColourStreams)
+		val numKeyframes = input.readInt()
+		keyframes = kotlin.Array<ParticleLightKeyframe>(numKeyframes) { i -> ParticleLightKeyframe() }
+
+		for (i in 0 until numKeyframes)
 		{
-			val stream = Array<Pair<Float, Colour>>()
-			colour.streams.add(stream)
+			val time = input.readFloat()
 
-			val numKeyframes = input.readInt()
-			for (ii in 0 until numKeyframes)
-			{
-				val time = input.readFloat()
-				val r = input.readFloat()
-				val g = input.readFloat()
-				val b = input.readFloat()
-				val a = input.readFloat()
+			val r = input.readFloat()
+			val g = input.readFloat()
+			val b = input.readFloat()
+			val a = input.readFloat()
 
-				stream.add(Pair(time, Colour(r, g, b, a)))
-			}
-		}
+			val brightness = input.readFloat()
 
-		val numBrightnessStreams = input.readInt()
-		for (i in 0 until numBrightnessStreams)
-		{
-			val stream = Array<Pair<Float, Float>>()
-			brightness.streams.add(stream)
+			val range = input.readFloat()
 
-			val numKeyframes = input.readInt()
-			for (ii in 0 until numKeyframes)
-			{
-				val time = input.readFloat()
-				val value = input.readFloat()
-				stream.add(Pair(time, value))
-			}
-		}
-
-		val numRangeStreams = input.readInt()
-		for (i in 0 until numRangeStreams)
-		{
-			val stream = Array<Pair<Float, Float>>()
-			range.streams.add(stream)
-
-			val numKeyframes = input.readInt()
-			for (ii in 0 until numKeyframes)
-			{
-				val time = input.readFloat()
-				val value = input.readFloat()
-				stream.add(Pair(time, value))
-			}
+			keyframes[i] = ParticleLightKeyframe(time, Colour(r, g, b, a), brightness, range)
 		}
 	}
 
@@ -544,14 +536,38 @@ class ParticleLight
 		{
 			val light = ParticleLight()
 
+			val colour = ColourTimeline()
 			val colourEls = xml.getChildByName("Colour")!!
-			light.colour.parse(colourEls, { AssetManager.loadColour(it) })
+			colour.parse(colourEls, { AssetManager.loadColour(it) })
 
+			val brightness = LerpTimeline()
 			val brightnessEls = xml.getChildByName("Brightness")!!
-			light.brightness.parse(brightnessEls, { it.toFloat() })
+			brightness.parse(brightnessEls, { it.toFloat() })
 
+			val range = LerpTimeline()
 			val rangeEls = xml.getChildByName("Range")!!
-			light.range.parse(rangeEls, { it.toFloat() })
+			range.parse(rangeEls, { it.toFloat() })
+
+			// Make map of times
+			val times = ObjectSet<Float>()
+			for (keyframe in colour.streams.flatMap { it }) { times.add(keyframe.first) }
+			for (keyframe in brightness.streams.flatMap { it }) { times.add(keyframe.first) }
+			for (keyframe in range.streams.flatMap { it }) { times.add(keyframe.first) }
+
+			val keyframes = kotlin.Array<ParticleLightKeyframe>(times.size) { i -> ParticleLightKeyframe() }
+			var keyframeI = 0
+			for (time in times.sortedBy { it })
+			{
+				val keyframe = ParticleLightKeyframe(
+					time,
+					colour.valAt(0, time),
+					brightness.valAt(0, time),
+					range.valAt(0, time))
+				keyframes[keyframeI++] = keyframe
+			}
+			light.keyframes = keyframes
+			light.keyframe1 = keyframes[0]
+			light.keyframe2 = keyframes[0]
 
 			return light
 		}

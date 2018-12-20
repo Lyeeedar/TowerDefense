@@ -318,7 +318,7 @@ class Particle(val emitter: Emitter)
 
 		if (emitter.simulationSpace == Emitter.SimulationSpace.LOCAL)
 		{
-			temp.set(emitter.offset.valAt(0, emitter.time))
+			temp.set(emitter.keyframe1.offset.lerp(emitter.keyframe2.offset, emitter.keyframeAlpha))
 			temp.scl(emitter.size)
 
 			if (emitter.particleEffect.flipX)

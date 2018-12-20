@@ -29,69 +29,69 @@ import squidpony.squidmath.LightRNG
 
 class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, val layers: Int, val alwaysOnscreen: Boolean)
 {
-	var batchID: Int = random.nextInt()
+	private var batchID: Int = random.nextInt()
 
-	val tempVec = Vector2()
-	val tempPoint = Point()
-	val tempCol = Colour()
-	val tempCol2 = Colour()
-	val tempCol3 = Colour()
-	val tempCol4 = Colour()
-	val tlCol = Colour()
-	val trCol = Colour()
-	val blCol = Colour()
-	val brCol = Colour()
-	val bitflag = EnumBitflag<Direction>()
+	private val tempVec = Vector2()
+	private val tempPoint = Point()
+	private val tempCol = Colour()
+	private val tempCol2 = Colour()
+	private val tempCol3 = Colour()
+	private val tempCol4 = Colour()
+	private val tlCol = Colour()
+	private val trCol = Colour()
+	private val blCol = Colour()
+	private val brCol = Colour()
+	private val bitflag = EnumBitflag<Direction>()
 
-	val startingArraySize = 128
-	var spriteArray = Array<RenderSprite?>(startingArraySize) { null }
-	var queuedSprites = 0
+	private val startingArraySize = 128
+	private var spriteArray = Array<RenderSprite?>(startingArraySize) { null }
+	private var queuedSprites = 0
 
-	val tilingMap: IntMap<ObjectSet<Long>> = IntMap()
+	private val tilingMap: IntMap<ObjectSet<Long>> = IntMap()
 
-	val setPool: Pool<ObjectSet<Long>> = object : Pool<ObjectSet<Long>>() {
+	private val setPool: Pool<ObjectSet<Long>> = object : Pool<ObjectSet<Long>>() {
 		override fun newObject(): ObjectSet<Long>
 		{
 			return ObjectSet()
 		}
 	}
 
-	val lightTileMap: IntMap<LightTile> = IntMap()
+	private val lightTileMap: IntMap<LightTile> = IntMap()
 
-	val lightTilePool: Pool<LightTile> = object : Pool<LightTile>() {
+	private val lightTilePool: Pool<LightTile> = object : Pool<LightTile>() {
 		override fun newObject(): LightTile
 		{
 			return LightTile()
 		}
 	}
 
-	var screenShakeRadius: Float = 0f
-	var screenShakeAccumulator: Float = 0f
-	var screenShakeSpeed: Float = 0f
-	var screenShakeAngle: Float = 0f
-	var screenShakeLocked: Boolean = false
+	private var screenShakeRadius: Float = 0f
+	private var screenShakeAccumulator: Float = 0f
+	private var screenShakeSpeed: Float = 0f
+	private var screenShakeAngle: Float = 0f
+	private var screenShakeLocked: Boolean = false
 
-	val BLENDMODES = BlendMode.values().size
-	val MAX_INDEX = 6 * BLENDMODES
-	val X_BLOCK_SIZE = layers * MAX_INDEX
-	val Y_BLOCK_SIZE = X_BLOCK_SIZE * width.toInt()
-	val MAX_Y_BLOCK_SIZE = Y_BLOCK_SIZE * height.toInt()
-	val MAX_X_BLOCK_SIZE = X_BLOCK_SIZE * width.toInt()
+	private val BLENDMODES = BlendMode.values().size
+	private val MAX_INDEX = 6 * BLENDMODES
+	private val X_BLOCK_SIZE = layers * MAX_INDEX
+	private val Y_BLOCK_SIZE = X_BLOCK_SIZE * width.toInt()
+	private val MAX_Y_BLOCK_SIZE = Y_BLOCK_SIZE * height.toInt()
+	private val MAX_X_BLOCK_SIZE = X_BLOCK_SIZE * width.toInt()
 
-	var delta: Float = 0f
+	private var delta: Float = 0f
 
-	var debugDrawSpeed = 1.0f
-	var debugDrawAccumulator = 0.0f
+	private var debugDrawSpeed = 1.0f
+	private var debugDrawAccumulator = 0.0f
 	var debugDraw = false
-	var debugDrawIndex = 0
-	var inDebugFrame = false
-	var debugDrawList = com.badlogic.gdx.utils.Array<RenderSprite>()
+	private var debugDrawIndex = 0
+	private var inDebugFrame = false
+	private var debugDrawList = com.badlogic.gdx.utils.Array<RenderSprite>()
 
-	var inBegin = false
-	var offsetx: Float = 0f
-	var offsety: Float = 0f
+	private var inBegin = false
+	private var offsetx: Float = 0f
+	private var offsety: Float = 0f
 
-	val ambientLight = Colour()
+	private val ambientLight = Colour()
 
 	// ----------------------------------------------------------------------
 	fun begin(deltaTime: Float, offsetx: Float, offsety: Float, ambientLight: Colour)
@@ -153,6 +153,9 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			offsety += Math.cos( screenShakeAngle.toDouble() ).toFloat() * screenShakeRadius
 		}
 
+		val tempCol3 = tempCol3
+		val lightTileMap = lightTileMap
+
 		fun draw(rs: RenderSprite)
 		{
 			val localx = rs.x + offsetx
@@ -166,9 +169,9 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 			if (rs.isLit)
 			{
-				fun getLight(point: Point, direction: Direction): Colour
+				fun getLight(px: Int, py: Int, direction: Direction): Colour
 				{
-					val hash = Point.getHashcode(point, direction)
+					val hash = Point.getHashcode(px, py, direction)
 
 					tempCol3.set(ambientLight)
 
@@ -177,7 +180,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 					{
 						if (!tile.evaluatedColour)
 						{
-							tile.evaluate(point.x + direction.x, point.y + direction.y, tempCol2, ambientLight)
+							tile.evaluate(px + direction.x, py + direction.y, tempCol2, ambientLight)
 							tile.evaluatedColour = true
 						}
 
@@ -187,20 +190,20 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 					return tempCol3
 				}
 
-				val xa = rs.x / tileSize - rs.point.x
-				val ya = rs.y / tileSize - rs.point.y
+				val xa = rs.x / tileSize - rs.px
+				val ya = rs.y / tileSize - rs.py
 
 				if (xa == 0f && ya == 0f)
 				{
-					tlCol.set(getLight(rs.point, Direction.CENTER))
+					tlCol.set(getLight(rs.px, rs.py, Direction.CENTER))
 					colour.mul(tlCol)
 				}
 				else
 				{
-					tlCol.set(getLight(rs.point, Direction.CENTER))
-					trCol.set(getLight(rs.point, Direction.EAST))
-					blCol.set(getLight(rs.point, Direction.NORTH))
-					brCol.set(getLight(rs.point, Direction.NORTHEAST))
+					tlCol.set(getLight(rs.px, rs.py, Direction.CENTER))
+					trCol.set(getLight(rs.px, rs.py, Direction.EAST))
+					blCol.set(getLight(rs.px, rs.py, Direction.NORTH))
+					brCol.set(getLight(rs.px, rs.py, Direction.NORTHEAST))
 
 					val topCol = tlCol.lerp(trCol, xa)
 					val botCol = blCol.lerp(brCol, xa)
@@ -221,7 +224,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 				bitflag.clear()
 				for (dir in Direction.Values)
 				{
-					val hash = Point.getHashcode(rs.point, dir)
+					val hash = Point.getHashcode(rs.px, rs.py, dir)
 					val keys = tilingMap[hash]
 
 					if (keys?.contains(rs.tilingSprite!!.checkID) != true)
@@ -331,7 +334,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	}
 
 	// ----------------------------------------------------------------------
-	fun getComparisonVal(x: Int, y: Int, layer: Int, index: Int, blend: BlendMode) : Int
+	private fun getComparisonVal(x: Int, y: Int, layer: Int, index: Int, blend: BlendMode) : Int
 	{
 		if (index > MAX_INDEX-1) throw RuntimeException("Index too high! $index >= $MAX_INDEX!")
 		if (layer > layers-1) throw RuntimeException("Layer too high! $index >= $layers!")
@@ -361,7 +364,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	}
 
 	// ----------------------------------------------------------------------
-	fun storeRenderSprite(renderSprite: RenderSprite)
+	private fun storeRenderSprite(renderSprite: RenderSprite)
 	{
 		if (queuedSprites == spriteArray.size-1)
 		{
@@ -469,6 +472,8 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		for (emitter in effect.emitters)
 		{
+			val emitterOffset = emitter.keyframe1.offset.lerp(emitter.keyframe2.offset, emitter.keyframeAlpha)
+
 			for (particle in emitter.particles)
 			{
 				var px = 0f
@@ -476,7 +481,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 				if (emitter.simulationSpace == Emitter.SimulationSpace.LOCAL)
 				{
-					tempVec.set(emitter.offset.valAt(0, emitter.time))
+					tempVec.set(emitterOffset)
 					tempVec.scl(emitter.size)
 					tempVec.rotate(emitter.rotation)
 
@@ -541,7 +546,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	}
 
 	// ----------------------------------------------------------------------
-	fun addToMap(tilingSprite: TilingSprite, ix: Float, iy: Float)
+	private fun addToMap(tilingSprite: TilingSprite, ix: Float, iy: Float)
 	{
 		// Add to map
 		val hash = Point.getHashcode(ix.toInt(), iy.toInt())
@@ -752,9 +757,8 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		storeRenderSprite(rs)
 	}
 
-
 	// ----------------------------------------------------------------------
-	fun isSpriteOnscreen(sprite: Sprite, x: Float, y: Float, width: Float, height: Float, scaleX: Float = 1f, scaleY: Float = 1f): Boolean
+	private fun isSpriteOnscreen(sprite: Sprite, x: Float, y: Float, width: Float, height: Float, scaleX: Float = 1f, scaleY: Float = 1f): Boolean
 	{
 		var localx = x + offsetx
 		var localy = y + offsety
@@ -824,7 +828,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	}
 
 	// ----------------------------------------------------------------------
-	fun isSpriteOnscreen(sprite: TilingSprite, x: Float, y: Float, width: Float, height: Float): Boolean
+	private fun isSpriteOnscreen(sprite: TilingSprite, x: Float, y: Float, width: Float, height: Float): Boolean
 	{
 		val localx = x + offsetx
 		val localy = y + offsety
@@ -839,34 +843,35 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	// ----------------------------------------------------------------------
 	companion object
 	{
-		val random = LightRNG()
+		private val random = LightRNG()
 	}
 }
 
 // ----------------------------------------------------------------------
 class RenderSprite(val parentBlock: RenderSpriteBlock, val parentBlockIndex: Int) : Comparable<RenderSprite>
 {
-	val point = Point()
-	val colour: Colour = Colour(1f, 1f, 1f, 1f)
-	var sprite: Sprite? = null
-	var tilingSprite: TilingSprite? = null
-	var texture: TextureRegion? = null
-	var nextTexture: TextureRegion? = null
-	var ninePatch: NinePatch? = null
-	var blendAlpha = 0f
-	var x: Float = 0f
-	var y: Float = 0f
-	var width: Float = 1f
-	var height: Float = 1f
-	var rotation: Float = 0f
-	var scaleX: Float = 1f
-	var scaleY: Float = 1f
-	var flipX: Boolean = false
-	var flipY: Boolean = false
-	var blend: BlendMode = BlendMode.MULTIPLICATIVE
-	var isLit: Boolean = true
+	internal var px: Int = 0
+	internal var py: Int = 0
+	internal val colour: Colour = Colour(1f, 1f, 1f, 1f)
+	internal var sprite: Sprite? = null
+	internal var tilingSprite: TilingSprite? = null
+	internal var texture: TextureRegion? = null
+	internal var nextTexture: TextureRegion? = null
+	internal var ninePatch: NinePatch? = null
+	internal var blendAlpha = 0f
+	internal var x: Float = 0f
+	internal var y: Float = 0f
+	internal var width: Float = 1f
+	internal var height: Float = 1f
+	internal var rotation: Float = 0f
+	internal var scaleX: Float = 1f
+	internal var scaleY: Float = 1f
+	internal var flipX: Boolean = false
+	internal var flipY: Boolean = false
+	internal var blend: BlendMode = BlendMode.MULTIPLICATIVE
+	internal var isLit: Boolean = true
 
-	var comparisonVal: Int = 0
+	internal var comparisonVal: Int = 0
 
 	// ----------------------------------------------------------------------
 	operator fun set(sprite: Sprite?, tilingSprite: TilingSprite?, texture: TextureRegion?, ninePatch: NinePatch?,
@@ -880,12 +885,9 @@ class RenderSprite(val parentBlock: RenderSpriteBlock, val parentBlockIndex: Int
 					 blend: BlendMode, lit: Boolean,
 					 comparisonVal: Int): RenderSprite
 	{
-		this.point.x = ix.toInt()
-		this.point.y = iy.toInt()
-		this.colour.r = colour.r
-		this.colour.g = colour.g
-		this.colour.b = colour.b
-		this.colour.a = colour.a
+		this.px = ix.toInt()
+		this.py = iy.toInt()
+		this.colour.set(colour)
 		this.sprite = sprite
 		this.tilingSprite = tilingSprite
 		this.texture = texture
@@ -939,9 +941,9 @@ class RenderSprite(val parentBlock: RenderSpriteBlock, val parentBlockIndex: Int
 // ----------------------------------------------------------------------
 class RenderSpriteBlock
 {
-	var count = 0
+	private var count = 0
 	var index: Int = 0
-	val sprites = Array(blockSize) { RenderSprite(this, it) }
+	private val sprites = Array(blockSize) { RenderSprite(this, it) }
 
 	fun obtain(): RenderSprite
 	{
@@ -990,7 +992,7 @@ class LightTile
 
 	var evaluatedColour = false
 
-	var evaluatedHash = -1
+	private var evaluatedHash = -1
 
 	fun evaluate(x: Int, y: Int, tempColour: Colour, ambientLight: Colour)
 	{
