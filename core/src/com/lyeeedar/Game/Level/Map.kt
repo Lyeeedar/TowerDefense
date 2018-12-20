@@ -329,6 +329,15 @@ class Map(val grid: Array2D<Tile>)
 					tile.groundSprite = theme.wall.copy()
 					tile.wallSprite = theme.block.copy()
 				}
+				else if (char == '@')
+				{
+					tile.isSolid = true
+					tile.groundSprite = theme.wall.copy()
+
+					val buildSite = BuildSite()
+					buildSite.tile = tile
+					tile.fillingEntity = buildSite
+				}
 				else if (char.isDigit())
 				{
 					tile.isSolid = false

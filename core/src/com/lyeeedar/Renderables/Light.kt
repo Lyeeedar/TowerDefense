@@ -5,7 +5,7 @@ import com.lyeeedar.Util.Colour
 import com.lyeeedar.Util.ciel
 import squidpony.squidgrid.FOV
 
-class Light(colour: Colour? = null, range: Float = 3f)
+class Light(colour: Colour? = null, brightness: Float = 1f, range: Float = 3f)
 {
 	var pos = Vector2()
 
@@ -16,7 +16,7 @@ class Light(colour: Colour? = null, range: Float = 3f)
 	{
 		if (colour != null)
 		{
-			this.colour.set(colour)
+			this.colour.set(colour).mul(brightness, brightness, brightness, 1f)
 		}
 
 		this.range = range

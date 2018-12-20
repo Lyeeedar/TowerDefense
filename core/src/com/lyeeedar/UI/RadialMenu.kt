@@ -37,7 +37,7 @@ class RadialMenu(val closeAction: () -> Unit) : Widget()
 		val glyphCache = GlyphLayout()
 	}
 
-	val menuSize = 128f
+	val menuSize = 80f
 	val itemSize = 32f
 
 	var clickPos: Vector2 = Vector2()

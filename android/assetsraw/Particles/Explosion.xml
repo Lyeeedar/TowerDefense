@@ -159,8 +159,8 @@
 		<Brightness>
 			<Keyframe>0|0</Keyframe>
 			<Keyframe>0.02913286|1</Keyframe>
-			<Keyframe>0.06935542|1</Keyframe>
-			<Keyframe>0.1006814|0.2</Keyframe>
+			<Keyframe>0.1447916|1</Keyframe>
+			<Keyframe>0.2892717|0.2</Keyframe>
 			<Keyframe>0.6894569|0</Keyframe>
 		</Brightness>
 		<Range>

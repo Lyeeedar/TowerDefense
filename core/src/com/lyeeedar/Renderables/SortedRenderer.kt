@@ -917,18 +917,18 @@ class RenderSprite(val parentBlock: RenderSpriteBlock, val parentBlockIndex: Int
 	}
 
 	// ----------------------------------------------------------------------
-	fun free() = parentBlock.free(this)
+	internal fun free() = parentBlock.free(this)
 
 	// ----------------------------------------------------------------------
 	companion object
 	{
-		var currentBlock: RenderSpriteBlock = RenderSpriteBlock.obtain()
+		private var currentBlock: RenderSpriteBlock = RenderSpriteBlock.obtain()
 
-		fun obtain(): RenderSprite
+		internal fun obtain(): RenderSprite
 		{
 			val rs = currentBlock.obtain()
 
-			if (currentBlock.index == RenderSpriteBlock.blockSize)
+			if (currentBlock.full())
 			{
 				currentBlock = RenderSpriteBlock.obtain()
 			}
@@ -942,10 +942,12 @@ class RenderSprite(val parentBlock: RenderSpriteBlock, val parentBlockIndex: Int
 class RenderSpriteBlock
 {
 	private var count = 0
-	var index: Int = 0
+	private var index: Int = 0
 	private val sprites = Array(blockSize) { RenderSprite(this, it) }
 
-	fun obtain(): RenderSprite
+	internal inline fun full() = index == blockSize
+
+	internal fun obtain(): RenderSprite
 	{
 		val sprite = sprites[index]
 		index++
@@ -954,7 +956,7 @@ class RenderSpriteBlock
 		return sprite
 	}
 
-	fun free(data: RenderSprite)
+	internal fun free(data: RenderSprite)
 	{
 		count--
 

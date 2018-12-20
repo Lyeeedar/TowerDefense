@@ -92,6 +92,7 @@ class MapWidget(val map: Map) : Widget()
 									if (tile.fillingEntity != null)
 									{
 										val tower = tile.fillingEntity as? Tower
+										val buildSite = tile.fillingEntity as? BuildSite
 										if (tower != null)
 										{
 											val menu = RadialMenu({
@@ -112,7 +113,9 @@ class MapWidget(val map: Map) : Widget()
 											menu.addItem(AssetManager.loadTextureRegion("Sprites/white")!!, "Sell tower for 32 gold.",
 														 {}, {},
 														 {
-												tile.fillingEntity = null
+															 val buildSite = BuildSite()
+															 buildSite.tile = tile
+															 tile.fillingEntity = buildSite
 											}, RadialMenu.Position.Bottom)
 
 											tower.selected = true
@@ -120,23 +123,22 @@ class MapWidget(val map: Map) : Widget()
 											menu.clickPos = screenPos
 											menu.show()
 										}
+										else if (buildSite != null)
+										{
+											val arrowTower = TowerUpgradeTree.load("Arrow")
+											val root = arrowTower.towerDefMap[arrowTower.root]
 
-									}
-									else
-									{
-										val arrowTower = TowerUpgradeTree.load("Arrow")
-										val root = arrowTower.towerDefMap[arrowTower.root]
+											val menu = RadialMenu({})
 
-										val menu = RadialMenu({})
+											menu.addItem(root.icon.textures[0], "Build " + root.name, {tile.previewTower = root}, {tile.previewTower = null}, {
+												val tower = Tower(root)
+												tower.tile = tile
+												tile.fillingEntity = tower
+											}, RadialMenu.Position.Top)
 
-										menu.addItem(root.icon.textures[0], "Build " + root.name, {tile.previewTower = root}, {tile.previewTower = null}, {
-											val tower = Tower(root)
-											tower.tile = tile
-											tile.fillingEntity = tower
-										}, RadialMenu.Position.Top)
-
-										menu.clickPos = screenPos
-										menu.show()
+											menu.clickPos = screenPos
+											menu.show()
+										}
 									}
 								}
 

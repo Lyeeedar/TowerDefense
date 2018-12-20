@@ -16,12 +16,46 @@
 		<Sprite meta:RefKey="Sprite">
 			<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
 		</Sprite>
+		<SpriteVariants>
+			<Sprite>
+				<Sprite meta:RefKey="Sprite">
+					<Name>Oryx/uf_split/uf_terrain/ground_grass_2</Name>
+				</Sprite>
+				<Chance>0.1</Chance>
+			</Sprite>
+			<Sprite>
+				<Sprite meta:RefKey="Sprite">
+					<Name>Oryx/uf_split/uf_terrain/ground_grass_3</Name>
+				</Sprite>
+				<Chance>0.05</Chance>
+			</Sprite>
+			<Sprite>
+				<Sprite meta:RefKey="Sprite">
+					<Name>Oryx/uf_split/uf_terrain/ground_grass_4</Name>
+				</Sprite>
+				<Chance>0.05</Chance>
+			</Sprite>
+		</SpriteVariants>
 	</Wall>
 	<Block meta:RefKey="SpriteWrapper">
 		<Sprite meta:RefKey="Sprite">
 			<Name>Oryx/Custom/terrain/tree1</Name>
 			<DrawActualSize>true</DrawActualSize>
 		</Sprite>
+		<SpriteVariants>
+			<Sprite>
+				<Sprite meta:RefKey="Sprite">
+					<Name>Oryx/Custom/terrain/treeglowing</Name>
+					<DrawActualSize>true</DrawActualSize>
+					<Light meta:RefKey="Light">
+						<Colour>245,252,203,255</Colour>
+						<Brightness>0.05</Brightness>
+						<Range>3</Range>
+					</Light>
+				</Sprite>
+				<Chance>0.1</Chance>
+			</Sprite>
+		</SpriteVariants>
 	</Block>
 	<BackgroundTile>Oryx/uf_split/uf_terrain/ground_grass_1</BackgroundTile>
 </Theme>

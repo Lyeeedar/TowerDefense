@@ -2,6 +2,7 @@ package com.lyeeedar.Screens
 
 import com.badlogic.gdx.*
 import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.input.GestureDetector
@@ -121,6 +122,13 @@ abstract class AbstractScreen() : Screen, InputProcessor, GestureDetector.Gestur
 			fpsAccumulator = 0f
 
 			fps = (1f / frameDuration).toInt()
+		}
+
+		if (!Global.release)
+		{
+			stage.batch.begin()
+			font.draw(stage.batch, "FPS: $fps", Global.resolution.x - 100f, Global.resolution.y - 20f)
+			stage.batch.end()
 		}
 
         // limit fps
@@ -259,6 +267,8 @@ abstract class AbstractScreen() : Screen, InputProcessor, GestureDetector.Gestur
     // ----------------------------------------------------------------------
     fun baseCreate()
 	{
+		font = Global.skin.getFont("default")
+
         stage = Stage(ScalingViewport(Scaling.fit, Global.resolution.x.toFloat(), Global.resolution.y.toFloat()), SpriteBatch())
 
         mainTable = Table()
@@ -337,6 +347,8 @@ abstract class AbstractScreen() : Screen, InputProcessor, GestureDetector.Gestur
 	var frameDuration: Float = 0f
 	var fps: Int = 0
 	var fpsAccumulator: Float = 0f
+
+	lateinit var font: BitmapFont
 
 	var debugAccumulator: Float = 0f
 

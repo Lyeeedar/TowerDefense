@@ -62,8 +62,17 @@ class SpriteWrapper
 		val wrapper = SpriteWrapper()
 		wrapper.sprite = sprite?.copy()
 		wrapper.tilingSprite = tilingSprite?.copy()
-		wrapper.spriteVariants.addAll(spriteVariants)
-		wrapper.tilingSpriteVariants.addAll(tilingSpriteVariants)
+
+		for (variant in spriteVariants)
+		{
+			wrapper.spriteVariants.add(Pair(variant.first, variant.second.copy()))
+		}
+
+		for (variant in tilingSpriteVariants)
+		{
+			wrapper.tilingSpriteVariants.add(Pair(variant.first, variant.second.copy()))
+		}
+
 		return wrapper
 	}
 
