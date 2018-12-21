@@ -1,16 +1,12 @@
 package com.lyeeedar.Util
 
 import com.badlogic.gdx.utils.Pool
-import java.util.concurrent.ArrayBlockingQueue
-import java.util.concurrent.locks.ReentrantLock
+import com.badlogic.gdx.utils.async.ThreadUtils.yield
 
 // ----------------------------------------------------------------------
 class ThreadpoolJob(val parentBlock: ThreadpoolJobBlock)
 {
 	private lateinit var task: () -> Unit
-
-	val lock = ReentrantLock()
-	val completeLock = lock.newCondition()
 
 	private var completed = false
 
@@ -22,28 +18,21 @@ class ThreadpoolJob(val parentBlock: ThreadpoolJobBlock)
 
 	fun await()
 	{
-		lock.lock()
 		try
 		{
 			while (!completed)
 			{
-				completeLock.await()
+				yield()
 			}
 		}
 		catch (ex: Exception) {}
-		lock.unlock()
 	}
 
 	fun execute()
 	{
 		task.invoke()
 
-		lock.lock()
-
 		completed = true
-		completeLock.signal()
-
-		lock.unlock()
 	}
 
 	fun free()
@@ -120,7 +109,7 @@ class ThreadpoolJobBlock
 // ----------------------------------------------------------------------
 class ThreadPoolThread(val index: Int)
 {
-	private val taskQueue = ArrayBlockingQueue<ThreadpoolJob>(100)
+	private val taskQueue = com.badlogic.gdx.utils.Array<ThreadpoolJob>(false, 100)
 	private val thread: Thread
 
 	init
@@ -129,8 +118,18 @@ class ThreadPoolThread(val index: Int)
 			override fun run() {
 				while (true)
 				{
-					val job = taskQueue.take()
-					job.execute()
+					if (taskQueue.size == 0) yield()
+
+					var job: ThreadpoolJob? = null
+					synchronized(taskQueue)
+					{
+						if (taskQueue.size > 0)
+						{
+							job = taskQueue.removeIndex(taskQueue.size - 1)
+						}
+					}
+
+					job?.execute()
 				}
 			}
 		}
@@ -140,7 +139,10 @@ class ThreadPoolThread(val index: Int)
 
 	fun addTask(job: ThreadpoolJob)
 	{
-		taskQueue.put(job)
+		synchronized(taskQueue)
+		{
+			taskQueue.add(job)
+		}
 	}
 }
 
