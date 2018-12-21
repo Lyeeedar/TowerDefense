@@ -41,6 +41,14 @@ class Array2D<T> (val xSize: Int, val ySize: Int, val array: Array<Array<T>>): S
 		else return this[x, y]
 	}
 
+	internal inline fun tryGet(x:Int, y:Int, dir: Direction, fallback:T?): T?
+	{
+		val x = x + dir.x
+		val y = y + dir.y
+		if (!inBounds(x, y)) return fallback
+		else return this[x, y]
+	}
+
 	operator fun get(x: Int, y: Int, fallback:T?): T? = tryGet(x, y, fallback)
 
 	fun getClamped(x: Int, y: Int): T {

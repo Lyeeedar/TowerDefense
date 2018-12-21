@@ -2,6 +2,7 @@ package com.lyeeedar.Game.Level
 
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Array
+import com.lyeeedar.Direction
 import com.lyeeedar.Renderables.Animation.ExpandAnimation
 import com.lyeeedar.Renderables.Animation.MoveAnimation
 import com.lyeeedar.Renderables.Particle.ParticleEffect
@@ -20,7 +21,7 @@ class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
 
 	var hp = def.health
 
-	val chosenOffset: Vector2 = Vector2(Random.random() * 0.8f - 0.4f, Random.random() * 0.8f - 0.4f)
+	val chosenOffset: Vector2 = Vector2(Random.randomWeighted() * Random.sign() * 0.4f, Random.randomWeighted() * Random.sign() * 0.4f)
 
 	var pos: Vector2 = Vector2()
 	var currentDest: Tile? = null
@@ -30,6 +31,8 @@ class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
 	init
 	{
 		sprite = def.sprite.copy()
+		sprite.baseScale[0] = 0.5f
+		sprite.baseScale[1] = 0.5f
 	}
 
 	override fun update(delta: Float, map: Map)
@@ -82,7 +85,7 @@ class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
 			{
 				if (currentDest == null)
 				{
-					val surroundingTiles = map.grid.get(tile, 1).filter { pathgrid[it] != null }
+					val surroundingTiles = Direction.CardinalValuesAndCenter.mapNotNull { map.grid.tryGet(tile.x, tile.y, it, null) }.filter { pathgrid[it] != null }
 					var minValue = Int.MAX_VALUE
 					for (tile in surroundingTiles)
 					{

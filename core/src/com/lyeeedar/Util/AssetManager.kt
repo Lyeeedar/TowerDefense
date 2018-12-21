@@ -387,6 +387,36 @@ class AssetManager
 			return TilingSprite.load(xml)
 		}
 
+		fun loadLayeredSprite(xml: XmlData): Sprite
+		{
+			val paths = Array<String>()
+			var drawActualSize = false
+
+			val layers = xml.getChildByName("Layers")!!
+			for (layer in layers.children)
+			{
+				val name = layer.get("Name")
+				drawActualSize = drawActualSize || layer.getBoolean("DrawActualSize", false)
+
+				paths.add(name)
+			}
+
+			val mergedName = paths.joinToString("+")
+			val tex = loadTextureRegion("Sprites/$mergedName.png")
+					  ?: throw RuntimeException("Cant find any textures for layered sprite $mergedName!")
+
+			val sprite = Sprite(tex)
+			sprite.drawActualSize = drawActualSize
+
+			val lightEl = xml.getChildByName("Light")
+			if (lightEl != null)
+			{
+				sprite.light = loadLight(lightEl)
+			}
+
+			return sprite
+		}
+
 		fun loadDirectionalSprite(xml:XmlData, size: Int = 1): DirectionalSprite
 		{
 			val directionalSprite = DirectionalSprite()

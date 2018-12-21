@@ -232,6 +232,18 @@ class AtlasCreator
 			}
 		}
 
+		val renderedLayeredSpriteElements = xml.getChildrenByAttributeRecursively("meta:RefKey", "RenderedLayeredSprite")
+		renderedLayeredSpriteElements.addAll(xml.getChildrenByAttributeRecursively("RefKey", "RenderedLayeredSprite"))
+
+		for (el in renderedLayeredSpriteElements)
+		{
+			val succeed = processLayeredSprite(el)
+			if (!succeed)
+			{
+				throw RuntimeException("Failed to process layered sprite in file: " + file)
+			}
+		}
+
 		val particleElements = xml.getChildrenByNameRecursively("TextureKeyframes")
 
 		for (el in particleElements)
@@ -614,6 +626,58 @@ class AtlasCreator
 		}
 
 		return foundCount > 0
+	}
+
+	private fun processLayeredSprite(spriteElement: XmlReader.Element): Boolean
+	{
+		val paths = Array<Pair<String, Boolean>>()
+
+		val layersEl = spriteElement.getChildByName("Layers")!!
+		for (el in layersEl.children())
+		{
+			val name = el.get("Name")
+			val fileHandle = Gdx.files.internal("../assetsraw/Sprites/$name.png")
+			if (!fileHandle.exists())
+			{
+				System.err.println("Failed to find sprite layer: " + name)
+				return false
+			}
+
+			paths.add(Pair(name, el.getBoolean("DrawActualSize", false)))
+		}
+
+		val layers = Array<Pair<Pixmap, Boolean>>()
+		val mergedName = paths.joinToString("+") { it.first }
+
+		if (tryPackSprite(mergedName))
+		{
+			println("Layered sprite already exists: " + mergedName)
+			return true
+		}
+
+		for (path in paths)
+		{
+			val fileHandle = Gdx.files.internal("../assetsraw/Sprites/${path.first}.png")
+
+			val pixmap = Pixmap(fileHandle)
+			layers.add(Pair(pixmap, path.second))
+		}
+
+		val merged = ImageUtils.flattenImages(layers)
+
+		val image = ImageUtils.pixmapToImage(merged)
+		merged.dispose()
+		for (layer in layers)
+		{
+			layer.first.dispose()
+		}
+
+		localGeneratedImages[mergedName] = image
+		packedPaths.add(mergedName)
+
+		println("Added layered sprite: " + mergedName)
+
+		return true
 	}
 
 	companion object

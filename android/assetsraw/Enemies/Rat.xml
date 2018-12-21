@@ -8,6 +8,6 @@
 	<Death meta:RefKey="ParticleEffect">
 		<Name>Death</Name>
 	</Death>
-	<TilesASecond>3</TilesASecond>
+	<TilesASecond>1</TilesASecond>
 	<Health>10</Health>
 </Enemy>

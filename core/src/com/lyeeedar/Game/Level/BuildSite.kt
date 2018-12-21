@@ -10,6 +10,8 @@ class BuildSite : Entity()
 	{
 		sprite = AssetManager.loadSprite("Oryx/Custom/terrain/crystal1")
 		sprite.drawActualSize = true
+		sprite.baseScale[0] = 0.8f
+		sprite.baseScale[1] = 0.8f
 
 		sprite.light = Light(Colour(107, 18, 136, 255), 1f, 4f)
 	}

@@ -355,7 +355,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		// begin rendering
 		for (i in 0 until queuedSprites)
 		{
-			val rs = sortedArray[i]!!
+			val rs = spriteArray[i]!!
 
 			var sprite = rs.sprite
 			if (rs.tilingSprite != null)

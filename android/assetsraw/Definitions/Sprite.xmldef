@@ -31,11 +31,11 @@
 		<Data Name="Path" BasePath="Sprites" StripExtension="True" AllowedFileTypes="png" SkipIfDefault="False" meta:RefKey="File" />
 	</Definition>
 	<Definition Name="SpriteWrapper" IsGlobal="True" meta:RefKey="StructDef">
-		<Data Name="Sprite" Keys="Sprite" meta:RefKey="Reference" />
+		<Data Name="Sprite" Keys="RenderedLayeredSprite" meta:RefKey="Reference" />
 		<Data Name="TilingSprite" Keys="TilingSprite" meta:RefKey="Reference" />
 		<Data Name="SpriteVariants" meta:RefKey="Collection">
 			<Data Name="Sprite" meta:RefKey="Struct">
-				<Data Name="Sprite" Keys="Sprite" Nullable="False" meta:RefKey="Reference" />
+				<Data Name="Sprite" Keys="RenderedLayeredSprite" Nullable="False" meta:RefKey="Reference" />
 				<Data Name="Chance" Min="0" Max="1" Default="0.2" SkipIfDefault="False" meta:RefKey="Number" />
 			</Data>
 		</Data>
@@ -78,5 +78,14 @@
 		<Data Name="Colour" SkipIfDefault="False" meta:RefKey="Colour" />
 		<Data Name="Brightness" Min="0" Default="1" SkipIfDefault="False" meta:RefKey="Number" />
 		<Data Name="Range" Min="0" Default="3" SkipIfDefault="False" meta:RefKey="Number" />
+	</Definition>
+	<Definition Name="RenderedLayeredSprite" IsGlobal="True" meta:RefKey="StructDef">
+		<Data Name="Layers" MinCount="1" meta:RefKey="Collection">
+			<Data Name="Layer" meta:RefKey="Struct">
+				<Data Name="Name" BasePath="Sprites" StripExtension="True" AllowedFileTypes="png" Default="white" SkipIfDefault="False" meta:RefKey="File" />
+				<Data Name="DrawActualSize" meta:RefKey="Boolean" />
+			</Data>
+		</Data>
+		<Data Name="Light" Keys="Light" meta:RefKey="Reference" />
 	</Definition>
 </Definitions>

@@ -265,7 +265,7 @@ class MapWidget(val map: Map) : Widget()
 
 				var tileHeight = 0
 
-				val groundSprite = tile.groundSprite
+				val groundSprite = tile.sprite
 				if (groundSprite != null)
 				{
 					if (!groundSprite.hasChosenSprites)
@@ -280,29 +280,6 @@ class MapWidget(val map: Map) : Widget()
 					}
 
 					val tilingSprite = groundSprite.chosenTilingSprite
-					if (tilingSprite != null)
-					{
-						renderer.queueSprite(tilingSprite, xi, yi, TILE, tileHeight, tileColour)
-					}
-
-					tileHeight++
-				}
-
-				val wallSprite = tile.wallSprite
-				if (wallSprite != null)
-				{
-					if (!wallSprite.hasChosenSprites)
-					{
-						wallSprite.chooseSprites()
-					}
-
-					val sprite = wallSprite.chosenSprite
-					if (sprite != null)
-					{
-						renderer.queueSprite(sprite, xi, yi, TILE, tileHeight, tileColour)
-					}
-
-					val tilingSprite = wallSprite.chosenTilingSprite
 					if (tilingSprite != null)
 					{
 						renderer.queueSprite(tilingSprite, xi, yi, TILE, tileHeight, tileColour)

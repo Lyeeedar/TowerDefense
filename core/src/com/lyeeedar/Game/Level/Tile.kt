@@ -25,29 +25,18 @@ class Tile(x: Int, y: Int) : Point(x, y)
 		set(value)
 		{
 			field = value
-
-			if (field)
-			{
-				groundSprite!!.sprite!!.colour = Colour.DARK_GRAY
-			}
-			else
-			{
-				groundSprite!!.sprite!!.colour = Colour.LIGHT_GRAY
-			}
-
 			tileDirty = true
 		}
 
 	val effects = Array<Renderable>()
 
-	var groundSprite: SpriteWrapper? = null
-	var wallSprite: SpriteWrapper? = null
+	var sprite: SpriteWrapper? = null
 
 	var tileDirty = false
 
 	init
 	{
-		groundSprite = SpriteWrapper()
-		groundSprite!!.sprite = AssetManager.loadSprite("white", colour = Colour.LIGHT_GRAY)
+		sprite = SpriteWrapper()
+		sprite!!.sprite = AssetManager.loadSprite("white", colour = Colour.LIGHT_GRAY)
 	}
 }

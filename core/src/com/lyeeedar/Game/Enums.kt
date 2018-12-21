@@ -137,6 +137,7 @@ enum class Direction private constructor(val x: Int, val y: Int, val identifier:
 		}
 
 		val CardinalValues = arrayOf(NORTH, EAST, SOUTH, WEST)
+		val CardinalValuesAndCenter = arrayOf(NORTH, EAST, SOUTH, WEST, CENTER)
 		val DiagonalValues = arrayOf(NORTHEAST, NORTHWEST, SOUTHWEST, SOUTHWEST)
 		val Values = Direction.values()
 

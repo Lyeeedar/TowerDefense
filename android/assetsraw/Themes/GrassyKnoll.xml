@@ -1,61 +1,114 @@
 <Theme xmlns:meta="Editor">
 	<Path meta:RefKey="SpriteWrapper">
-		<Sprite meta:RefKey="Sprite">
-			<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
+		<Sprite meta:RefKey="RenderedLayeredSprite">
+			<Layers>
+				<Layer>
+					<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
+				</Layer>
+			</Layers>
 		</Sprite>
 		<TilingSprite meta:RefKey="TilingSprite">
 			<Name>Path</Name>
 			<Mode>Masked</Mode>
-			<Mask>Masks/path</Mask>
+			<Mask>Masks/paththick</Mask>
 			<Sprite meta:RefKey="Sprite">
 				<Name>Oryx/uf_split/uf_terrain/ground_dirt_brown_1</Name>
 			</Sprite>
 		</TilingSprite>
 	</Path>
+	<PathBorder meta:RefKey="SpriteWrapper">
+		<Sprite meta:RefKey="RenderedLayeredSprite">
+			<Layers>
+				<Layer>
+					<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
+				</Layer>
+			</Layers>
+		</Sprite>
+	</PathBorder>
+	<Ground meta:RefKey="SpriteWrapper">
+		<Sprite meta:RefKey="RenderedLayeredSprite">
+			<Layers>
+				<Layer>
+					<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
+				</Layer>
+			</Layers>
+		</Sprite>
+	</Ground>
 	<Wall meta:RefKey="SpriteWrapper">
-		<Sprite meta:RefKey="Sprite">
-			<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
-		</Sprite>
-		<SpriteVariants>
-			<Sprite>
-				<Sprite meta:RefKey="Sprite">
-					<Name>Oryx/uf_split/uf_terrain/ground_grass_2</Name>
-				</Sprite>
-				<Chance>0.1</Chance>
-			</Sprite>
-			<Sprite>
-				<Sprite meta:RefKey="Sprite">
-					<Name>Oryx/uf_split/uf_terrain/ground_grass_3</Name>
-				</Sprite>
-				<Chance>0.05</Chance>
-			</Sprite>
-			<Sprite>
-				<Sprite meta:RefKey="Sprite">
-					<Name>Oryx/uf_split/uf_terrain/ground_grass_4</Name>
-				</Sprite>
-				<Chance>0.05</Chance>
-			</Sprite>
-		</SpriteVariants>
-	</Wall>
-	<Block meta:RefKey="SpriteWrapper">
-		<Sprite meta:RefKey="Sprite">
-			<Name>Oryx/Custom/terrain/tree1</Name>
-			<DrawActualSize>true</DrawActualSize>
-		</Sprite>
-		<SpriteVariants>
-			<Sprite>
-				<Sprite meta:RefKey="Sprite">
-					<Name>Oryx/Custom/terrain/treeglowing</Name>
+		<Sprite meta:RefKey="RenderedLayeredSprite">
+			<Layers>
+				<Layer>
+					<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
+				</Layer>
+				<Layer>
+					<Name>Oryx/Custom/terrain/tree1group</Name>
 					<DrawActualSize>true</DrawActualSize>
+				</Layer>
+			</Layers>
+		</Sprite>
+		<SpriteVariants>
+			<Sprite>
+				<Sprite meta:RefKey="RenderedLayeredSprite">
+					<Layers>
+						<Layer>
+							<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
+						</Layer>
+						<Layer>
+							<Name>Oryx/Custom/terrain/treecluster2</Name>
+							<DrawActualSize>true</DrawActualSize>
+						</Layer>
+					</Layers>
+				</Sprite>
+				<Chance>0.2</Chance>
+			</Sprite>
+			<Sprite>
+				<Sprite meta:RefKey="RenderedLayeredSprite">
+					<Layers>
+						<Layer>
+							<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
+						</Layer>
+						<Layer>
+							<Name>Oryx/Custom/terrain/treecluster3</Name>
+							<DrawActualSize>true</DrawActualSize>
+						</Layer>
+					</Layers>
+				</Sprite>
+				<Chance>0.2</Chance>
+			</Sprite>
+			<Sprite>
+				<Sprite meta:RefKey="RenderedLayeredSprite">
+					<Layers>
+						<Layer>
+							<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
+						</Layer>
+						<Layer>
+							<Name>Oryx/Custom/terrain/treecluster4</Name>
+							<DrawActualSize>true</DrawActualSize>
+						</Layer>
+					</Layers>
+				</Sprite>
+				<Chance>0.2</Chance>
+			</Sprite>
+			<Sprite>
+				<Sprite meta:RefKey="RenderedLayeredSprite">
+					<Layers>
+						<Layer>
+							<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
+						</Layer>
+						<Layer>
+							<Name>Oryx/Custom/terrain/treeglowing</Name>
+							<DrawActualSize>true</DrawActualSize>
+						</Layer>
+					</Layers>
 					<Light meta:RefKey="Light">
-						<Colour>245,252,203,255</Colour>
-						<Brightness>0.05</Brightness>
+						<Colour>228,240,161,255</Colour>
+						<Brightness>0.1</Brightness>
 						<Range>3</Range>
 					</Light>
 				</Sprite>
 				<Chance>0.1</Chance>
 			</Sprite>
 		</SpriteVariants>
-	</Block>
+	</Wall>
 	<BackgroundTile>Oryx/uf_split/uf_terrain/ground_grass_1</BackgroundTile>
 </Theme>

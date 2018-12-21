@@ -90,7 +90,7 @@ class SpriteWrapper
 			}
 
 			val wrapper = SpriteWrapper()
-			if (spriteEl != null) wrapper.sprite = AssetManager.loadSprite(spriteEl)
+			if (spriteEl != null) wrapper.sprite = AssetManager.loadLayeredSprite(spriteEl)
 			if (tilingEl != null) wrapper.tilingSprite = AssetManager.loadTilingSprite(tilingEl)
 
 			val spriteVariantsEl = xml.getChildByName("SpriteVariants")
@@ -98,7 +98,7 @@ class SpriteWrapper
 			{
 				for (el in spriteVariantsEl.children)
 				{
-					val sprite = AssetManager.loadSprite(el.getChildByName("Sprite")!!)
+					val sprite = AssetManager.loadLayeredSprite(el.getChildByName("Sprite")!!)
 					val weight = el.getFloat("Chance")
 
 					wrapper.spriteVariants.add(Pair(weight, sprite))

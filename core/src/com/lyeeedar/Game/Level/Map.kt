@@ -292,7 +292,7 @@ class Map(val grid: Array2D<Tile>)
 					spawners[def.destination].add(spawner)
 
 					tile.isSolid = false
-					tile.groundSprite = theme.path.copy()
+					tile.sprite = theme.path.copy()
 				}
 				else if (symbolsMap.containsKey(char.toInt()))
 				{
@@ -310,29 +310,33 @@ class Map(val grid: Array2D<Tile>)
 
 					if (symbol.sprite != null)
 					{
-						tile.wallSprite = symbol.sprite.copy()
+						tile.sprite = symbol.sprite.copy()
 					}
 				}
 				else if (char == '#')
 				{
 					tile.isSolid = true
-					tile.groundSprite = theme.wall.copy()
+					tile.sprite = theme.ground.copy()
 				}
 				else if (char == '.')
 				{
 					tile.isSolid = false
-					tile.groundSprite = theme.path.copy()
+					tile.sprite = theme.path.copy()
+				}
+				else if (char == ',')
+				{
+					tile.isSolid = true
+					tile.sprite = theme.pathborder.copy()
 				}
 				else if (char == '!')
 				{
 					tile.isSolid = true
-					tile.groundSprite = theme.wall.copy()
-					tile.wallSprite = theme.block.copy()
+					tile.sprite = theme.wall.copy()
 				}
 				else if (char == '@')
 				{
 					tile.isSolid = true
-					tile.groundSprite = theme.wall.copy()
+					tile.sprite = theme.pathborder.copy()
 
 					val buildSite = BuildSite()
 					buildSite.tile = tile
@@ -341,7 +345,7 @@ class Map(val grid: Array2D<Tile>)
 				else if (char.isDigit())
 				{
 					tile.isSolid = false
-					tile.groundSprite = theme.path.copy()
+					tile.sprite = theme.pathborder.copy()
 
 					val sinker = Sinker()
 					tile.fillingEntity = sinker
@@ -351,7 +355,7 @@ class Map(val grid: Array2D<Tile>)
 				}
 				else
 				{
-					tile.groundSprite = theme.path.copy()
+					tile.sprite = theme.ground.copy()
 				}
 			}
 
