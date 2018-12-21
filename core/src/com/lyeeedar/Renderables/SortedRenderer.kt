@@ -126,7 +126,6 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	private val queuedBuffers = com.badlogic.gdx.utils.Array<VertexBuffer>()
 	private val shader: ShaderProgram
 	private val combinedMatrix: Matrix4 = Matrix4()
-	private val vertexJobs = com.badlogic.gdx.utils.Array<ThreadpoolJob>()
 
 	private val executor = LightweightThreadpool(3)
 
@@ -234,10 +233,9 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		if (currentVertexCount == maxVertices) throw Exception("Too many vertices queued!")
 
-		val job = executor.addTask {
+		executor.addJob {
 			drawFun.invoke(vertices, offset)
 		}
-		vertexJobs.add(job)
 	}
 
 	// ----------------------------------------------------------------------
@@ -255,12 +253,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		shader.setUniformMatrix("u_projTrans", combinedMatrix)
 		shader.setUniformi("u_texture", 0)
 
-		for (job in vertexJobs)
-		{
-			job.await()
-			job.free()
-		}
-		vertexJobs.clear()
+		executor.awaitAllJobs()
 
 		mesh.setVertices(vertices, 0, currentVertexCount)
 		mesh.bind(shader)
@@ -325,9 +318,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		if (!inBegin) throw Exception("Flush called before begin!")
 
 		// Begin prerender work
-		val jobs = com.badlogic.gdx.utils.Array<ThreadpoolJob>()
-
-		val sortJob = executor.addTask {
+		executor.addJob {
 			// sort
 			RadixSort.sort(spriteArray, sortedArray, 0, 0, queuedSprites, MOST_SIGNIFICANT_BYTE_INDEX)
 
@@ -351,21 +342,15 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 				offsety += Math.cos( screenShakeAngle.toDouble() ).toFloat() * screenShakeRadius
 			}
 		}
-		jobs.add(sortJob)
 
 		for (tile in lightTileMap.values())
 		{
-			val job = executor.addTask {
+			executor.addJob {
 				tile.evaluate(ambientLight)
 			}
-			jobs.add(job)
 		}
 
-		for (job in jobs)
-		{
-			job.await()
-			job.free()
-		}
+		executor.awaitAllJobs()
 
 		// begin rendering
 		for (i in 0 until queuedSprites)
