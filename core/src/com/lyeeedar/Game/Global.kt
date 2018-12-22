@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.ObjectMap
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
+import com.lyeeedar.Game.GameData
 import com.lyeeedar.Screens.AbstractScreen
 import com.lyeeedar.UI.*
 import com.lyeeedar.UI.Tooltip
@@ -52,6 +53,8 @@ class Global
 		val debugConsole: DebugConsole
 			get() = (game.screen as AbstractScreen).debugConsole
 
+		lateinit var gameData: GameData
+
 		fun setup()
 		{
 			skin = loadSkin()
@@ -62,6 +65,7 @@ class Global
 
 		fun newGame()
 		{
+			gameData = GameData()
 			settings = Settings()
 		}
 

@@ -233,26 +233,8 @@ class Map(val grid: Array2D<Tile>)
 			{
 				for (symbolEl in symbolsEl.children)
 				{
-					val character = symbolEl.get("Character")[0]
-					val extends = symbolEl.get("Extends", " ")!!.firstOrNull() ?: ' '
-
-					val usageCondition = symbolEl.get("UsageCondition", "1")!!.toLowerCase()
-					val fallbackChar = symbolEl.get("FallbackCharacter", ".")!!.firstOrNull() ?: '.'
-
-					val nameKey = symbolEl.get("NameKey", null)
-
-					var sprite: SpriteWrapper? = null
-					val symbolSpriteEl = symbolEl.getChildByName("Sprite")
-					if (symbolSpriteEl != null)
-					{
-						sprite = SpriteWrapper.load(symbolSpriteEl)
-					}
-
-					symbolsMap[character.toInt()] = Symbol(
-						character, extends,
-						usageCondition, fallbackChar,
-						nameKey,
-						sprite)
+					val symbol = Symbol.parse(symbolEl)
+					symbolsMap[symbol.char.toInt()] = symbol
 				}
 			}
 
@@ -273,6 +255,16 @@ class Map(val grid: Array2D<Tile>)
 			val sinkers = ObjectMap<Char, Sinker>()
 
 			val theme = Theme.load(xml.get("Theme"))
+			for (symbol in theme.symbols)
+			{
+				if (!symbolsMap.containsKey(symbol.char.toInt())) // level overrides theme
+				{
+					symbolsMap[symbol.char.toInt()] = symbol
+				}
+			}
+
+			val pathSymbol = symbolsMap['.'.toInt()]
+			val groundSymbol = symbolsMap['#'.toInt()]
 
 			fun loadTile(tile: Tile, char: Char)
 			{
@@ -292,7 +284,7 @@ class Map(val grid: Array2D<Tile>)
 					spawners[def.destination].add(spawner)
 
 					tile.isSolid = false
-					tile.sprite = theme.path.copy()
+					tile.sprite = pathSymbol.sprite!!.copy()
 				}
 				else if (symbolsMap.containsKey(char.toInt()))
 				{
@@ -306,37 +298,17 @@ class Map(val grid: Array2D<Tile>)
 						loadTile(tile, '.')
 					}
 
-					tile.isSolid = true
+					tile.isSolid = !symbol.isPath
 
 					if (symbol.sprite != null)
 					{
 						tile.sprite = symbol.sprite.copy()
 					}
 				}
-				else if (char == '#')
-				{
-					tile.isSolid = true
-					tile.sprite = theme.ground.copy()
-				}
-				else if (char == '.')
-				{
-					tile.isSolid = false
-					tile.sprite = theme.path.copy()
-				}
-				else if (char == ',')
-				{
-					tile.isSolid = true
-					tile.sprite = theme.pathborder.copy()
-				}
-				else if (char == '!')
-				{
-					tile.isSolid = true
-					tile.sprite = theme.wall.copy()
-				}
 				else if (char == '@')
 				{
 					tile.isSolid = true
-					tile.sprite = theme.pathborder.copy()
+					tile.sprite = groundSymbol.sprite!!.copy()
 
 					val buildSite = BuildSite()
 					buildSite.tile = tile
@@ -345,7 +317,7 @@ class Map(val grid: Array2D<Tile>)
 				else if (char.isDigit())
 				{
 					tile.isSolid = false
-					tile.sprite = theme.pathborder.copy()
+					tile.sprite = pathSymbol.sprite!!.copy()
 
 					val sinker = Sinker()
 					tile.fillingEntity = sinker
@@ -355,7 +327,7 @@ class Map(val grid: Array2D<Tile>)
 				}
 				else
 				{
-					tile.sprite = theme.ground.copy()
+					tile.sprite = groundSymbol.sprite!!.copy()
 				}
 			}
 
@@ -400,11 +372,38 @@ class Map(val grid: Array2D<Tile>)
 
 class SpawnerDef(val char: Char, val destination: Char)
 
-data class Symbol(
+class Symbol(
 	val char: Char, val extends: Char,
+	val isPath: Boolean,
 	val usageCondition: String, val fallbackChar: Char,
 	val nameKey: String?,
 	val sprite: SpriteWrapper?)
+{
+	companion object
+	{
+		fun parse(xmlData: XmlData): Symbol
+		{
+			val character = xmlData.get("Character")[0]
+			val extends = xmlData.get("Extends", " ")!!.firstOrNull() ?: ' '
+
+			val isPath = xmlData.getBoolean("IsPath", false)
+
+			val usageCondition = xmlData.get("UsageCondition", "1")!!.toLowerCase()
+			val fallbackChar = xmlData.get("FallbackCharacter", ".")!!.firstOrNull() ?: '.'
+
+			val nameKey = xmlData.get("NameKey", null)
+
+			var sprite: SpriteWrapper? = null
+			val symbolSpriteEl = xmlData.getChildByName("Sprite")
+			if (symbolSpriteEl != null)
+			{
+				sprite = SpriteWrapper.load(symbolSpriteEl)
+			}
+
+			return Symbol(character, extends, isPath, usageCondition, fallbackChar, nameKey, sprite)
+		}
+	}
+}
 
 class PathfindNode(var cost: Int, x: Int, y: Int) : Point(x, y)
 {

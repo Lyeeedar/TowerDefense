@@ -21,8 +21,13 @@ class Light(colour: Colour? = null, brightness: Float = 1f, range: Float = 3f)
 	{
 		if (colour != null)
 		{
+			baseColour.set(colour)
+
 			this.colour.set(colour).mul(brightness, brightness, brightness, 1f)
 		}
+
+		baseBrightness = brightness
+		baseRange = range
 
 		this.range = range
 	}
@@ -152,5 +157,27 @@ class PulseLightAnimation : LightAnimation()
 		anim.maxRangeRange = maxRangeRange
 
 		return anim
+	}
+
+	companion object
+	{
+		fun create(period: Float, brightness: Float, range: Float, changePercent: Float, randomPercent: Float): PulseLightAnimation
+		{
+			val change = changePercent / 100f
+			val random = randomPercent / 100f
+
+			val anim = PulseLightAnimation()
+			anim.periodRange = Range(period * (1f - random), period * (1f + random))
+
+			val minBrightness = brightness * (1f - change)
+			val maxBrightness = brightness * (1f + change)
+			anim.minBrightnessRange = Range(minBrightness * (1f - random), minBrightness * (1f + random))
+			anim.maxBrightnessRange = Range(maxBrightness * (1f - random), maxBrightness * (1f + random))
+
+			anim.minRangeRange = Range(range, range)
+			anim.maxRangeRange = Range(range, range)
+
+			return anim
+		}
 	}
 }

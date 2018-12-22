@@ -1,0 +1,224 @@
+<Tower meta:X="0" meta:Y="0" GUID="8c60dbe7-1cf6-4a8d-963a-da4c817e3d70" xmlns:meta="Editor">
+	<Root meta:RefKey="Tower">b2f9175e-501d-48f1-8f28-7134d580cfea</Root>
+	<TowerDefs>
+		<Tower meta:X="205" meta:Y="0" GUID="b2f9175e-501d-48f1-8f28-7134d580cfea">
+			<Upgrades>
+				<Upgrade>
+					<Cost>1</Cost>
+					<Upgrade meta:RefKey="Tower">2ca5b087-6f4b-4c63-bb6e-4f2a19ef29c5</Upgrade>
+				</Upgrade>
+			</Upgrades>
+			<Name>Crystal Shot I</Name>
+			<Icon meta:RefKey="Sprite">
+				<Name>Oryx/Custom/items/gem</Name>
+			</Icon>
+			<Sprite meta:RefKey="Sprite">
+				<Name>Oryx/Custom/terrain/CrystalTower</Name>
+				<DrawActualSize>true</DrawActualSize>
+				<Light meta:RefKey="Light">
+					<Colour>92,29,143,255</Colour>
+					<Brightness>1</Brightness>
+					<Range>3</Range>
+					<Animation meta:RefKey="PulseLightAnimation">
+						<Period>2,3</Period>
+						<MinBrightness>1.6,1.8</MinBrightness>
+						<MaxBrightness>2.1,2.3</MaxBrightness>
+						<MinRange>3,3</MinRange>
+						<MaxRange>3,3</MaxRange>
+					</Animation>
+				</Light>
+			</Sprite>
+			<AttacksPerSecond>1</AttacksPerSecond>
+			<Effects>
+				<Effect meta:RefKey="ShotEffect">
+					<Range>3</Range>
+					<Count>1</Count>
+					<FlightEffect meta:RefKey="ParticleEffect">
+						<Name>IceShard</Name>
+						<Colour>241,166,255,255</Colour>
+						<Scale>0.5</Scale>
+						<KillOnAnimComplete>true</KillOnAnimComplete>
+					</FlightEffect>
+					<Animation meta:RefKey="MoveAnimation">
+						<SpeedMultiplier>1</SpeedMultiplier>
+					</Animation>
+					<Effects>
+						<Effect meta:RefKey="DamageEffect">
+							<Damage>1</Damage>
+							<Effect meta:RefKey="ParticleEffect">
+								<Name>IceBurst</Name>
+								<Colour>146,34,194,255</Colour>
+								<Scale>0.5</Scale>
+							</Effect>
+						</Effect>
+					</Effects>
+				</Effect>
+			</Effects>
+		</Tower>
+		<Tower meta:X="547" meta:Y="9" GUID="2ca5b087-6f4b-4c63-bb6e-4f2a19ef29c5">
+			<Upgrades>
+				<Upgrade>
+					<Cost>1</Cost>
+					<Upgrade meta:RefKey="Tower">0655dd04-991d-488c-8a20-edbb312110aa</Upgrade>
+				</Upgrade>
+			</Upgrades>
+			<Name>Crystal Shot II</Name>
+			<Icon meta:RefKey="Sprite">
+				<Name>Oryx/Custom/items/gem</Name>
+			</Icon>
+			<Sprite meta:RefKey="Sprite">
+				<Name>Oryx/Custom/terrain/CrystalTower2</Name>
+				<DrawActualSize>true</DrawActualSize>
+				<Light meta:RefKey="Light">
+					<Colour>92,29,143,255</Colour>
+					<Brightness>1</Brightness>
+					<Range>3</Range>
+					<Animation meta:RefKey="PulseLightAnimation">
+						<Period>2,3</Period>
+						<MinBrightness>1.6,1.8</MinBrightness>
+						<MaxBrightness>2.1,2.3</MaxBrightness>
+						<MinRange>3,3</MinRange>
+						<MaxRange>3,3</MaxRange>
+					</Animation>
+				</Light>
+			</Sprite>
+			<AttacksPerSecond>1.2</AttacksPerSecond>
+			<Effects>
+				<Effect meta:RefKey="ShotEffect">
+					<Range>3.3</Range>
+					<Count>1</Count>
+					<FlightEffect meta:RefKey="ParticleEffect">
+						<Name>IceShard</Name>
+						<Colour>241,166,255,255</Colour>
+						<Scale>0.5</Scale>
+						<KillOnAnimComplete>true</KillOnAnimComplete>
+					</FlightEffect>
+					<Animation meta:RefKey="MoveAnimation">
+						<SpeedMultiplier>1</SpeedMultiplier>
+					</Animation>
+					<Effects>
+						<Effect meta:RefKey="DamageEffect">
+							<Damage>2</Damage>
+							<Effect meta:RefKey="ParticleEffect">
+								<Name>IceBurst</Name>
+								<Colour>146,34,194,255</Colour>
+								<Scale>0.5</Scale>
+							</Effect>
+						</Effect>
+					</Effects>
+				</Effect>
+			</Effects>
+		</Tower>
+		<Tower meta:X="873" meta:Y="9" GUID="0655dd04-991d-488c-8a20-edbb312110aa">
+			<Upgrades>
+				<Upgrade>
+					<Cost>1</Cost>
+					<Upgrade meta:RefKey="Tower">c08a61cb-1682-4a70-8a54-97942dd29cf3</Upgrade>
+				</Upgrade>
+			</Upgrades>
+			<Name>Crystal Shot III</Name>
+			<Icon meta:RefKey="Sprite">
+				<Name>Oryx/Custom/items/gem</Name>
+			</Icon>
+			<Sprite meta:RefKey="Sprite">
+				<Name>Oryx/Custom/terrain/CrystalTower3</Name>
+				<DrawActualSize>true</DrawActualSize>
+				<Light meta:RefKey="Light">
+					<Colour>92,29,143,255</Colour>
+					<Brightness>1</Brightness>
+					<Range>3</Range>
+					<Animation meta:RefKey="PulseLightAnimation">
+						<Period>2,3</Period>
+						<MinBrightness>1.6,1.8</MinBrightness>
+						<MaxBrightness>2.1,2.3</MaxBrightness>
+						<MinRange>3,3</MinRange>
+						<MaxRange>3,3</MaxRange>
+					</Animation>
+				</Light>
+			</Sprite>
+			<AttacksPerSecond>1.6</AttacksPerSecond>
+			<Effects>
+				<Effect meta:RefKey="ShotEffect">
+					<Range>4</Range>
+					<Count>1</Count>
+					<FlightEffect meta:RefKey="ParticleEffect">
+						<Name>IceShard</Name>
+						<Colour>241,166,255,255</Colour>
+						<Scale>0.5</Scale>
+						<KillOnAnimComplete>true</KillOnAnimComplete>
+					</FlightEffect>
+					<Animation meta:RefKey="MoveAnimation">
+						<SpeedMultiplier>1</SpeedMultiplier>
+					</Animation>
+					<Effects>
+						<Effect meta:RefKey="DamageEffect">
+							<Damage>3</Damage>
+							<Effect meta:RefKey="ParticleEffect">
+								<Name>IceBurst</Name>
+								<Colour>146,34,194,255</Colour>
+								<Scale>0.5</Scale>
+							</Effect>
+						</Effect>
+					</Effects>
+				</Effect>
+			</Effects>
+		</Tower>
+		<Tower meta:X="1199" meta:Y="9" GUID="c08a61cb-1682-4a70-8a54-97942dd29cf3">
+			<Name>Crystal Shot IV</Name>
+			<Icon meta:RefKey="Sprite">
+				<Name>Oryx/Custom/items/gem</Name>
+			</Icon>
+			<Sprite meta:RefKey="Sprite">
+				<Name>Oryx/Custom/terrain/CrystalTower4</Name>
+				<DrawActualSize>true</DrawActualSize>
+				<Light meta:RefKey="Light">
+					<Colour>92,29,143,255</Colour>
+					<Brightness>1</Brightness>
+					<Range>3</Range>
+					<Animation meta:RefKey="PulseLightAnimation">
+						<Period>2,3</Period>
+						<MinBrightness>1.6,1.8</MinBrightness>
+						<MaxBrightness>2.1,2.3</MaxBrightness>
+						<MinRange>3,3</MinRange>
+						<MaxRange>3,3</MaxRange>
+					</Animation>
+				</Light>
+			</Sprite>
+			<AttacksPerSecond>1.5</AttacksPerSecond>
+			<Effects>
+				<Effect meta:RefKey="ShotEffect">
+					<Range>4</Range>
+					<Count>1</Count>
+					<FlightEffect meta:RefKey="ParticleEffect">
+						<Name>IceShard</Name>
+						<Colour>241,166,255,255</Colour>
+						<Scale>0.5</Scale>
+						<KillOnAnimComplete>true</KillOnAnimComplete>
+					</FlightEffect>
+					<Animation meta:RefKey="MoveAnimation">
+						<SpeedMultiplier>1</SpeedMultiplier>
+					</Animation>
+					<Effects>
+						<Effect meta:RefKey="AoeEffect">
+							<Range>1</Range>
+							<Effect meta:RefKey="ParticleEffect">
+								<Name>IceBurst</Name>
+								<Colour>146,34,194,255</Colour>
+							</Effect>
+							<Effects>
+								<Effect meta:RefKey="DamageEffect">
+									<Damage>3</Damage>
+									<Effect meta:RefKey="ParticleEffect">
+										<Name>IceBurst</Name>
+										<Colour>146,34,194,255</Colour>
+										<Scale>0.5</Scale>
+									</Effect>
+								</Effect>
+							</Effects>
+						</Effect>
+					</Effects>
+				</Effect>
+			</Effects>
+		</Tower>
+	</TowerDefs>
+</Tower>

@@ -41,6 +41,8 @@ class ParticleEffect : Renderable()
 	var facing: Direction = Direction.NORTH
 	var useFacing = true
 
+	var scale = 1f
+
 	var collisionFun: ((x: Int, y: Int) -> Unit)? = null
 
 	var isShortened = false
@@ -99,8 +101,8 @@ class ParticleEffect : Renderable()
 		val y = position.y + (posOffset?.get(1) ?: 0f)
 
 		val scale = animation?.renderScale()
-		val sx = size[0] * (scale?.get(0) ?: 1f)
-		val sy = size[1] * (scale?.get(1) ?: 1f)
+		val sx = size[0].toFloat() * (scale?.get(0) ?: 1f) * this.scale
+		val sy = size[1].toFloat() * (scale?.get(1) ?: 1f) * this.scale
 
 		for (emitter in emitters)
 		{
@@ -316,6 +318,7 @@ class ParticleEffect : Renderable()
 		effect.useFacing = useFacing
 		effect.size[0] = size[0]
 		effect.size[1] = size[1]
+		effect.scale = scale
 		effect.isShortened = isShortened
 		effect.timeMultiplier = timeMultiplier
 		return effect

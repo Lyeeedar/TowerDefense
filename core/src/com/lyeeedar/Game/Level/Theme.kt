@@ -1,14 +1,11 @@
 package com.lyeeedar.Game.Level
 
-import com.lyeeedar.Renderables.Sprite.SpriteWrapper
+import com.badlogic.gdx.utils.Array
 import com.lyeeedar.Util.getXml
 
 class Theme(val filepath: String)
 {
-	lateinit var path: SpriteWrapper
-	lateinit var pathborder: SpriteWrapper
-	lateinit var wall: SpriteWrapper
-	lateinit var ground: SpriteWrapper
+	val symbols = Array<Symbol>()
 
 	lateinit var backgroundTile: String
 
@@ -19,12 +16,14 @@ class Theme(val filepath: String)
 			val xml = getXml("Themes/$path")
 			val theme = Theme(path)
 
-			theme.path = SpriteWrapper.load(xml.getChildByName("Path")!!)
-			theme.pathborder = SpriteWrapper.load(xml.getChildByName("PathBorder")!!)
-			theme.ground = SpriteWrapper.load(xml.getChildByName("Ground")!!)
-			theme.wall = SpriteWrapper.load(xml.getChildByName("Wall")!!)
-
 			theme.backgroundTile = xml.get("BackgroundTile")
+
+			val symbolsEl = xml.getChildByName("Symbols")!!
+			for (symbolEl in symbolsEl.children)
+			{
+				val symbol = Symbol.parse(symbolEl)
+				theme.symbols.add(symbol)
+			}
 
 			return theme
 		}

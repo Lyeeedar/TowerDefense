@@ -13,6 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.badlogic.gdx.scenes.scene2d.ui.Widget
 import com.lyeeedar.Game.Level.*
 import com.lyeeedar.Game.Level.Map
+import com.lyeeedar.Global
 import com.lyeeedar.Renderables.Particle.ParticleEffect
 import com.lyeeedar.Renderables.SortedRenderer
 import com.lyeeedar.Renderables.Sprite.Sprite
@@ -120,16 +121,18 @@ class MapWidget(val map: Map) : Widget()
 										}
 										else if (buildSite != null)
 										{
-											val arrowTower = TowerUpgradeTree.load("Arrow")
-											val root = arrowTower.towerDefMap[arrowTower.root]
-
 											val menu = RadialMenu({})
 
-											menu.addItem(root.icon.textures[0], "Build " + root.name, {tile.previewTower = root}, {tile.previewTower = null}, {
-												val tower = Tower(root)
-												tower.tile = tile
-												tile.fillingEntity = tower
-											}, RadialMenu.Position.Top)
+											for (tower in Global.gameData.unlockedTowers)
+											{
+												val root = tower.towerDefMap[tower.root]
+
+												menu.addItem(root.icon.textures[0], "Build " + root.name, {tile.previewTower = root}, {tile.previewTower = null}, {
+													val tower = Tower(root)
+													tower.tile = tile
+													tile.fillingEntity = tower
+												}, RadialMenu.Position.Top)
+											}
 
 											menu.clickPos = screenPos
 											menu.show()

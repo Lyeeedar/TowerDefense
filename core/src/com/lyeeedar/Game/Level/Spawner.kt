@@ -2,6 +2,7 @@ package com.lyeeedar.Game.Level
 
 import com.lyeeedar.Renderables.Animation.ExpandAnimation
 import com.lyeeedar.Renderables.Light
+import com.lyeeedar.Renderables.PulseLightAnimation
 import com.lyeeedar.Util.AssetManager
 import com.lyeeedar.Util.Colour
 import ktx.math.plus
@@ -19,6 +20,7 @@ class Spawner(val character: Char) : Entity()
 		sprite.size[1] = 2
 
 		sprite.light = Light(Colour(0.5f, 0.7f, 1.0f, 1.0f), 1f, 3f)
+		sprite.light!!.anim = PulseLightAnimation.create(3f, 1f, 3f, 20f, 10f)
 	}
 
 	override fun update(delta: Float, map: Map)
@@ -66,6 +68,7 @@ class Sinker : Entity()
 		sprite.size[1] = 2
 
 		sprite.light = Light(Colour(1.0f, 0.7f, 0.3f, 1.0f), 1f, 3f)
+		sprite.light!!.anim = PulseLightAnimation.create(3f, 1f, 3f, 20f, 10f)
 	}
 
 	override fun update(delta: Float, map: Map)

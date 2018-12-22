@@ -41,6 +41,7 @@ class MainGame : Game()
 	{
 		Global.applicationChanger.processResources()
 		Global.setup()
+		Global.newGame()
 
 		if (Global.android)
 		{

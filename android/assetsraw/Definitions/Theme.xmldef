@@ -1,9 +1,8 @@
 <Definitions Colour="114,182,240" Icon="Sprites/Oryx/uf_split/uf_terrain/crate.png" xmlns:meta="Editor">
 	<Definition Name="Theme" Nullable="False" meta:RefKey="Struct">
-		<Data Name="Path" Keys="SpriteWrapper" Nullable="False" meta:RefKey="Reference" />
-		<Data Name="PathBorder" Keys="SpriteWrapper" Nullable="False" meta:RefKey="Reference" />
-		<Data Name="Ground" Keys="SpriteWrapper" Nullable="False" meta:RefKey="Reference" />
-		<Data Name="Wall" Keys="SpriteWrapper" Nullable="False" meta:RefKey="Reference" />
 		<Data Name="BackgroundTile" BasePath="Sprites" StripExtension="True" AllowedFileTypes="png" meta:RefKey="File" />
+		<Data Name="Symbols" meta:RefKey="Collection">
+			<Data Name="Symbol" Keys="Symbol" Nullable="False" meta:RefKey="Reference" />
+		</Data>
 	</Definition>
 </Definitions>
