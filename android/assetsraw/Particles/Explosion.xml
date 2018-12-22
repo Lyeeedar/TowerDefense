@@ -164,8 +164,8 @@
 			<Keyframe>0.6894569|0</Keyframe>
 		</Brightness>
 		<Range>
-			<Keyframe>0|5</Keyframe>
-			<Keyframe>0.6894569|3</Keyframe>
+			<Keyframe>0|3</Keyframe>
+			<Keyframe>0.6894569|1</Keyframe>
 		</Range>
 	</Light>
 </Effect>

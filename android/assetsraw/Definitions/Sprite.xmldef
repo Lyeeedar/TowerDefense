@@ -78,6 +78,7 @@
 		<Data Name="Colour" SkipIfDefault="False" meta:RefKey="Colour" />
 		<Data Name="Brightness" Min="0" Default="1" SkipIfDefault="False" meta:RefKey="Number" />
 		<Data Name="Range" Min="0" Default="3" SkipIfDefault="False" meta:RefKey="Number" />
+		<Data Name="Animation" Keys="PulseLightAnimation" meta:RefKey="Reference" />
 	</Definition>
 	<Definition Name="RenderedLayeredSprite" IsGlobal="True" meta:RefKey="StructDef">
 		<Data Name="Layers" MinCount="1" meta:RefKey="Collection">
@@ -87,5 +88,12 @@
 			</Data>
 		</Data>
 		<Data Name="Light" Keys="Light" meta:RefKey="Reference" />
+	</Definition>
+	<Definition Name="PulseLightAnimation" meta:RefKey="StructDef">
+		<Data Name="Period" Name1="Min" Name2="Max" meta:RefKey="Vector" />
+		<Data Name="MinBrightness" Name1="Min" Name2="Max" meta:RefKey="Vector" />
+		<Data Name="MaxBrightness" Name1="Min" Name2="Max" meta:RefKey="Vector" />
+		<Data Name="MinRange" Name1="Min" Name2="Max" meta:RefKey="Vector" />
+		<Data Name="MaxRange" Name1="Min" Name2="Max" meta:RefKey="Vector" />
 	</Definition>
 </Definitions>

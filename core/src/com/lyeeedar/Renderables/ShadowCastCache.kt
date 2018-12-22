@@ -60,9 +60,9 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 				Point.freeAllTS(currentShadowCast)
 				currentShadowCast.clear()
 
-				for (ix in 0 until range * 2)
+				for (ix in 0 until range * 2 + 1)
 				{
-					for (iy in 0 until range * 2)
+					for (iy in 0 until range * 2 + 1)
 					{
 						val gx = ix + x - range
 						val gy = iy + y - range

@@ -14,6 +14,7 @@ import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.ObjectMap
 import com.lyeeedar.Renderables.Animation.AbstractAnimation
 import com.lyeeedar.Renderables.Light
+import com.lyeeedar.Renderables.LightAnimation
 import com.lyeeedar.Renderables.Particle.ParticleEffect
 import com.lyeeedar.Renderables.Renderable
 import com.lyeeedar.Renderables.Sprite.DirectionalSprite
@@ -359,9 +360,18 @@ class AssetManager
 		{
 			val light = Light()
 			light.colour.set(loadColour(xml.getChildByName("Colour")!!))
+			light.baseColour.set(light.colour)
 			val brightness = xml.getFloat("Brightness")
+			light.baseBrightness = brightness
 			light.colour.mul(brightness, brightness, brightness, 1.0f)
 			light.range = xml.getFloat("Range")
+			light.baseRange = light.range
+
+			val animEl = xml.getChildByName("Animation")
+			if (animEl != null)
+			{
+				light.anim = LightAnimation.load(animEl)
+			}
 
 			return light
 		}

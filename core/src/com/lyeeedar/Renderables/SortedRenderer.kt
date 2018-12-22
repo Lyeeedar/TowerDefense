@@ -817,7 +817,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		if (sprite.light != null)
 		{
-			sprite.light!!.pos.set(lx, ly)
+			sprite.light!!.pos.set(ix, iy)
 			addLight(sprite.light!!)
 		}
 
@@ -1124,7 +1124,7 @@ class LightTile
 
 			val dst2 = Vector2.len2(x - light.pos.x, y - light.pos.y)
 
-			var alpha = 1f - dst2 / (light.range * light.range)
+			var alpha = 1f - dst2 / (light.range * light.range * 1.5f)
 			if (alpha < 0.001f) alpha = 0f
 
 			tempColour.set(light.colour)

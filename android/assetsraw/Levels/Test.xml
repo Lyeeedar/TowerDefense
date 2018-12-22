@@ -5,10 +5,10 @@
 		<Line>!!!?,.,,@,,?</Line>
 		<Line>!!!#,.....,#</Line>
 		<Line>!!?#,,,,,.,#</Line>
-		<Line>!!!??##@,.@#</Line>
+		<Line>!!!??###,.@#</Line>
 		<Line>?,,,,,,,,.,#</Line>
 		<Line>#,........,#</Line>
-		<Line>#@.,@,,@,,,#</Line>
+		<Line>#@.,,,,@,,,#</Line>
 		<Line>#,.,###?###?</Line>
 		<Line>?,.,,,,#??!!</Line>
 		<Line>!,....1#?!!!</Line>
@@ -96,7 +96,7 @@
 					</Enemies>
 				</Spawner>
 			</Spawners>
-			<Duration>10</Duration>
+			<Duration>20</Duration>
 		</Wave>
 		<Wave>
 			<Spawners>
@@ -110,7 +110,7 @@
 					</Enemies>
 				</Spawner>
 			</Spawners>
-			<Duration>10</Duration>
+			<Duration>20</Duration>
 		</Wave>
 		<Wave>
 			<Spawners>
@@ -124,7 +124,7 @@
 					</Enemies>
 				</Spawner>
 			</Spawners>
-			<Duration>10</Duration>
+			<Duration>20</Duration>
 		</Wave>
 		<Wave>
 			<Spawners>
@@ -138,7 +138,7 @@
 					</Enemies>
 				</Spawner>
 			</Spawners>
-			<Duration>10</Duration>
+			<Duration>20</Duration>
 		</Wave>
 		<Wave>
 			<Spawners>
@@ -152,7 +152,7 @@
 					</Enemies>
 				</Spawner>
 			</Spawners>
-			<Duration>10</Duration>
+			<Duration>20</Duration>
 		</Wave>
 	</Waves>
 	<Theme>GrassyKnoll</Theme>

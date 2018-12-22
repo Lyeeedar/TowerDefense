@@ -145,7 +145,7 @@ class ParticleEffect : Renderable()
 			}
 		}
 
-		particleLight?.update(time)
+		particleLight?.update(time, max(sx, sy))
 
 		return complete
 	}
@@ -449,7 +449,7 @@ class ParticleLight
 	var keyframeAlpha: Float = 0f
 	var keyframes: kotlin.Array<ParticleLightKeyframe> = emptyArray()
 
-	fun update(time: Float)
+	fun update(time: Float, size: Float)
 	{
 		var keyframeIndex = keyframeIndex
 		while (keyframeIndex < keyframes.size-1)
@@ -487,7 +487,7 @@ class ParticleLight
 		light.colour.mul(brightness, brightness, brightness, 1f)
 
 		val range = (keyframe1.range.lerp(keyframe2.range, keyframeAlpha))
-		light.range = range
+		light.range = range * size
 	}
 
 	fun store(kryo: Kryo, output: Output)
