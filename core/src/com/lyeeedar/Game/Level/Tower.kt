@@ -216,7 +216,7 @@ class ShotEffectType : AbstractEffectType()
 	{
 		val entityPos = if (entity is Enemy) entity.pos else entity.tile.toVec()
 		val rangeMax = range.ciel()
-		val allenemies = map.grid.get(entity.tile, rangeMax).flatMap { it.entities.asSequence() }.mapNotNull { it as? Enemy }.asGdxArray()
+		val allenemies = map.grid.get(entity.tile, rangeMax).flatMap { it.enemies.asSequence() }.asGdxArray()
 		val enemiesInRange = allenemies.filter { it != entity && it.actualhp > 0 && it.pos.dst2(entityPos) <= range*range }.asGdxArray()
 
 		for (i in 0 until count)
@@ -312,16 +312,13 @@ class AOEEffectType : AbstractEffectType()
 
 		for (tile in map.grid.get(entity.tile, range.ciel()))
 		{
-			for (enemy in tile.entities)
+			for (enemy in tile.enemies)
 			{
-				if (enemy is Enemy)
+				if (enemy.pos.dst2(entityPos) <= range*range)
 				{
-					if (enemy.pos.dst2(entityPos) <= range*range)
+					for (effect in effects)
 					{
-						for (effect in effects)
-						{
-							effect.apply(enemy, map)
-						}
+						effect.apply(enemy, map)
 					}
 				}
 			}

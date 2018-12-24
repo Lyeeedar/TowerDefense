@@ -122,13 +122,6 @@
 								<Colour>228,240,161,255</Colour>
 								<Brightness>0.1</Brightness>
 								<Range>3</Range>
-								<Animation meta:RefKey="PulseLightAnimation">
-									<Period>0.4,0.8</Period>
-									<MinBrightness>0.45,0.5</MinBrightness>
-									<MaxBrightness>0.55,0.7</MaxBrightness>
-									<MinRange>3,3</MinRange>
-									<MaxRange>3,3</MaxRange>
-								</Animation>
 							</Light>
 						</Sprite>
 						<Chance>0.1</Chance>

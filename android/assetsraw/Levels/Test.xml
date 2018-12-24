@@ -1,18 +1,25 @@
 <Level xmlns:meta="Editor">
 	<Grid>
-		<Line>!!!?####?!!!</Line>
-		<Line>!!!?,A,##??!</Line>
-		<Line>!!!?,.,,@,,?</Line>
-		<Line>!!!#,.....,#</Line>
-		<Line>!!?#,,,,,.,#</Line>
-		<Line>!!!??###,.@#</Line>
-		<Line>?,,,,,,,,.,#</Line>
-		<Line>#,........,#</Line>
-		<Line>#@.,,,,@,,,#</Line>
-		<Line>#,.,###?###?</Line>
-		<Line>?,.,,,,#??!!</Line>
-		<Line>!,....1#?!!!</Line>
-		<Line>!?,,,,,?!!!!</Line>
+		<Line>!!!?####?!!!!!!!!!!!</Line>
+		<Line>!!!?,A,##??!!!!!!!!!</Line>
+		<Line>!!!?,.,,@,,?!!!!!!!!</Line>
+		<Line>!!!#,.....,#!!!!!!!!</Line>
+		<Line>!!?#,,,,,.,#!!!!!!!!</Line>
+		<Line>!!!??###,.@#!!!!!!!!</Line>
+		<Line>?,,,,,,,,.,#!!!!!!!!</Line>
+		<Line>#,........,#!!!!!!!!</Line>
+		<Line>#@.,,,,@,,,#!!!!!!!!</Line>
+		<Line>#,.,###?###?!!!!!!!!</Line>
+		<Line>?,.,,,,#??!!!!!!!!!!</Line>
+		<Line>!,....1#?!!!!!!!!!!!</Line>
+		<Line>!?,,,,,?!!!!!!!!!!!!</Line>
+		<Line>!!!!!!!!!!!!!!!!!!!!</Line>
+		<Line>!!!!!!!!!!!!!!!!!!!!</Line>
+		<Line>!!!!!!!!!!!!!!!!!!!!</Line>
+		<Line>!!!!!!!!!!!!!!!!!!!!</Line>
+		<Line>!!!!!!!!!!!!!!!!!!!!</Line>
+		<Line>!!!!!!!!!!!!!!!!!!!!</Line>
+		<Line>!!!!!!!!!!!!!!!!!!!!</Line>
 	</Grid>
 	<Spawners>
 		<Spawner>
@@ -20,69 +27,6 @@
 			<Destination>1</Destination>
 		</Spawner>
 	</Spawners>
-	<Symbols>
-		<Symbol>
-			<Character>?</Character>
-			<Extends></Extends>
-			<Sprite meta:RefKey="SpriteWrapper">
-				<Sprite meta:RefKey="RenderedLayeredSprite">
-					<Layers>
-						<Layer>
-							<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
-						</Layer>
-						<Layer>
-							<Name>Oryx/Custom/terrain/treepair1</Name>
-							<DrawActualSize>true</DrawActualSize>
-						</Layer>
-					</Layers>
-				</Sprite>
-				<SpriteVariants>
-					<Sprite>
-						<Sprite meta:RefKey="RenderedLayeredSprite">
-							<Layers>
-								<Layer>
-									<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
-								</Layer>
-								<Layer>
-									<Name>Oryx/Custom/terrain/treepair2</Name>
-									<DrawActualSize>true</DrawActualSize>
-								</Layer>
-							</Layers>
-						</Sprite>
-						<Chance>0.2</Chance>
-					</Sprite>
-					<Sprite>
-						<Sprite meta:RefKey="RenderedLayeredSprite">
-							<Layers>
-								<Layer>
-									<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
-								</Layer>
-								<Layer>
-									<Name>Oryx/Custom/terrain/treepair3</Name>
-									<DrawActualSize>true</DrawActualSize>
-								</Layer>
-							</Layers>
-						</Sprite>
-						<Chance>0.2</Chance>
-					</Sprite>
-					<Sprite>
-						<Sprite meta:RefKey="RenderedLayeredSprite">
-							<Layers>
-								<Layer>
-									<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
-								</Layer>
-								<Layer>
-									<Name>Oryx/Custom/terrain/treetriple1</Name>
-									<DrawActualSize>true</DrawActualSize>
-								</Layer>
-							</Layers>
-						</Sprite>
-						<Chance>0.2</Chance>
-					</Sprite>
-				</SpriteVariants>
-			</Sprite>
-		</Symbol>
-	</Symbols>
 	<Waves>
 		<Wave>
 			<Spawners>

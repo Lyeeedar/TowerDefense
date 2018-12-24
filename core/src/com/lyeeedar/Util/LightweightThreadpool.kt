@@ -3,6 +3,7 @@ package com.lyeeedar.Util
 import java.util.concurrent.atomic.AtomicInteger
 
 const val allowParkThreads = false
+const val disableThreading = true
 
 // ----------------------------------------------------------------------
 class ThreadPoolThread(val index: Int)
@@ -12,44 +13,49 @@ class ThreadPoolThread(val index: Int)
 	private val jobQueue = kotlin.Array<(()->Unit)?>(10000) { null }
 	private var executeIndex = AtomicInteger(0)
 	private val queueIndex = AtomicInteger(0)
-	private val thread: Thread
+	private lateinit var thread: Thread
 
 	init
 	{
-		thread = object : Thread() {
-			override fun run() {
-				while (true)
+		if (!disableThreading)
+		{
+			thread = object : Thread()
+			{
+				override fun run()
 				{
-					if (allowParkThreads && queueIndex.get() == 0)
+					while (true)
 					{
-						synchronized(lock)
-						{
-							lock.wait()
-						}
-					}
-					else if (executeIndex.get() >= queueIndex.get())
-					{
-						yield()
-					}
-					else
-					{
-						val job = jobQueue[executeIndex.get()]!!
-						job.invoke()
-						executeIndex.incrementAndGet()
-
-						if (allowParkThreads && executeIndex.get() == queueIndex.get())
+						if (allowParkThreads && queueIndex.get() == 0)
 						{
 							synchronized(lock)
 							{
-								lock.notifyAll()
+								lock.wait()
+							}
+						}
+						else if (executeIndex.get() >= queueIndex.get())
+						{
+							yield()
+						}
+						else
+						{
+							val job = jobQueue[executeIndex.get()]!!
+							job.invoke()
+							executeIndex.incrementAndGet()
+
+							if (allowParkThreads && executeIndex.get() == queueIndex.get())
+							{
+								synchronized(lock)
+								{
+									lock.notifyAll()
+								}
 							}
 						}
 					}
 				}
 			}
+			thread.name = "LightweightThreadPool $index"
+			thread.start()
 		}
-		thread.name = "LightweightThreadPool $index"
-		thread.start()
 	}
 
 	fun addJob(job: ()->Unit)
@@ -106,6 +112,12 @@ class LightweightThreadpool(val numThreads: Int)
 
 	fun addJob(job: ()->Unit)
 	{
+		if (disableThreading)
+		{
+			job.invoke()
+			return
+		}
+
 		val start = queueIndex
 		while (true)
 		{
@@ -131,6 +143,11 @@ class LightweightThreadpool(val numThreads: Int)
 
 	fun awaitAllJobs()
 	{
+		if (disableThreading)
+		{
+			return
+		}
+
 		for (i in 0 until numThreads)
 		{
 			val thread = threads[i]

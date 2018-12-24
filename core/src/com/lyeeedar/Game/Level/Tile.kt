@@ -9,7 +9,7 @@ import com.lyeeedar.Util.Point
 
 class Tile(x: Int, y: Int) : Point(x, y)
 {
-	val entities = Array<Entity>()
+	val enemies = Array<Enemy>()
 
 	var fillingEntity: Entity? = null
 		set(value)

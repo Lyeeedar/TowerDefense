@@ -70,23 +70,12 @@ class Map(val grid: Array2D<Tile>)
 		var pathsDirty = false
 		for (tile in grid)
 		{
-			for (entity in tile.entities)
+			for (enemy in tile.enemies)
 			{
-				if (entity is Enemy)
-				{
-					enemyList.add(entity)
-				}
-				else if (entity is Tower)
-				{
-					towerList.add(entity)
-				}
-				else
-				{
-					otherList.add(entity)
-				}
+				enemyList.add(enemy)
 			}
 
-			tile.entities.clear()
+			tile.enemies.clear()
 
 			if (tile.fillingEntity != null)
 			{
@@ -142,16 +131,9 @@ class Map(val grid: Array2D<Tile>)
 				sources.add(tile.fillingEntity as Spawner)
 			}
 
-			for (entity in tile.entities)
+			for (enemy in tile.enemies)
 			{
-				if (entity is Enemy)
-				{
-					entity.currentDest = null
-				}
-				else
-				{
-					throw Exception("Unhandled entity type! " + entity.javaClass.name)
-				}
+				enemy.currentDest = null
 			}
 		}
 

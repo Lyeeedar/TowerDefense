@@ -65,7 +65,7 @@ class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
 		else
 		{
 			this.tile = tile
-			tile.entities.add(this)
+			tile.enemies.add(this)
 		}
 	}
 
@@ -74,7 +74,7 @@ class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
 		class FuturePos(val pos: Vector2, val destTile: Tile?)
 		fun getFuturePos(delta: Float, map: Map, enemy: Enemy): FuturePos
 		{
-			var pos = enemy.pos.cpy()
+			val pos = enemy.pos.cpy()
 			var currentDest = enemy.currentDest
 			var tile = enemy.tile
 

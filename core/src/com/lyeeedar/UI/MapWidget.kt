@@ -347,57 +347,50 @@ class MapWidget(val map: Map) : Widget()
 					}
 				}
 
-				for (entity in tile.entities)
+				for (entity in tile.enemies)
 				{
-					if (entity is Enemy)
+					val pos = entity.pos.cpy()
+					pos.y = map.height - 1 - pos.y
+
+					renderer.queueSprite(entity.sprite, pos.x, pos.y, ENTITY, 0, tileColour)
+
+					if (entity.hp != entity.def.health)
 					{
-						val pos = entity.pos.cpy()
-						pos.y = map.height - 1 - pos.y
+						val hpbarposx = pos.x + (1f - entity.sprite.baseScale[0]) / 2f - 0.1f
+						val hpbarposy = pos.y + 1f - ((1f - entity.sprite.baseScale[1]) / 2f) + 0.2f
 
-						renderer.queueSprite(entity.sprite, pos.x, pos.y, ENTITY, 0, tileColour)
+						val a = entity.hp.toFloat() / entity.def.health.toFloat()
+						val col = Colour.RED.copy().lerpHSV(Colour.GREEN.copy(), a)
 
-						if (entity.hp != entity.def.health)
-						{
-							val hpbarposx = pos.x + (1f - entity.sprite.baseScale[0]) / 2f - 0.1f
-							val hpbarposy = pos.y + 1f - ((1f - entity.sprite.baseScale[1]) / 2f) + 0.2f
-
-							val a = entity.hp.toFloat() / entity.def.health.toFloat()
-							val col = Colour.RED.copy().lerpHSV(Colour.GREEN.copy(), a)
-
-							renderer.queueSprite(white, hpbarposx, hpbarposy, ENTITY, 0, col, width = a * entity.sprite.baseScale[0] + 0.2f, height = 0.1f, lit = false)
-						}
-
-						for (effect in entity.effects)
-						{
-							if (effect is Sprite)
-							{
-								renderer.update(effect)
-
-								if (effect.completed)
-								{
-									entity.effects.removeValue(effect, true)
-								}
-								else
-								{
-									renderer.queueSprite(effect, pos.x, pos.y, EFFECT, 0)
-								}
-							}
-							else if (effect is ParticleEffect)
-							{
-								if (effect.completed)
-								{
-									entity.effects.removeValue(effect, true)
-								}
-								else
-								{
-									renderer.queueParticle(effect, pos.x, pos.y, EFFECT, 0)
-								}
-							}
-						}
+						renderer.queueSprite(white, hpbarposx, hpbarposy, ENTITY, 0, col, width = a * entity.sprite.baseScale[0] + 0.2f, height = 0.1f, lit = false)
 					}
-					else
+
+					for (effect in entity.effects)
 					{
-						renderer.queueSprite(entity.sprite, 0f, 0f, ENTITY, 0, tileColour)
+						if (effect is Sprite)
+						{
+							renderer.update(effect)
+
+							if (effect.completed)
+							{
+								entity.effects.removeValue(effect, true)
+							}
+							else
+							{
+								renderer.queueSprite(effect, pos.x, pos.y, EFFECT, 0)
+							}
+						}
+						else if (effect is ParticleEffect)
+						{
+							if (effect.completed)
+							{
+								entity.effects.removeValue(effect, true)
+							}
+							else
+							{
+								renderer.queueParticle(effect, pos.x, pos.y, EFFECT, 0)
+							}
+						}
 					}
 				}
 
