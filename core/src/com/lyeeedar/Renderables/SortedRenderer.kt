@@ -308,11 +308,18 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		shader.setUniformi("u_texture", 0)
 		shader.setUniformf("u_ambient", ambientLight.vec3())
 
+		if (!smoothLighting)
+		{
+			shader.setUniformf("u_tileSize", tileSize)
+		}
+
 		var i = 0
 		for (light in lights)
 		{
-			lightPosRange[(i*3)+0] = (light.pos.x + 0.5f) * tileSize + offsetx
-			lightPosRange[(i*3)+1] = (light.pos.y + 0.5f) * tileSize + offsety
+			val offset = if (smoothLighting) 0.5f else 0f
+
+			lightPosRange[(i*3)+0] = (light.pos.x + offset) * tileSize + offsetx
+			lightPosRange[(i*3)+1] = (light.pos.y + offset) * tileSize + offsety
 			lightPosRange[(i*3)+2] = (light.range * tileSize) * (light.range * tileSize)
 
 			lightColourBrightness[(i*4)+0] = light.colour.r
@@ -557,8 +564,10 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			sortedArray = sortedArray.copyOf(sortedArray.size * 2)
 		}
 
-		spriteArray[queuedSprites++] = renderSprite
+		spriteArray[queuedSprites] = renderSprite
 		sortedArray[queuedSprites] = renderSprite
+
+		queuedSprites++
 	}
 
 	// ----------------------------------------------------------------------
@@ -968,6 +977,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	// ----------------------------------------------------------------------
 	companion object
 	{
+		private val smoothLighting = false
 		private val random = LightRNG()
 
 		fun createShader(numLights: Int): ShaderProgram
@@ -1004,7 +1014,7 @@ void main()
 	gl_Position = u_projTrans * truePos;
 }
 """
-			val fragmentShader = """
+			var fragmentShader = """
 #ifdef GL_ES
 #define LOWP lowp
 precision mediump float;
@@ -1017,6 +1027,10 @@ varying vec2 v_pixelPos;
 varying vec2 v_texCoords1;
 varying vec2 v_texCoords2;
 varying float v_blendAlpha;
+
+#ifdef TILELIGHTING
+uniform float u_tileSize;
+#endif
 
 uniform vec3 u_ambient;
 uniform int u_numLights;
@@ -1033,7 +1047,13 @@ vec3 calculateLight(int index)
 	vec2 pos = posRange.xy;
 	float rangeSq = posRange.z;
 
-	vec2 diff = pos - v_pixelPos;
+	vec2 pixelPos = v_pixelPos;
+
+#ifdef TILELIGHTING
+	pixelPos = (floor(pixelPos / u_tileSize)) * u_tileSize;
+#endif
+
+	vec2 diff = pos - pixelPos;
 	float distSq = (diff.x * diff.x) + (diff.y * diff.y);
 	if (distSq > rangeSq)
 	{
@@ -1067,6 +1087,10 @@ void main()
 	gl_FragColor = finalCol;
 }
 """
+			if (!smoothLighting)
+			{
+				fragmentShader = "#define TILELIGHTING 1\n$fragmentShader"
+			}
 
 			val shader = ShaderProgram(vertexShader, fragmentShader)
 			if (!shader.isCompiled) throw IllegalArgumentException("Error compiling shader: " + shader.log)
