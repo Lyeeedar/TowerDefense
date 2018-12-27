@@ -1,6 +1,7 @@
 package com.lyeeedar.Util
 
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.NumberUtils
 import com.badlogic.gdx.utils.Pool
 
@@ -293,6 +294,8 @@ class Colour()
 	var cachedB: Float = -1f
 	var cachedA: Float = -1f
 	var cachedFB: Float = -1f
+
+	fun vec3(): Vector3 = Vector3(r, g, b)
 
 	fun color() : Color
 	{

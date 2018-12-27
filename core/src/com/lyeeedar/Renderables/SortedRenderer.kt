@@ -7,7 +7,6 @@ import com.badlogic.gdx.graphics.VertexAttribute
 import com.badlogic.gdx.graphics.VertexAttributes
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.g2d.BigMesh
-import com.badlogic.gdx.graphics.g2d.HDRColourSpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.ShaderProgram
 import com.badlogic.gdx.math.Matrix4
@@ -62,14 +61,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		}
 	}
 
-	private val lightTileMap: IntMap<LightTile> = IntMap()
-
-	private val lightTilePool: Pool<LightTile> = object : Pool<LightTile>() {
-		override fun newObject(): LightTile
-		{
-			return LightTile()
-		}
-	}
+	private val lights = com.badlogic.gdx.utils.Array<Light>()
 
 	private var screenShakeRadius: Float = 0f
 	private var screenShakeAccumulator: Float = 0f
@@ -124,7 +116,10 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	private val vertices: FloatArray
 	private var currentVertexCount = 0
 	private val queuedBuffers = com.badlogic.gdx.utils.Array<VertexBuffer>()
-	private val shader: ShaderProgram
+	private lateinit var shader: ShaderProgram
+	private var shaderLightNum: Int = -1
+	private lateinit var lightPosRange: FloatArray
+	private lateinit var lightColourBrightness: FloatArray
 	private val combinedMatrix: Matrix4 = Matrix4()
 
 	private val executor = LightweightThreadpool(3)
@@ -166,7 +161,10 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		vertices = FloatArray(maxVertices)
 
-		shader = HDRColourSpriteBatch.createDefaultShader()
+		shaderLightNum = 10
+		lightPosRange = FloatArray(shaderLightNum * 3)
+		lightColourBrightness = FloatArray(shaderLightNum * 4)
+		shader = createShader(shaderLightNum)
 	}
 
 	// ----------------------------------------------------------------------
@@ -246,12 +244,41 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		queuedBuffers.add(currentBuffer!!)
 		currentBuffer = null
 
+		if (lights.size > shaderLightNum)
+		{
+			shaderLightNum = lights.size + 5
+			shader.dispose()
+			shader = createShader(shaderLightNum)
+			lightPosRange = FloatArray(shaderLightNum * 3)
+			lightColourBrightness = FloatArray(shaderLightNum * 4)
+		}
+
 		Gdx.gl.glEnable(GL20.GL_BLEND)
 		Gdx.gl.glDepthMask(false)
 		shader.begin()
 
 		shader.setUniformMatrix("u_projTrans", combinedMatrix)
 		shader.setUniformi("u_texture", 0)
+		shader.setUniformf("u_ambient", ambientLight.vec3())
+
+		var i = 0
+		for (light in lights)
+		{
+			lightPosRange[(i*3)+0] = (light.pos.x + 0.5f) * tileSize + offsetx
+			lightPosRange[(i*3)+1] = (light.pos.y + 0.5f) * tileSize + offsety
+			lightPosRange[(i*3)+2] = (light.range * tileSize) * (light.range * tileSize)
+
+			lightColourBrightness[(i*4)+0] = light.colour.r
+			lightColourBrightness[(i*4)+1] = light.colour.g
+			lightColourBrightness[(i*4)+2] = light.colour.b
+			lightColourBrightness[(i*4)+3] = light.brightness
+
+			i++
+		}
+
+		shader.setUniform3fv("u_lightPosRange", lightPosRange, 0, shaderLightNum * 3)
+		shader.setUniform4fv("u_lightColourBrightness", lightColourBrightness, 0, shaderLightNum * 4)
+		shader.setUniformi("u_numLights", lights.size)
 
 		executor.awaitAllJobs()
 
@@ -297,22 +324,6 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	}
 
 	// ----------------------------------------------------------------------
-	private inline fun getLight(rs: RenderSprite, direction: Direction): Colour
-	{
-		val hash = Point.getHashcode(rs.px, rs.py, direction)
-
-		rs.tempColour.set(ambientLight)
-
-		val tile = lightTileMap[hash]
-		if (tile != null)
-		{
-			rs.tempColour.set(tile.colour)
-		}
-
-		return rs.tempColour
-	}
-
-	// ----------------------------------------------------------------------
 	private fun flush(batch: Batch)
 	{
 		if (!inBegin) throw Exception("Flush called before begin!")
@@ -340,13 +351,6 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 				offsetx += Math.sin( screenShakeAngle.toDouble() ).toFloat() * screenShakeRadius
 				offsety += Math.cos( screenShakeAngle.toDouble() ).toFloat() * screenShakeRadius
-			}
-		}
-
-		for (tile in lightTileMap.values())
-		{
-			executor.addJob {
-				tile.evaluate(ambientLight)
 			}
 		}
 
@@ -390,32 +394,6 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 				val colour = rs.colour
 
-				if (rs.isLit)
-				{
-					val xa = rs.x / tileSize - rs.px
-					val ya = rs.y / tileSize - rs.py
-
-					if (xa == 0f && ya == 0f)
-					{
-						rs.tlCol.set(getLight(rs, Direction.CENTER))
-						colour.mul(rs.tlCol)
-					}
-					else
-					{
-						rs.tlCol.set(getLight(rs, Direction.CENTER))
-						rs.trCol.set(getLight(rs, Direction.EAST))
-						rs.blCol.set(getLight(rs, Direction.NORTH))
-						rs.brCol.set(getLight(rs, Direction.NORTHEAST))
-
-						val topCol = rs.tlCol.lerp(rs.trCol, xa)
-						val botCol = rs.blCol.lerp(rs.brCol, xa)
-
-						val finalCol = topCol.lerp(botCol, ya)
-
-						colour.mul(finalCol)
-					}
-				}
-
 				if (sprite != null)
 				{
 					colour.mul(sprite.getRenderColour())
@@ -451,10 +429,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		}
 		tilingMap.clear()
 
-		for (entry in lightTileMap)
-		{
-			entry.value.lights.clear()
-		}
+		lights.clear()
 
 		if (queuedSprites < spriteArray.size / 4)
 		{
@@ -510,36 +485,6 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		spriteArray[queuedSprites++] = renderSprite
 		sortedArray[queuedSprites] = renderSprite
-	}
-
-	// ----------------------------------------------------------------------
-	fun addLight(light: Light)
-	{
-		if (light.batchID != batchID)
-		{
-			light.batchID = batchID
-			light.update(delta)
-
-			for (point in light.cache.currentShadowCast)
-			{
-				var tile = lightTileMap[point.hashCode()]
-				if (tile == null)
-				{
-					tile = lightTilePool.obtain()
-					tile.x = point.x
-					tile.y = point.y
-					tile.lights.clear()
-
-					lightTileMap[point.hashCode()] = tile
-				}
-
-				tile.lights.add(light)
-			}
-		}
-		else
-		{
-			throw Exception("Light already added to renderer!")
-		}
 	}
 
 	// ----------------------------------------------------------------------
@@ -600,7 +545,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		if (effect.light != null)
 		{
 			effect.light!!.pos.set(lx, ly)
-			addLight(effect.light!!)
+			lights.add(effect.light!!)
 		}
 
 		//val scale = effect.animation?.renderScale()?.get(0) ?: 1f
@@ -735,7 +680,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		if (tilingSprite.light != null)
 		{
 			tilingSprite.light!!.pos.set(lx, ly)
-			addLight(tilingSprite.light!!)
+			lights.add(tilingSprite.light!!)
 		}
 
 		// check if onscreen
@@ -818,7 +763,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		if (sprite.light != null)
 		{
 			sprite.light!!.pos.set(ix, iy)
-			addLight(sprite.light!!)
+			lights.add(sprite.light!!)
 		}
 
 		// check if onscreen
@@ -945,6 +890,103 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	companion object
 	{
 		private val random = LightRNG()
+
+		fun createShader(numLights: Int): ShaderProgram
+		{
+			val vertexShader = """
+attribute vec4 ${ShaderProgram.POSITION_ATTRIBUTE};
+attribute vec4 ${ShaderProgram.COLOR_ATTRIBUTE};
+attribute vec2 ${ShaderProgram.TEXCOORD_ATTRIBUTE}0;
+attribute vec2 ${ShaderProgram.TEXCOORD_ATTRIBUTE}1;
+attribute float a_blendAlpha;
+
+uniform mat4 u_projTrans;
+
+varying vec4 v_color;
+varying vec2 v_pixelPos;
+varying vec2 v_texCoords1;
+varying vec2 v_texCoords2;
+varying float v_blendAlpha;
+
+void main()
+{
+	v_color = ${ShaderProgram.COLOR_ATTRIBUTE};
+	v_color.a = min(v_color.a, 1.0);
+	v_pixelPos = ${ShaderProgram.POSITION_ATTRIBUTE}.xy;
+	v_texCoords1 = ${ShaderProgram.TEXCOORD_ATTRIBUTE}0;
+	v_texCoords2 = ${ShaderProgram.TEXCOORD_ATTRIBUTE}1;
+	v_blendAlpha = a_blendAlpha;
+	gl_Position = u_projTrans * ${ShaderProgram.POSITION_ATTRIBUTE};
+}
+"""
+			val fragmentShader = """
+#ifdef GL_ES
+#define LOWP lowp
+precision mediump float;
+#else
+#define LOWP
+#endif
+
+varying vec4 v_color;
+varying vec2 v_pixelPos;
+varying vec2 v_texCoords1;
+varying vec2 v_texCoords2;
+varying float v_blendAlpha;
+
+uniform vec3 u_ambient;
+uniform int u_numLights;
+uniform vec3 u_lightPosRange[$numLights];
+uniform vec4 u_lightColourBrightness[$numLights];
+
+uniform sampler2D u_texture;
+
+vec3 calculateLight(int index)
+{
+	vec3 posRange = u_lightPosRange[index];
+	vec4 colourBrightness = u_lightColourBrightness[index];
+
+	vec2 pos = posRange.xy;
+	float rangeSq = posRange.z;
+
+	vec2 diff = pos - v_pixelPos;
+	float distSq = (diff.x * diff.x) + (diff.y * diff.y);
+	if (distSq > rangeSq)
+	{
+		return vec3(0.0, 0.0, 0.0);
+	}
+	else
+	{
+		float alpha = 1.0 - (distSq / rangeSq);
+
+		vec3 lightCol = colourBrightness.rgb;
+		float brightness = colourBrightness.a;
+
+		return lightCol * brightness * alpha;
+	}
+}
+
+void main()
+{
+	vec4 col1 = texture2D(u_texture, v_texCoords1);
+	vec4 col2 = texture2D(u_texture, v_texCoords2);
+
+	vec4 outCol = mix(col1, col2, v_blendAlpha);
+
+	vec3 lightCol = u_ambient;
+	for (int i = 0; i < u_numLights; i++)
+	{
+		lightCol += calculateLight(i);
+	}
+
+	vec4 finalCol = clamp(v_color * outCol * vec4(lightCol, 1.0), 0.0, 1.0);
+	gl_FragColor = finalCol;
+}
+"""
+
+			val shader = ShaderProgram(vertexShader, fragmentShader)
+			if (!shader.isCompiled) throw IllegalArgumentException("Error compiling shader: " + shader.log)
+			return shader
+		}
 	}
 }
 
@@ -1088,54 +1130,6 @@ class RenderSpriteBlock
 				return RenderSpriteBlock()
 			}
 		}
-	}
-}
-
-// ----------------------------------------------------------------------
-class LightTile
-{
-	var x: Int = -1
-	var y: Int = -1
-
-	val lights = com.badlogic.gdx.utils.Array<Light>()
-	val colour = Colour()
-	private val tempColour = Colour()
-
-	private var evaluatedHash = -1
-
-	fun evaluate(ambientLight: Colour)
-	{
-		var hash = ambientLight.hashCode()
-		for (i in 0 until lights.size)
-		{
-			hash += lights[i].hashCode()
-		}
-
-		if (evaluatedHash == hash)
-		{
-			return
-		}
-
-		colour.set(ambientLight)
-
-		for (i in 0 until lights.size)
-		{
-			val light = lights[i]
-
-			val dst2 = Vector2.len2(x - light.pos.x, y - light.pos.y)
-
-			var alpha = 1f - dst2 / (light.range * light.range * 1.5f)
-			if (alpha < 0.001f) alpha = 0f
-
-			tempColour.set(light.colour)
-			tempColour *= alpha
-			tempColour *= tempColour.a
-			tempColour.a = 1f
-
-			colour += tempColour
-		}
-
-		evaluatedHash = hash
 	}
 }
 

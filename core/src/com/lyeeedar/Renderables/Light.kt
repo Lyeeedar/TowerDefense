@@ -4,6 +4,13 @@ import com.badlogic.gdx.math.Vector2
 import com.lyeeedar.Util.*
 import squidpony.squidgrid.FOV
 
+// Could be encoded as
+// vec2 pos : 2x4 = 8 bytes
+// float packedColour&Brightness : 4 bytes (1 bit per channel)
+// float range : 4 bytes
+//
+// vec4 posx, posy, packedColBrightness, range
+
 class Light(colour: Colour? = null, brightness: Float = 1f, range: Float = 3f)
 {
 	var pos = Vector2()
@@ -13,6 +20,7 @@ class Light(colour: Colour? = null, brightness: Float = 1f, range: Float = 3f)
 	var baseRange = 0f
 
 	val colour = Colour.WHITE.copy()
+	var brightness = 1.0f
 	var range = 0f
 
 	var anim: LightAnimation? = null
@@ -22,19 +30,29 @@ class Light(colour: Colour? = null, brightness: Float = 1f, range: Float = 3f)
 		if (colour != null)
 		{
 			baseColour.set(colour)
-
-			this.colour.set(colour).mul(brightness, brightness, brightness, 1f)
+			this.colour.set(colour)
 		}
 
 		baseBrightness = brightness
 		baseRange = range
 
+		this.brightness = brightness
 		this.range = range
 	}
 
 	val cache: ShadowCastCache = ShadowCastCache(fovType = FOV.RIPPLE)
 
 	var batchID: Int = 0
+
+	fun packColourBrightness(): Int
+	{
+		val byter = (colour.r * 255).toChar()
+		val byteg = (colour.g * 255).toChar()
+		val byteb = (colour.b * 255).toChar()
+		val bytea = (brightness).toChar()
+
+		return packBytesToInt(byter, byteg, byteb, bytea)
+	}
 
 	fun update(delta: Float)
 	{
@@ -134,7 +152,8 @@ class PulseLightAnimation : LightAnimation()
 		val brightness = startBrightness.lerp(targetBrightness, alpha)
 		val range = startRange.lerp(targetRange, alpha)
 
-		light.colour.set(light.baseColour).mul(brightness, brightness, brightness, 1.0f)
+		light.colour.set(light.baseColour)
+		light.brightness = brightness
 		light.range = range
 	}
 
