@@ -61,6 +61,8 @@ class MapWidget(val map: Map) : Widget()
 
 	var hpLossTimer = 0f
 
+	var storedStatic = false
+
 	init
 	{
 		touchable = Touchable.enabled
@@ -253,6 +255,53 @@ class MapWidget(val map: Map) : Widget()
 		val yp = this.y
 		renderY = yp
 
+		if (!storedStatic)
+		{
+			storedStatic = true
+
+			renderer.beginStatic()
+
+			for (x in 0 until map.width)
+			{
+				for (y in 0 until map.height)
+				{
+					val tile = map.grid[x, y]
+
+					val tileColour = Colour.WHITE
+
+					val xi = x.toFloat()
+					val yi = (map.height-1) - y.toFloat()
+
+					var tileHeight = 0
+
+					val groundSprite = tile.sprite
+					if (groundSprite != null)
+					{
+						if (!groundSprite.hasChosenSprites)
+						{
+							groundSprite.chooseSprites()
+						}
+
+						val sprite = groundSprite.chosenSprite
+						if (sprite != null)
+						{
+							renderer.queueSprite(sprite, xi, yi, TILE, tileHeight, tileColour)
+						}
+
+						val tilingSprite = groundSprite.chosenTilingSprite
+						if (tilingSprite != null)
+						{
+							renderer.queueSprite(tilingSprite, xi, yi, TILE, tileHeight, tileColour)
+						}
+
+						tileHeight++
+					}
+				}
+			}
+
+			renderer.endStatic(batch)
+		}
+
 		renderer.begin(Gdx.app.graphics.deltaTime, xp, yp, map.ambient)
 
 		for (x in 0 until map.width)
@@ -266,8 +315,6 @@ class MapWidget(val map: Map) : Widget()
 				val xi = x.toFloat()
 				val yi = (map.height-1) - y.toFloat()
 
-				var tileHeight = 0
-
 				val groundSprite = tile.sprite
 				if (groundSprite != null)
 				{
@@ -279,16 +326,11 @@ class MapWidget(val map: Map) : Widget()
 					val sprite = groundSprite.chosenSprite
 					if (sprite != null)
 					{
-						renderer.queueSprite(sprite, xi, yi, TILE, tileHeight, tileColour)
+						if (sprite.light != null)
+						{
+							renderer.addLight(sprite.light!!, xi, yi)
+						}
 					}
-
-					val tilingSprite = groundSprite.chosenTilingSprite
-					if (tilingSprite != null)
-					{
-						renderer.queueSprite(tilingSprite, xi, yi, TILE, tileHeight, tileColour)
-					}
-
-					tileHeight++
 				}
 
 				if (tile.fillingEntity != null)

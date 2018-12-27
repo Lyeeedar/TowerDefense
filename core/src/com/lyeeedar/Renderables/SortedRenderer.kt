@@ -38,6 +38,7 @@ const val vertexSize = (2 + 4 + 2 + 2 + 1)
 const val verticesASprite = vertexSize * 4
 const val maxVertices = maxSprites * vertexSize
 
+// ----------------------------------------------------------------------
 class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, val layers: Int, val alwaysOnscreen: Boolean)
 {
 	private var batchID: Int = random.nextInt()
@@ -79,6 +80,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	private var delta: Float = 0f
 
 	private var inBegin = false
+	private var inStaticBegin = false
 	private var offsetx: Float = 0f
 	private var offsety: Float = 0f
 
@@ -115,6 +117,8 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	private var currentBuffer: VertexBuffer? = null
 	private val vertices: FloatArray
 	private var currentVertexCount = 0
+	private var currentStaticVertexCount = 0
+	private val staticBuffers = com.badlogic.gdx.utils.Array<VertexBuffer>()
 	private val queuedBuffers = com.badlogic.gdx.utils.Array<VertexBuffer>()
 	private lateinit var shader: ShaderProgram
 	private var shaderLightNum: Int = -1
@@ -180,9 +184,40 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	}
 
 	// ----------------------------------------------------------------------
+	fun beginStatic()
+	{
+		if (inBegin) throw Exception("BeginStatic called within begin!")
+		if (inStaticBegin) throw Exception("BeginStatic called BeginStatic!")
+
+		for (buffer in staticBuffers)
+		{
+			bufferPool.free(buffer)
+		}
+		staticBuffers.clear()
+
+		delta = 0f
+		inStaticBegin = true
+		currentStaticVertexCount = 0
+	}
+
+	// ----------------------------------------------------------------------
 	fun end(batch: Batch)
 	{
+		if (!inBegin) throw Exception("End called before begin!")
+
 		flush(batch)
+
+		inBegin = false
+	}
+
+	// ----------------------------------------------------------------------
+	fun endStatic(batch: Batch)
+	{
+		if (!inStaticBegin) throw Exception("EndStatic called before beginstatic!")
+
+		flush(batch)
+
+		inStaticBegin = false
 	}
 
 	// ----------------------------------------------------------------------
@@ -211,7 +246,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		{
 			currentBuffer = bufferPool.obtain()
 			currentBuffer!!.reset(blendSrc, blendDst, texture)
-			currentBuffer!!.offset = currentVertexCount
+			currentBuffer!!.offset = currentStaticVertexCount + currentVertexCount
 		}
 
 		var buffer = currentBuffer!!
@@ -220,16 +255,16 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			queuedBuffers.add(currentBuffer)
 			buffer = bufferPool.obtain()
 			buffer.reset(blendSrc, blendDst, texture)
-			buffer.offset = currentVertexCount
+			buffer.offset = currentStaticVertexCount + currentVertexCount
 
 			currentBuffer = buffer
 		}
 
-		val offset = currentVertexCount
+		val offset = currentStaticVertexCount + currentVertexCount
 		buffer.count += verticesASprite
 		currentVertexCount += verticesASprite
 
-		if (currentVertexCount == maxVertices) throw Exception("Too many vertices queued!")
+		if (currentStaticVertexCount + currentVertexCount == maxVertices) throw Exception("Too many vertices queued!")
 
 		executor.addJob {
 			drawFun.invoke(vertices, offset)
@@ -237,12 +272,23 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	}
 
 	// ----------------------------------------------------------------------
-	private fun waitOnRender()
+	private fun storeStatic()
 	{
-		if (currentBuffer == null) return
+		executor.awaitAllJobs()
 
 		queuedBuffers.add(currentBuffer!!)
 		currentBuffer = null
+
+		staticBuffers.addAll(queuedBuffers)
+		queuedBuffers.clear()
+		currentStaticVertexCount = currentVertexCount
+		currentVertexCount = 0
+	}
+
+	// ----------------------------------------------------------------------
+	private fun waitOnRender()
+	{
+		if (currentBuffer == null) return
 
 		if (lights.size > shaderLightNum)
 		{
@@ -258,6 +304,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		shader.begin()
 
 		shader.setUniformMatrix("u_projTrans", combinedMatrix)
+		shader.setUniformf("u_offset", offsetx, offsety)
 		shader.setUniformi("u_texture", 0)
 		shader.setUniformf("u_ambient", ambientLight.vec3())
 
@@ -282,14 +329,18 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		executor.awaitAllJobs()
 
-		mesh.setVertices(vertices, 0, currentVertexCount)
+		queuedBuffers.add(currentBuffer!!)
+		currentBuffer = null
+
+		mesh.setVertices(vertices, 0, currentStaticVertexCount + currentVertexCount)
 		mesh.bind(shader)
 
 		var lastBlendSrc = -1
 		var lastBlendDst = -1
 		var lastTexture: Texture? = null
 		var currentOffset = 0
-		for (buffer in queuedBuffers)
+
+		fun drawBuffer(buffer: VertexBuffer)
 		{
 			if (buffer.texture != lastTexture)
 			{
@@ -309,7 +360,16 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			val drawCount = spritesInBuffer * 6
 			mesh.render(shader, GL20.GL_TRIANGLES, currentOffset, drawCount)
 			currentOffset += drawCount
+		}
 
+		for (buffer in staticBuffers)
+		{
+			drawBuffer(buffer)
+		}
+
+		for (buffer in queuedBuffers)
+		{
+			drawBuffer(buffer)
 			bufferPool.free(buffer)
 		}
 		queuedBuffers.clear()
@@ -318,45 +378,15 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		Gdx.gl.glDepthMask(true)
 		Gdx.gl.glDisable(GL20.GL_BLEND)
+		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
 		shader.end()
 
 		currentVertexCount = 0
 	}
 
 	// ----------------------------------------------------------------------
-	private fun flush(batch: Batch)
+	private fun queueRenderJobs()
 	{
-		if (!inBegin) throw Exception("Flush called before begin!")
-
-		// Begin prerender work
-		executor.addJob {
-			// sort
-			RadixSort.sort(spriteArray, sortedArray, 0, 0, queuedSprites, MOST_SIGNIFICANT_BYTE_INDEX)
-
-			// do screen shake
-			if ( screenShakeRadius > 2 )
-			{
-				screenShakeAccumulator += delta
-
-				while ( screenShakeAccumulator >= screenShakeSpeed )
-				{
-					screenShakeAccumulator -= screenShakeSpeed
-					screenShakeAngle += (150 + Random.random() * 60)
-
-					if (!screenShakeLocked)
-					{
-						screenShakeRadius *= 0.9f
-					}
-				}
-
-				offsetx += Math.sin( screenShakeAngle.toDouble() ).toFloat() * screenShakeRadius
-				offsety += Math.cos( screenShakeAngle.toDouble() ).toFloat() * screenShakeRadius
-			}
-		}
-
-		executor.awaitAllJobs()
-
-		// begin rendering
 		for (i in 0 until queuedSprites)
 		{
 			val rs = spriteArray[i]!!
@@ -387,8 +417,8 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			}
 
 			requestRender(rs.blend.src, rs.blend.dst, texture!!, { vertices: FloatArray, offset: Int ->
-				val localx = rs.x + offsetx
-				val localy = rs.y + offsety
+				val localx = rs.x
+				val localy = rs.y
 				val localw = rs.width * tileSize
 				val localh = rs.height * tileSize
 
@@ -409,10 +439,11 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 				}
 			} )
 		}
+	}
 
-		combinedMatrix.set(batch.projectionMatrix).mul(batch.transformMatrix)
-		waitOnRender()
-
+	// ----------------------------------------------------------------------
+	private fun cleanup()
+	{
 		// clean up
 		for (i in 0 until queuedSprites)
 		{
@@ -438,10 +469,53 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		}
 
 		queuedSprites = 0
+	}
 
-		inBegin = false
+	// ----------------------------------------------------------------------
+	private fun flush(batch: Batch)
+	{
+		// Begin prerender work
+		executor.addJob {
+			// sort
+			RadixSort.sort(spriteArray, sortedArray, 0, 0, queuedSprites, MOST_SIGNIFICANT_BYTE_INDEX)
 
-		batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+			// do screen shake
+			if ( screenShakeRadius > 2 )
+			{
+				screenShakeAccumulator += delta
+
+				while ( screenShakeAccumulator >= screenShakeSpeed )
+				{
+					screenShakeAccumulator -= screenShakeSpeed
+					screenShakeAngle += (150 + Random.random() * 60)
+
+					if (!screenShakeLocked)
+					{
+						screenShakeRadius *= 0.9f
+					}
+				}
+
+				offsetx += Math.sin( screenShakeAngle.toDouble() ).toFloat() * screenShakeRadius
+				offsety += Math.cos( screenShakeAngle.toDouble() ).toFloat() * screenShakeRadius
+			}
+		}
+
+		executor.awaitAllJobs()
+
+		// begin rendering
+		queueRenderJobs()
+
+		if (inStaticBegin)
+		{
+			storeStatic()
+		}
+		else
+		{
+			combinedMatrix.set(batch.projectionMatrix).mul(batch.transformMatrix)
+			waitOnRender()
+		}
+
+		cleanup()
 	}
 
 	// ----------------------------------------------------------------------
@@ -490,7 +564,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	// ----------------------------------------------------------------------
 	fun queueParticle(effect: ParticleEffect, ix: Float, iy: Float, layer: Int, index: Int, colour: Colour = Colour.WHITE, width: Float = 1f, height: Float = 1f, lit: Boolean = true)
 	{
-		if (!inBegin) throw Exception("Queue called before begin!")
+		if (!inBegin && !inStaticBegin) throw Exception("Queue called before begin!")
 
 		var lx = ix
 		var ly = iy
@@ -544,8 +618,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		if (effect.light != null)
 		{
-			effect.light!!.pos.set(lx, ly)
-			lights.add(effect.light!!)
+			addLight(effect.light!!, lx, ly)
 		}
 
 		//val scale = effect.animation?.renderScale()?.get(0) ?: 1f
@@ -643,9 +716,16 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	}
 
 	// ----------------------------------------------------------------------
+	fun addLight(light: Light, ix: Float, iy: Float)
+	{
+		light.pos.set(ix, iy)
+		lights.add(light)
+	}
+
+	// ----------------------------------------------------------------------
 	fun queueSprite(tilingSprite: TilingSprite, ix: Float, iy: Float, layer: Int, index: Int, colour: Colour = Colour.WHITE, width: Float = 1f, height: Float = 1f, lit: Boolean = true)
 	{
-		if (!inBegin) throw Exception("Queue called before begin!")
+		if (!inBegin && !inStaticBegin) throw Exception("Queue called before begin!")
 
 		update(tilingSprite)
 
@@ -696,7 +776,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	// ----------------------------------------------------------------------
 	fun queueSprite(sprite: Sprite, ix: Float, iy: Float, layer: Int, index: Int, colour: Colour = Colour.WHITE, width: Float = 1f, height: Float = 1f, scaleX: Float = 1f, scaleY: Float = 1f, lit: Boolean = true)
 	{
-		if (!inBegin) throw Exception("Queue called before begin!")
+		if (!inBegin && !inStaticBegin) throw Exception("Queue called before begin!")
 
 		update(sprite)
 
@@ -762,8 +842,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		if (sprite.light != null)
 		{
-			sprite.light!!.pos.set(ix, iy)
-			lights.add(sprite.light!!)
+			addLight(sprite.light!!, ix, iy)
 		}
 
 		// check if onscreen
@@ -779,7 +858,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	// ----------------------------------------------------------------------
 	fun queueTexture(texture: TextureRegion, ix: Float, iy: Float, layer: Int, index: Int, colour: Colour = Colour.WHITE, width: Float = 1f, height: Float = 1f, scaleX: Float = 1f, scaleY: Float = 1f, sortX: Float? = null, sortY: Float? = null, lit: Boolean = true)
 	{
-		if (!inBegin) throw Exception("Queue called before begin!")
+		if (!inBegin && !inStaticBegin) throw Exception("Queue called before begin!")
 
 		val lx = ix - width
 		val ly = iy - height
@@ -901,6 +980,7 @@ attribute vec2 ${ShaderProgram.TEXCOORD_ATTRIBUTE}1;
 attribute float a_blendAlpha;
 
 uniform mat4 u_projTrans;
+uniform vec2 u_offset;
 
 varying vec4 v_color;
 varying vec2 v_pixelPos;
@@ -912,11 +992,16 @@ void main()
 {
 	v_color = ${ShaderProgram.COLOR_ATTRIBUTE};
 	v_color.a = min(v_color.a, 1.0);
-	v_pixelPos = ${ShaderProgram.POSITION_ATTRIBUTE}.xy;
+
+	vec4 rawPos = ${ShaderProgram.POSITION_ATTRIBUTE};
+	vec2 worldPos = ${ShaderProgram.POSITION_ATTRIBUTE}.xy + u_offset;
+	vec4 truePos = vec4(worldPos.x, worldPos.y, rawPos.z, rawPos.w);
+
+	v_pixelPos = worldPos;
 	v_texCoords1 = ${ShaderProgram.TEXCOORD_ATTRIBUTE}0;
 	v_texCoords2 = ${ShaderProgram.TEXCOORD_ATTRIBUTE}1;
 	v_blendAlpha = a_blendAlpha;
-	gl_Position = u_projTrans * ${ShaderProgram.POSITION_ATTRIBUTE};
+	gl_Position = u_projTrans * truePos;
 }
 """
 			val fragmentShader = """
