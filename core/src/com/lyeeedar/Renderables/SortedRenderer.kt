@@ -446,7 +446,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 				lastBlendDst = buffer.blendDst
 			}
 
-			val spritesInBuffer = buffer.count / (4 * 11)
+			val spritesInBuffer = buffer.count / (4 * vertexSize)
 			val drawCount = spritesInBuffer * 6
 			mesh.render(shader, GL20.GL_TRIANGLES, currentOffset, drawCount)
 			currentOffset += drawCount

@@ -392,7 +392,7 @@ internal inline fun doDraw(vertices: FloatArray, offset: Int, region1: TextureRe
 	vertices[i+32] = r1u2
 	vertices[i+33] = r1v2
 	vertices[i+34] = r2u2
-	vertices[i+34] = r2v2
+	vertices[i+35] = r2v2
 	vertices[i+36] = spriteX
 	vertices[i+37] = spriteY
 	vertices[i+38] = blendAlpha
