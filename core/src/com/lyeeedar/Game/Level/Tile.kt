@@ -7,6 +7,13 @@ import com.lyeeedar.Util.AssetManager
 import com.lyeeedar.Util.Colour
 import com.lyeeedar.Util.Point
 
+enum class TileType
+{
+	PATH,
+	GROUND,
+	WALL
+}
+
 class Tile(x: Int, y: Int) : Point(x, y)
 {
 	val enemies = Array<Enemy>()
@@ -21,7 +28,7 @@ class Tile(x: Int, y: Int) : Point(x, y)
 
 	var previewTower: TowerDefinition? = null
 
-	var isSolid = false
+	var type: TileType = TileType.GROUND
 		set(value)
 		{
 			field = value

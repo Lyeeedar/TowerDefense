@@ -1,7 +1,7 @@
 <Level xmlns:meta="Editor">
 	<Grid>
 		<Line>!!!?####?!!!!!!!!!!!</Line>
-		<Line>!!!?,A,##??!!!!!!!!!</Line>
+		<Line>!!!?,A!##??!!!!!!!!!</Line>
 		<Line>!!!?,.,,@,,?!!!!!!!!</Line>
 		<Line>!!!#,.....,#!!!!!!!!</Line>
 		<Line>!!?#,,,,,.,#!!!!!!!!</Line>
@@ -100,5 +100,5 @@
 		</Wave>
 	</Waves>
 	<Theme>GrassyKnoll</Theme>
-	<Ambient>99,99,99</Ambient>
+	<Ambient>36,36,36</Ambient>
 </Level>

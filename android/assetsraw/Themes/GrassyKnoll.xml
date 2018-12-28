@@ -4,7 +4,7 @@
 		<Symbol meta:RefKey="Symbol">
 			<Character>.</Character>
 			<Extends></Extends>
-			<IsPath>true</IsPath>
+			<Type>Path</Type>
 			<Sprite meta:RefKey="SpriteWrapper">
 				<Sprite meta:RefKey="RenderedLayeredSprite">
 					<Layers>
@@ -26,6 +26,7 @@
 		<Symbol meta:RefKey="Symbol">
 			<Character>,</Character>
 			<Extends></Extends>
+			<Type>Ground</Type>
 			<Sprite meta:RefKey="SpriteWrapper">
 				<Sprite meta:RefKey="RenderedLayeredSprite">
 					<Layers>
@@ -39,6 +40,7 @@
 		<Symbol meta:RefKey="Symbol">
 			<Character>#</Character>
 			<Extends></Extends>
+			<Type>Ground</Type>
 			<Sprite meta:RefKey="SpriteWrapper">
 				<Sprite meta:RefKey="RenderedLayeredSprite">
 					<Layers>
@@ -52,6 +54,7 @@
 		<Symbol meta:RefKey="Symbol">
 			<Character>!</Character>
 			<Extends></Extends>
+			<Type>Wall</Type>
 			<Sprite meta:RefKey="SpriteWrapper">
 				<Sprite meta:RefKey="RenderedLayeredSprite">
 					<Layers>
@@ -118,11 +121,6 @@
 									<DrawActualSize>true</DrawActualSize>
 								</Layer>
 							</Layers>
-							<Light meta:RefKey="Light">
-								<Colour>228,240,161,255</Colour>
-								<Brightness>0.1</Brightness>
-								<Range>3</Range>
-							</Light>
 						</Sprite>
 						<Chance>0.1</Chance>
 					</Sprite>

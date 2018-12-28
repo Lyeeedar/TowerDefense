@@ -163,9 +163,9 @@ class Map(val grid: Array2D<Tile>)
 					{
 						val nextTile = grid[next]
 						var nextCost = nextCost
-						if (!nextTile.isSolid && nextTile.fillingEntity == null)
+						if (nextTile.type == TileType.PATH && nextTile.fillingEntity == null)
 						{
-							if (grid.get(nextTile, 1).any { it.isSolid || nextTile.fillingEntity != null })
+							if (grid.get(nextTile, 1).any { it.type != TileType.PATH || nextTile.fillingEntity != null })
 							{
 								nextCost++
 							}
@@ -265,7 +265,7 @@ class Map(val grid: Array2D<Tile>)
 
 					spawners[def.destination].add(spawner)
 
-					tile.isSolid = false
+					tile.type = TileType.PATH
 					tile.sprite = pathSymbol.sprite!!.copy()
 				}
 				else if (symbolsMap.containsKey(char.toInt()))
@@ -280,7 +280,7 @@ class Map(val grid: Array2D<Tile>)
 						loadTile(tile, '.')
 					}
 
-					tile.isSolid = !symbol.isPath
+					tile.type = symbol.type
 
 					if (symbol.sprite != null)
 					{
@@ -289,7 +289,7 @@ class Map(val grid: Array2D<Tile>)
 				}
 				else if (char == '@')
 				{
-					tile.isSolid = true
+					tile.type = TileType.GROUND
 					tile.sprite = groundSymbol.sprite!!.copy()
 
 					val buildSite = BuildSite()
@@ -298,7 +298,7 @@ class Map(val grid: Array2D<Tile>)
 				}
 				else if (char.isDigit())
 				{
-					tile.isSolid = false
+					tile.type = TileType.PATH
 					tile.sprite = pathSymbol.sprite!!.copy()
 
 					val sinker = Sinker()
@@ -356,7 +356,7 @@ class SpawnerDef(val char: Char, val destination: Char)
 
 class Symbol(
 	val char: Char, val extends: Char,
-	val isPath: Boolean,
+	val type: TileType,
 	val usageCondition: String, val fallbackChar: Char,
 	val nameKey: String?,
 	val sprite: SpriteWrapper?)
@@ -368,7 +368,7 @@ class Symbol(
 			val character = xmlData.get("Character")[0]
 			val extends = xmlData.get("Extends", " ")!!.firstOrNull() ?: ' '
 
-			val isPath = xmlData.getBoolean("IsPath", false)
+			val type = TileType.valueOf(xmlData.get("Type", "Ground")!!.toUpperCase())
 
 			val usageCondition = xmlData.get("UsageCondition", "1")!!.toLowerCase()
 			val fallbackChar = xmlData.get("FallbackCharacter", ".")!!.firstOrNull() ?: '.'
@@ -382,7 +382,7 @@ class Symbol(
 				sprite = SpriteWrapper.load(symbolSpriteEl)
 			}
 
-			return Symbol(character, extends, isPath, usageCondition, fallbackChar, nameKey, sprite)
+			return Symbol(character, extends, type, usageCondition, fallbackChar, nameKey, sprite)
 		}
 	}
 }

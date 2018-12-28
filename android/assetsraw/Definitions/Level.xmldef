@@ -2,7 +2,7 @@
 	<Definition Name="Symbol" IsGlobal="True" meta:RefKey="StructDef">
 		<Data Name="Character" MaxLength="1" SkipIfDefault="False" meta:RefKey="String" />
 		<Data Name="Extends" MaxLength="1" SkipIfDefault="False" meta:RefKey="String" />
-		<Data Name="IsPath" meta:RefKey="Boolean" />
+		<Data Name="Type" EnumValues="Ground,Path,Wall" SkipIfDefault="False" meta:RefKey="Enum" />
 		<Data Name="UsageCondition" Default="1" meta:RefKey="String" />
 		<Data Name="FallbackCharacter" MaxLength="1" Default="." VisibleIf="UsageCondition != 1" meta:RefKey="String" />
 		<Data Name="NameKey" meta:RefKey="String" />

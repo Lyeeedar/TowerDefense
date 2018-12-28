@@ -38,6 +38,10 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 	private val opaqueTiles = com.badlogic.gdx.utils.Array<Point>()
 	private val clearTiles = com.badlogic.gdx.utils.Array<Point>()
 	val currentShadowCast = com.badlogic.gdx.utils.Array<Point>()
+	val invCurrentShadowCast = com.badlogic.gdx.utils.Array<Point>()
+
+	fun anyOpaque() = opaqueTiles.size > 0
+	fun anyClear() = clearTiles.size > 0
 
 	@JvmOverloads fun getShadowCast(x: Int, y: Int, range: Int): com.badlogic.gdx.utils.Array<Point>
 	{
@@ -59,6 +63,9 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 			{
 				Point.freeAllTS(currentShadowCast)
 				currentShadowCast.clear()
+
+				Point.freeAllTS(invCurrentShadowCast)
+				invCurrentShadowCast.clear()
 
 				for (ix in 0 until range * 2 + 1)
 				{
@@ -120,6 +127,9 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 			Point.freeAllTS(currentShadowCast)
 			currentShadowCast.clear()
 
+			Point.freeAllTS(invCurrentShadowCast)
+			invCurrentShadowCast.clear()
+
 			// build grid
 			var anySolid = false
 			val resistanceGrid = Array(range * 2) { DoubleArray(range * 2) }
@@ -156,10 +166,18 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 					val gx = ix + x - range
 					val gy = iy + y - range
 
-					if ((!anySolid || rawOutput!![ix][iy] > 0) && collisionGrid.inBounds(gx, gy))
+					if (collisionGrid.inBounds(gx, gy))
 					{
-						val point = Point.obtainTS().set(gx, gy)
-						currentShadowCast.add(point)
+						if ((!anySolid || rawOutput!![ix][iy] > 0))
+						{
+							val point = Point.obtainTS().set(gx, gy)
+							currentShadowCast.add(point)
+						}
+						else
+						{
+							val point = Point.obtainTS().set(gx, gy)
+							invCurrentShadowCast.add(point)
+						}
 					}
 				}
 			}

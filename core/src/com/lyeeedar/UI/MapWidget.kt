@@ -85,7 +85,7 @@ class MapWidget(val map: Map) : Widget()
 								screenPos.y += tileSize / 2f
 								val tile = if (map.grid.inBounds(sx, sy)) map.grid[sx, sy] else return false
 
-								if (tile.isSolid)
+								if (tile.type == TileType.GROUND)
 								{
 									if (tile.fillingEntity != null)
 									{
