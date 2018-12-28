@@ -6,6 +6,14 @@ import com.badlogic.gdx.math.Path
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Pools
 
+fun Vector2.lerp(targetx: Float, targety: Float, alpha: Float): Vector2
+{
+	val invAlpha = 1.0f - alpha
+	this.x = x * invAlpha + targetx * alpha
+	this.y = y * invAlpha + targety * alpha
+	return this
+}
+
 fun Path<Vector2>.valueAt(time: Float): Vector2
 {
 	val vec2 = Vector2()

@@ -367,6 +367,7 @@ class AssetManager
 			light.colour.mul(brightness, brightness, brightness, 1.0f)
 			light.range = xml.getFloat("Range")
 			light.baseRange = light.range
+			light.hasShadows = xml.getBoolean("HasShadows", false)
 
 			val animEl = xml.getChildByName("Animation")
 			if (animEl != null)

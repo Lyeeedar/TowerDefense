@@ -1,5 +1,6 @@
 package com.lyeeedar.Renderables
 
+import com.badlogic.gdx.math.Vector2
 import com.lyeeedar.Global.Companion.collisionGrid
 import com.lyeeedar.Util.Point
 import squidpony.squidgrid.FOV
@@ -43,7 +44,7 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 	fun anyOpaque() = opaqueTiles.size > 0
 	fun anyClear() = clearTiles.size > 0
 
-	@JvmOverloads fun getShadowCast(x: Int, y: Int, range: Int): com.badlogic.gdx.utils.Array<Point>
+	fun getShadowCast(x: Int, y: Int, range: Int): com.badlogic.gdx.utils.Array<Point>
 	{
 		val collisionGrid = collisionGrid
 		if (collisionGrid == null)
@@ -132,10 +133,10 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 
 			// build grid
 			var anySolid = false
-			val resistanceGrid = Array(range * 2) { DoubleArray(range * 2) }
-			for (ix in 0 until range * 2)
+			val resistanceGrid = Array(range * 2 + 1) { DoubleArray(range * 2 + 1) }
+			for (ix in 0 until range * 2 + 1)
 			{
-				for (iy in 0 until range * 2)
+				for (iy in 0 until range * 2 + 1)
 				{
 					val gx = ix + x - range
 					val gy = iy + y - range
@@ -156,17 +157,17 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 			var rawOutput: Array<DoubleArray>? = null
 			if (anySolid)
 			{
-				rawOutput = fov.calculateFOV(resistanceGrid, range, range, range.toDouble(), Radius.SQUARE)
+				rawOutput = fov.calculateFOV(resistanceGrid, range, range, range.toDouble() + 1, Radius.SQUARE)
 			}
 
-			for (ix in 0 until range * 2)
+			for (ix in 0 until range * 2 + 1)
 			{
-				for (iy in 0 until range * 2)
+				for (iy in 0 until range * 2 + 1)
 				{
 					val gx = ix + x - range
 					val gy = iy + y - range
 
-					if (collisionGrid.inBounds(gx, gy))
+					if (collisionGrid.inBounds(gx, gy) && Vector2.dst2(gx.toFloat(), gy.toFloat(), x.toFloat(), y.toFloat()) <= (range * range).toFloat())
 					{
 						if ((!anySolid || rawOutput!![ix][iy] > 0))
 						{

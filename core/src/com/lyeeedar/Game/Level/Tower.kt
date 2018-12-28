@@ -212,6 +212,8 @@ class ShotEffectType : AbstractEffectType()
 
 	var targetCache: TargetCache? = null
 
+	private val future = Enemy.Companion.FuturePos()
+
 	override fun apply(entity: Entity, map: Map)
 	{
 		val entityPos = if (entity is Enemy) entity.pos else entity.tile.toVec()
@@ -254,8 +256,8 @@ class ShotEffectType : AbstractEffectType()
 
 			val flightTime = 0.2f + enemy.tile.euclideanDist(entity.tile) * 0.025f
 
-			val pos = Enemy.getFuturePos(flightTime, map, enemy)
-			val targetPos = pos.pos
+			Enemy.getFuturePos(flightTime, map, enemy, future)
+			val targetPos = future.pos
 
 			val path = arrayOf(Vector2(), targetPos - entityPos)
 			path[1].y *= -1

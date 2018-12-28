@@ -13,7 +13,7 @@ class MapScreen : AbstractScreen()
 	{
 		map = Map.load("Levels/Test")
 
-		val collisionGrid = Array2D<Boolean>(map.width, map.height) { x,y -> map.grid[x,y].type != TileType.WALL }
+		val collisionGrid = Array2D<Boolean>(map.width, map.height) { x,y -> map.grid[x,y].type == TileType.WALL }
 		Global.collisionGrid = collisionGrid
 
 		val mapWidget = MapWidget(map)

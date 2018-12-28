@@ -9,8 +9,6 @@ import com.lyeeedar.Renderables.Particle.ParticleEffect
 import com.lyeeedar.Renderables.Renderable
 import com.lyeeedar.Renderables.Sprite.Sprite
 import com.lyeeedar.Util.*
-import ktx.math.minus
-import ktx.math.plus
 
 class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
 {
@@ -27,6 +25,8 @@ class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
 	var currentDest: Tile? = null
 
 	var effects = Array<Renderable>()
+
+	private val future = FuturePos()
 
 	init
 	{
@@ -45,9 +45,9 @@ class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
 			return
 		}
 
-		val futurepos = getFuturePos(delta, map, this)
-		pos = futurepos.pos
-		currentDest = futurepos.destTile
+		getFuturePos(delta, map, this, future)
+		pos.set(future.pos)
+		currentDest = future.destTile
 
 		val tile = map.grid.getClamped(pos.x.toInt(), pos.y.toInt())
 
@@ -71,10 +71,15 @@ class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
 
 	companion object
 	{
-		class FuturePos(val pos: Vector2, val destTile: Tile?)
-		fun getFuturePos(delta: Float, map: Map, enemy: Enemy): FuturePos
+		class FuturePos()
 		{
-			val pos = enemy.pos.cpy()
+			val pos: Vector2 = Vector2()
+			var destTile: Tile? = null
+		}
+
+		fun getFuturePos(delta: Float, map: Map, enemy: Enemy, future: FuturePos)
+		{
+			val pos = future.pos.set(enemy.pos)
 			var currentDest = enemy.currentDest
 			var tile = enemy.tile
 
@@ -112,15 +117,13 @@ class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
 					break
 				}
 
-				val targetPos = currentDest.toVec() + enemy.chosenOffset
-				val diff = targetPos.cpy() - pos
-				val len = diff.len()
+				val len = Vector2.len((currentDest.x + enemy.chosenOffset.x) - pos.x, (currentDest.y + enemy.chosenOffset.y) - pos.y)
 
-				val move = min(moveDist, len)
+				val move = if (moveDist < len) moveDist else len
 				moveDist -= move
 
 				val alpha = move / len
-				pos.lerp(targetPos, alpha)
+				pos.lerp(enemy.chosenOffset.x + currentDest.x, enemy.chosenOffset.y + currentDest.y, alpha)
 
 				if (moveDist > 0f)
 				{
@@ -129,7 +132,7 @@ class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
 				}
 			}
 
-			return FuturePos(pos, currentDest)
+			future.destTile = currentDest
 		}
 	}
 }

@@ -23,6 +23,8 @@ class Light(colour: Colour? = null, brightness: Float = 1f, range: Float = 3f)
 	var brightness = 1.0f
 	var range = 0f
 
+	var hasShadows = false
+
 	var anim: LightAnimation? = null
 
 	init
@@ -40,7 +42,7 @@ class Light(colour: Colour? = null, brightness: Float = 1f, range: Float = 3f)
 		this.range = range
 	}
 
-	val cache: ShadowCastCache = ShadowCastCache(fovType = FOV.RIPPLE)
+	val cache: ShadowCastCache = ShadowCastCache(fovType = FOV.SHADOW)
 
 	var batchID: Int = 0
 
@@ -56,7 +58,11 @@ class Light(colour: Colour? = null, brightness: Float = 1f, range: Float = 3f)
 
 	fun update(delta: Float)
 	{
-		cache.getShadowCast(pos.x.toInt(), pos.y.toInt(), range.ciel())
+		if (hasShadows)
+		{
+			cache.getShadowCast(pos.x.toInt(), pos.y.toInt(), range.ciel())
+		}
+
 		anim?.update(delta, this)
 	}
 

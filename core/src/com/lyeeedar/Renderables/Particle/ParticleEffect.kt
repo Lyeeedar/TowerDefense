@@ -452,6 +452,8 @@ class ParticleLight
 	var keyframeAlpha: Float = 0f
 	var keyframes: kotlin.Array<ParticleLightKeyframe> = emptyArray()
 
+	var hasShadows = false
+
 	fun update(time: Float, size: Float)
 	{
 		var keyframeIndex = keyframeIndex
@@ -491,6 +493,8 @@ class ParticleLight
 
 		val range = (keyframe1.range.lerp(keyframe2.range, keyframeAlpha))
 		light.range = range * size
+
+		light.hasShadows = hasShadows
 	}
 
 	fun store(kryo: Kryo, output: Output)
@@ -509,6 +513,8 @@ class ParticleLight
 
 			output.writeFloat(keyframe.range)
 		}
+
+		output.writeBoolean(hasShadows)
 	}
 
 	fun restore(kryo: Kryo, input: Input)
@@ -531,6 +537,8 @@ class ParticleLight
 
 			keyframes[i] = ParticleLightKeyframe(time, Colour(r, g, b, a), brightness, range)
 		}
+
+		hasShadows = input.readBoolean()
 	}
 
 	companion object
@@ -550,6 +558,8 @@ class ParticleLight
 			val range = LerpTimeline()
 			val rangeEls = xml.getChildByName("Range")!!
 			range.parse(rangeEls, { it.toFloat() })
+
+			light.hasShadows = xml.getBoolean("HasShadows", false)
 
 			// Make map of times
 			val times = ObjectSet<Float>()

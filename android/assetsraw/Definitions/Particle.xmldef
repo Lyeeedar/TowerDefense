@@ -117,6 +117,7 @@
 					<Data Name="Range" Min="0" Default="3" SkipIfDefault="False" meta:RefKey="Number" />
 				</Keyframe>
 			</Data>
+			<Data Name="HasShadows" meta:RefKey="Boolean" />
 		</Data>
 	</Definition>
 </Definitions>

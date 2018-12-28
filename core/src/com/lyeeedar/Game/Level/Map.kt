@@ -3,7 +3,6 @@ package com.lyeeedar.Game.Level
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.IntMap
 import com.badlogic.gdx.utils.ObjectMap
-import com.badlogic.gdx.utils.ObjectSet
 import com.lyeeedar.Direction
 import com.lyeeedar.Renderables.Sprite.SpriteWrapper
 import com.lyeeedar.Util.*
@@ -29,7 +28,7 @@ class Map(val grid: Array2D<Tile>)
 		updatePath()
 	}
 
-	val enemyList = ObjectSet<Enemy>()
+	val enemyList = Array<Enemy>()
 	val towerList = Array<Tower>()
 	val otherList = Array<Entity>()
 	fun update(delta: Float)
@@ -68,32 +67,37 @@ class Map(val grid: Array2D<Tile>)
 		}
 
 		var pathsDirty = false
-		for (tile in grid)
+		for (x in 0 until grid.width)
 		{
-			for (enemy in tile.enemies)
+			for (y in 0 until grid.height)
 			{
-				enemyList.add(enemy)
-			}
+				val tile = grid[x, y]
 
-			tile.enemies.clear()
-
-			if (tile.fillingEntity != null)
-			{
-				val entity = tile.fillingEntity!!
-				if (entity is Tower)
+				for (i in 0 until tile.enemies.size)
 				{
-					towerList.add(entity)
+					val enemy = tile.enemies[i]
+					enemyList.add(enemy)
 				}
-				else
-				{
-					otherList.add(entity)
-				}
-			}
+				tile.enemies.clear()
 
-			if (tile.tileDirty)
-			{
-				pathsDirty = true
-				tile.tileDirty = false
+				if (tile.fillingEntity != null)
+				{
+					val entity = tile.fillingEntity!!
+					if (entity is Tower)
+					{
+						towerList.add(entity)
+					}
+					else
+					{
+						otherList.add(entity)
+					}
+				}
+
+				if (tile.tileDirty)
+				{
+					pathsDirty = true
+					tile.tileDirty = false
+				}
 			}
 		}
 
@@ -102,19 +106,21 @@ class Map(val grid: Array2D<Tile>)
 			updatePath()
 		}
 
-		for (entity in enemyList)
+		for (i in 0 until enemyList.size)
 		{
+			val entity = enemyList[i]
 			entity.update(delta, this)
 		}
-		for (entity in otherList)
+		for (i in 0 until otherList.size)
 		{
+			val entity = otherList[i]
 			entity.update(delta, this)
 		}
-		for (entity in towerList)
+		for (i in 0 until towerList.size)
 		{
+			val entity = towerList[i]
 			entity.update(delta, this)
 		}
-
 		enemyList.clear()
 		otherList.clear()
 		towerList.clear()
@@ -320,7 +326,7 @@ class Map(val grid: Array2D<Tile>)
 				for (y in 0 until charGrid.ySize)
 				{
 					val tile = grid[x, y]
-					val char = charGrid[x, y]
+					val char = charGrid[x, charGrid.ySize - 1 - y]
 
 					loadTile(tile, char)
 				}

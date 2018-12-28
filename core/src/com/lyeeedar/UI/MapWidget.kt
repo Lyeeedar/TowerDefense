@@ -74,7 +74,7 @@ class MapWidget(val map: Map) : Widget()
 							val xp = x + ((map.width * tileSize) / 2f) - (width / 2f)
 
 							val sx = (xp / tileSize).toInt()
-							val sy = (map.height-1) - (y / tileSize).toInt()
+							val sy = (y / tileSize).toInt()
 
 							if (button == Input.Buttons.LEFT)
 							{
@@ -162,7 +162,7 @@ class MapWidget(val map: Map) : Widget()
 							val xp = x + ((map.width * tileSize) / 2f) - (width / 2f)
 
 							val sx = (xp / tileSize).toInt()
-							val sy = (map.height - 1) - (y / tileSize).toInt()
+							val sy = (y / tileSize).toInt()
 
 							val point = Point(sx, sy)
 
@@ -226,14 +226,14 @@ class MapWidget(val map: Map) : Widget()
 	{
 		val xp = x + (width / 2f) - ((map.width * tileSize) / 2f)
 
-		return Vector2(xp + point.x * tileSize, renderY + ((map.height - 1) - point.y) * tileSize)
+		return Vector2(xp + point.x * tileSize, renderY + point.y * tileSize)
 	}
 
 	fun pointToScreenspace(point: Vector2): Vector2
 	{
 		val xp = x + (width / 2f) - ((map.width * tileSize) / 2f)
 
-		return Vector2(xp + point.x * tileSize, renderY + ((map.height - 1) - point.y) * tileSize)
+		return Vector2(xp + point.x * tileSize, renderY + point.y * tileSize)
 	}
 
 	override fun invalidate()
@@ -270,7 +270,7 @@ class MapWidget(val map: Map) : Widget()
 					val tileColour = Colour.WHITE
 
 					val xi = x.toFloat()
-					val yi = (map.height-1) - y.toFloat()
+					val yi = y.toFloat()
 
 					var tileHeight = 0
 
@@ -313,7 +313,7 @@ class MapWidget(val map: Map) : Widget()
 				val tileColour = Colour.WHITE
 
 				val xi = x.toFloat()
-				val yi = (map.height-1) - y.toFloat()
+				val yi = y.toFloat()
 
 				val groundSprite = tile.sprite
 				if (groundSprite != null)
@@ -392,7 +392,7 @@ class MapWidget(val map: Map) : Widget()
 				for (entity in tile.enemies)
 				{
 					val pos = entity.pos.cpy()
-					pos.y = map.height - 1 - pos.y
+					//pos.y = map.height - 1 - pos.y
 
 					renderer.queueSprite(entity.sprite, pos.x, pos.y, ENTITY, 0, tileColour)
 

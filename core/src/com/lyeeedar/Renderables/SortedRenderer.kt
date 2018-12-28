@@ -33,11 +33,6 @@ import squidpony.squidmath.LightRNG
  * Created by Philip on 04-Jul-16.
  */
 
-const val maxSprites = 10000
-const val vertexSize = (2 + 4 + 2 + 2 + 1)
-const val verticesASprite = vertexSize * 4
-const val maxVertices = maxSprites * vertexSize
-
 // ----------------------------------------------------------------------
 class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, val layers: Int, val alwaysOnscreen: Boolean)
 {
@@ -145,6 +140,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 					   VertexAttribute(VertexAttributes.Usage.ColorUnpacked, 4, ShaderProgram.COLOR_ATTRIBUTE),
 					   VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "0"),
 					   VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "1"),
+					   VertexAttribute(VertexAttributes.Usage.Generic, 2, "a_spritePos"),
 					   VertexAttribute(VertexAttributes.Usage.Generic, 1, "a_blendAlpha")
 					  )
 
@@ -171,7 +167,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		lightPosRange = FloatArray(shaderLightNum * 3)
 		lightColourBrightness = FloatArray(shaderLightNum * 4)
 		lightShadowData = FloatArray(shaderLightNum * 3)
-		lightShadowPoints = FloatArray(100 * 2)
+		lightShadowPoints = FloatArray(maxShadowPoints * 2)
 		shader = createShader(shaderLightNum)
 	}
 
@@ -320,7 +316,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		{
 			lightPosRange[(i*3)+0] = light.pos.x * tileSize + offsetx
 			lightPosRange[(i*3)+1] = light.pos.y * tileSize + offsety
-			lightPosRange[(i*3)+2] = (light.range * tileSize) * (light.range * tileSize)
+			lightPosRange[(i*3)+2] = (light.range * tileSize * 0.9f) * (light.range * tileSize * 0.9f)
 
 			lightColourBrightness[(i*4)+0] = light.colour.r
 			lightColourBrightness[(i*4)+1] = light.colour.g
@@ -334,12 +330,14 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 				val numCount = when
 				{
+					!light.hasShadows -> 0f
 					!light.cache.anyOpaque() -> 0f
+					!light.cache.anyClear() -> -1f
 					else -> cast.size.toFloat()
 				}
 
 				lightShadowData[(i*3)+0] = numCount
-				lightShadowData[(i*3)+1] = shadowCacheOffset.toFloat()
+				lightShadowData[(i*3)+1] = (shadowCacheOffset / 2).toFloat()
 				lightShadowData[(i*3)+2] = mode.toFloat()
 
 				for (point in cast)
@@ -361,7 +359,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		if (Global.collisionGrid != null)
 		{
 			shader.setUniform3fv("u_lightShadowData", lightShadowData, 0, lights.size * 3)
-			shader.setUniform2fv("u_lightShadowPoints", lightShadowPoints, 0, 100 * 2)
+			shader.setUniform2fv("u_lightShadowPoints", lightShadowPoints, 0, shadowCacheOffset)
 		}
 
 		shader.setUniformi("u_numLights", lights.size)
@@ -1019,21 +1017,30 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		private val smoothLighting = true
 		private val random = LightRNG()
 
+		private const val vertexSize = 4 + 2 + 2 + 2 + 2 + 1
+		private const val maxSprites = 10000
+		private const val verticesASprite = vertexSize * 4
+		private const val maxVertices = maxSprites * vertexSize
+
+		private const val maxShadowPoints = 100
+
 		fun createShader(numLights: Int): ShaderProgram
 		{
-			val numShadowCastPoints = 100
+			val numShadowCastPoints = maxShadowPoints
 
 			val vertexShader = """
 attribute vec4 ${ShaderProgram.POSITION_ATTRIBUTE};
 attribute vec4 ${ShaderProgram.COLOR_ATTRIBUTE};
 attribute vec2 ${ShaderProgram.TEXCOORD_ATTRIBUTE}0;
 attribute vec2 ${ShaderProgram.TEXCOORD_ATTRIBUTE}1;
+attribute vec2 a_spritePos;
 attribute float a_blendAlpha;
 
 uniform mat4 u_projTrans;
 uniform vec2 u_offset;
 
 varying vec4 v_color;
+varying vec2 v_spritePos;
 varying vec2 v_pixelPos;
 varying vec2 v_texCoords1;
 varying vec2 v_texCoords2;
@@ -1049,6 +1056,7 @@ void main()
 	vec4 truePos = vec4(worldPos.x, worldPos.y, rawPos.z, rawPos.w);
 
 	v_pixelPos = worldPos;
+	v_spritePos = a_spritePos;
 	v_texCoords1 = ${ShaderProgram.TEXCOORD_ATTRIBUTE}0;
 	v_texCoords2 = ${ShaderProgram.TEXCOORD_ATTRIBUTE}1;
 	v_blendAlpha = a_blendAlpha;
@@ -1064,6 +1072,7 @@ precision mediump float;
 #endif
 
 varying vec4 v_color;
+varying vec2 v_spritePos;
 varying vec2 v_pixelPos;
 varying vec2 v_texCoords1;
 varying vec2 v_texCoords2;
@@ -1094,7 +1103,7 @@ vec3 calculateLight(int index)
 	vec2 pixelPos = v_pixelPos;
 
 #ifdef TILELIGHTING
-	pixelPos = (floor(pixelPos / u_tileSize)) * u_tileSize;
+	pixelPos = (floor(v_spritePos / u_tileSize)) * u_tileSize;
 #else
 	pos += 0.5 * u_tileSize;
 #endif
@@ -1117,7 +1126,7 @@ vec3 calculateLight(int index)
 		// A value of 0 means all tiles are visible
 		if (numShadowPoints > 0)
 		{
-			pixelPos = (floor(pixelPos / u_tileSize)) * u_tileSize;
+			pixelPos = (floor(v_spritePos / u_tileSize)) * u_tileSize;
 
 			bool found = false;
 			for (int i = 0; i < numShadowPoints; i++)
@@ -1136,14 +1145,13 @@ vec3 calculateLight(int index)
 
 			if (mode < 0 && !found)
 			{
-				return vec3(0.0, 1.0, 0.0);
+				return vec3(0.0, 0.0, 0.0);
 			}
 			else if (mode > 0 && found)
 			{
-				return vec3(0.0, 0.0, 1.0);
+				return vec3(0.0, 0.0, 0.0);
 			}
 
-			return vec3(1.0, 0.0, 0.0);
 		}
 		// A value of -1 means no tiles are visible
 		else if (numShadowPoints == -1)

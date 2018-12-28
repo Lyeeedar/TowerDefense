@@ -238,6 +238,9 @@ internal inline fun doDraw(vertices: FloatArray, offset: Int, region1: TextureRe
 	val p4x = fx2
 	val p4y = fy
 
+	val spriteX = worldOriginX
+	val spriteY = worldOriginY - originY*scaleY*0.9f
+
 	var x1: Float
 	var y1: Float
 	var x2: Float
@@ -362,43 +365,51 @@ internal inline fun doDraw(vertices: FloatArray, offset: Int, region1: TextureRe
 	vertices[i+7] = r1v
 	vertices[i+8] = r2u
 	vertices[i+9] = r2v
-	vertices[i+10] = blendAlpha
+	vertices[i+10] = spriteX
+	vertices[i+11] = spriteY
+	vertices[i+12] = blendAlpha
 
-	vertices[i+11] = x2
-	vertices[i+12] = y2
-	vertices[i+13] = r
-	vertices[i+14] = g
-	vertices[i+15] = b
-	vertices[i+16] = a
-	vertices[i+17] = r1u
-	vertices[i+18] = r1v2
-	vertices[i+19] = r2u
-	vertices[i+20] = r2v2
-	vertices[i+21] = blendAlpha
+	vertices[i+13] = x2
+	vertices[i+14] = y2
+	vertices[i+15] = r
+	vertices[i+16] = g
+	vertices[i+17] = b
+	vertices[i+18] = a
+	vertices[i+19] = r1u
+	vertices[i+20] = r1v2
+	vertices[i+21] = r2u
+	vertices[i+22] = r2v2
+	vertices[i+23] = spriteX
+	vertices[i+24] = spriteY
+	vertices[i+25] = blendAlpha
 
-	vertices[i+22] = x3
-	vertices[i+23] = y3
-	vertices[i+24] = r
-	vertices[i+25] = g
-	vertices[i+26] = b
-	vertices[i+27] = a
-	vertices[i+28] = r1u2
-	vertices[i+29] = r1v2
-	vertices[i+30] = r2u2
-	vertices[i+31] = r2v2
-	vertices[i+32] = blendAlpha
+	vertices[i+26] = x3
+	vertices[i+27] = y3
+	vertices[i+28] = r
+	vertices[i+29] = g
+	vertices[i+30] = b
+	vertices[i+31] = a
+	vertices[i+32] = r1u2
+	vertices[i+33] = r1v2
+	vertices[i+34] = r2u2
+	vertices[i+34] = r2v2
+	vertices[i+36] = spriteX
+	vertices[i+37] = spriteY
+	vertices[i+38] = blendAlpha
 
-	vertices[i+33] = x4
-	vertices[i+34] = y4
-	vertices[i+35] = r
-	vertices[i+36] = g
-	vertices[i+37] = b
-	vertices[i+38] = a
-	vertices[i+39] = r1u2
-	vertices[i+40] = r1v
-	vertices[i+41] = r2u2
-	vertices[i+42] = r2v
-	vertices[i+43] = blendAlpha
+	vertices[i+39] = x4
+	vertices[i+40] = y4
+	vertices[i+41] = r
+	vertices[i+42] = g
+	vertices[i+43] = b
+	vertices[i+44] = a
+	vertices[i+45] = r1u2
+	vertices[i+46] = r1v
+	vertices[i+47] = r2u2
+	vertices[i+48] = r2v
+	vertices[i+49] = spriteX
+	vertices[i+50] = spriteY
+	vertices[i+51] = blendAlpha
 }
 
 inline fun calculateVertexData(region1: TextureRegion, region2: TextureRegion,
