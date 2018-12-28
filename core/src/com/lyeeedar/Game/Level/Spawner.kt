@@ -66,7 +66,7 @@ class Sinker : Entity()
 		sprite.baseScale[0] = 2f
 		sprite.size[1] = 2
 
-		sprite.light = Light(Colour(1.0f, 0.7f, 0.3f, 1.0f), 1f, 4f)
+		sprite.light = Light(Colour(1.0f, 0.7f, 0.3f, 1.0f), 1f, 5f)
 		sprite.light!!.hasShadows = true
 	//	sprite.light!!.anim = PulseLightAnimation.create(3f, 1f, 3f, 20f, 10f)
 	}

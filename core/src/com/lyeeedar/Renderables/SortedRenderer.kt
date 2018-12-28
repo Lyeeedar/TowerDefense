@@ -117,6 +117,8 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	private val queuedBuffers = com.badlogic.gdx.utils.Array<VertexBuffer>()
 	private lateinit var shader: ShaderProgram
 	private var shaderLightNum: Int = -1
+	private var shaderHasShadows = false
+	private var shaderLightPointNum = 0
 	private lateinit var lightPosRange: FloatArray
 	private lateinit var lightColourBrightness: FloatArray
 	private lateinit var lightShadowData: FloatArray
@@ -167,8 +169,8 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		lightPosRange = FloatArray(shaderLightNum * 3)
 		lightColourBrightness = FloatArray(shaderLightNum * 4)
 		lightShadowData = FloatArray(shaderLightNum * 3)
-		lightShadowPoints = FloatArray(maxShadowPoints * 2)
-		shader = createShader(shaderLightNum)
+		lightShadowPoints = FloatArray(shaderLightPointNum * 2)
+		shader = createShader(shaderLightNum, false, shaderLightPointNum)
 	}
 
 	// ----------------------------------------------------------------------
@@ -290,25 +292,57 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	{
 		if (currentBuffer == null) return
 
+		var rebuildShader = false
 		if (lights.size > shaderLightNum)
 		{
 			shaderLightNum = lights.size + 5
-			shader.dispose()
-			shader = createShader(shaderLightNum)
+			rebuildShader = true
 			lightPosRange = FloatArray(shaderLightNum * 3)
 			lightColourBrightness = FloatArray(shaderLightNum * 4)
 			lightShadowData = FloatArray(shaderLightNum * 3)
 		}
 
-		Gdx.gl.glEnable(GL20.GL_BLEND)
-		Gdx.gl.glDepthMask(false)
-		shader.begin()
+		var requiredShadowPoints = 0
+		var needsShadows = false
+		if (Global.collisionGrid != null)
+		{
+			for (light in lights)
+			{
+				if (light.hasShadows)
+				{
+					needsShadows = true
 
-		shader.setUniformMatrix("u_projTrans", combinedMatrix)
-		shader.setUniformf("u_offset", offsetx, offsety)
-		shader.setUniformi("u_texture", 0)
-		shader.setUniformf("u_ambient", ambientLight.vec3())
-		shader.setUniformf("u_tileSize", tileSize)
+					val mode = if (light.cache.currentShadowCast.size <= light.cache.invCurrentShadowCast.size) -10 else 10
+					val cast = if (mode < 0) light.cache.currentShadowCast else light.cache.invCurrentShadowCast
+
+					val numCount = when
+					{
+						!light.hasShadows -> 0f
+						!light.cache.anyOpaque() -> 0f
+						!light.cache.anyClear() -> -1f
+						else -> cast.size.toFloat()
+					}
+
+					if (numCount > 0)
+					{
+						requiredShadowPoints += cast.size
+					}
+				}
+			}
+		}
+
+		if (needsShadows && !shaderHasShadows)
+		{
+			shaderHasShadows = true
+			rebuildShader = true
+		}
+
+		if (shaderLightPointNum < requiredShadowPoints)
+		{
+			rebuildShader = true
+			shaderLightPointNum = requiredShadowPoints
+			lightShadowPoints = FloatArray(shaderLightPointNum * 2)
+		}
 
 		var shadowCacheOffset = 0
 		var i = 0
@@ -323,7 +357,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			lightColourBrightness[(i*4)+2] = light.colour.b
 			lightColourBrightness[(i*4)+3] = light.brightness
 
-			if (Global.collisionGrid != null)
+			if (shaderHasShadows)
 			{
 				val mode = if (light.cache.currentShadowCast.size <= light.cache.invCurrentShadowCast.size) -10 else 10
 				val cast = if (mode < 0) light.cache.currentShadowCast else light.cache.invCurrentShadowCast
@@ -340,23 +374,42 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 				lightShadowData[(i*3)+1] = (shadowCacheOffset / 2).toFloat()
 				lightShadowData[(i*3)+2] = mode.toFloat()
 
-				for (point in cast)
+				if (numCount > 0)
 				{
-					val dx = point.x - light.pos.x
-					val dy = point.y - light.pos.y
+					for (point in cast)
+					{
+						val dx = point.x - light.pos.x
+						val dy = point.y - light.pos.y
 
-					lightShadowPoints[shadowCacheOffset++] = dx
-					lightShadowPoints[shadowCacheOffset++] = dy
+						lightShadowPoints[shadowCacheOffset++] = dx
+						lightShadowPoints[shadowCacheOffset++] = dy
+					}
 				}
 			}
 
 			i++
 		}
 
+		if (rebuildShader)
+		{
+			shader.dispose()
+			shader = createShader(shaderLightNum, shaderHasShadows, shaderLightPointNum)
+		}
+
+		Gdx.gl.glEnable(GL20.GL_BLEND)
+		Gdx.gl.glDepthMask(false)
+		shader.begin()
+
+		shader.setUniformMatrix("u_projTrans", combinedMatrix)
+		shader.setUniformf("u_offset", offsetx, offsety)
+		shader.setUniformi("u_texture", 0)
+		shader.setUniformf("u_ambient", ambientLight.vec3())
+		shader.setUniformf("u_tileSize", tileSize)
+
 		shader.setUniform3fv("u_lightPosRange", lightPosRange, 0, lights.size * 3)
 		shader.setUniform4fv("u_lightColourBrightness", lightColourBrightness, 0, lights.size * 4)
 
-		if (Global.collisionGrid != null)
+		if (shaderHasShadows)
 		{
 			shader.setUniform3fv("u_lightShadowData", lightShadowData, 0, lights.size * 3)
 			shader.setUniform2fv("u_lightShadowPoints", lightShadowPoints, 0, shadowCacheOffset)
@@ -1022,12 +1075,8 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		private const val verticesASprite = vertexSize * 4
 		private const val maxVertices = maxSprites * vertexSize
 
-		private const val maxShadowPoints = 100
-
-		fun createShader(numLights: Int): ShaderProgram
+		fun createShader(numLights: Int, shadows: Boolean, shaderLightPointNum: Int): ShaderProgram
 		{
-			val numShadowCastPoints = maxShadowPoints
-
 			val vertexShader = """
 attribute vec4 ${ShaderProgram.POSITION_ATTRIBUTE};
 attribute vec4 ${ShaderProgram.COLOR_ATTRIBUTE};
@@ -1087,7 +1136,7 @@ uniform vec4 u_lightColourBrightness[$numLights];
 
 #ifdef SHADOWS
 uniform vec3 u_lightShadowData[$numLights];
-uniform vec2 u_lightShadowPoints[$numShadowCastPoints];
+uniform vec2 u_lightShadowPoints[$shaderLightPointNum];
 #endif
 
 uniform sampler2D u_texture;
@@ -1192,7 +1241,7 @@ void main()
 				fragmentShader = "#define TILELIGHTING 1\n$fragmentShader"
 			}
 
-			if (Global.collisionGrid != null)
+			if (shadows)
 			{
 				fragmentShader = "#define SHADOWS 1\n$fragmentShader"
 			}

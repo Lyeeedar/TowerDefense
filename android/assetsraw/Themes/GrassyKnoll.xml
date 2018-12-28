@@ -62,54 +62,12 @@
 							<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
 						</Layer>
 						<Layer>
-							<Name>Oryx/Custom/terrain/tree1group</Name>
+							<Name>Oryx/Custom/terrain/tree1</Name>
 							<DrawActualSize>true</DrawActualSize>
 						</Layer>
 					</Layers>
 				</Sprite>
 				<SpriteVariants>
-					<Sprite>
-						<Sprite meta:RefKey="RenderedLayeredSprite">
-							<Layers>
-								<Layer>
-									<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
-								</Layer>
-								<Layer>
-									<Name>Oryx/Custom/terrain/treecluster2</Name>
-									<DrawActualSize>true</DrawActualSize>
-								</Layer>
-							</Layers>
-						</Sprite>
-						<Chance>0.2</Chance>
-					</Sprite>
-					<Sprite>
-						<Sprite meta:RefKey="RenderedLayeredSprite">
-							<Layers>
-								<Layer>
-									<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
-								</Layer>
-								<Layer>
-									<Name>Oryx/Custom/terrain/treecluster3</Name>
-									<DrawActualSize>true</DrawActualSize>
-								</Layer>
-							</Layers>
-						</Sprite>
-						<Chance>0.2</Chance>
-					</Sprite>
-					<Sprite>
-						<Sprite meta:RefKey="RenderedLayeredSprite">
-							<Layers>
-								<Layer>
-									<Name>Oryx/uf_split/uf_terrain/ground_grass_1</Name>
-								</Layer>
-								<Layer>
-									<Name>Oryx/Custom/terrain/treecluster4</Name>
-									<DrawActualSize>true</DrawActualSize>
-								</Layer>
-							</Layers>
-						</Sprite>
-						<Chance>0.2</Chance>
-					</Sprite>
 					<Sprite>
 						<Sprite meta:RefKey="RenderedLayeredSprite">
 							<Layers>
