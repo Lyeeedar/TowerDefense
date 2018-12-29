@@ -12,9 +12,9 @@ class BigMesh
 	internal var vertices: VertexBufferObject
 	internal var indices: LargeIndexBufferObject
 
-	constructor(maxVertices: Int, maxIndices: Int, vararg attributes: VertexAttribute)
+	constructor(isStatic: Boolean, maxVertices: Int, maxIndices: Int, vararg attributes: VertexAttribute)
 	{
-		vertices = VertexBufferObject(false, maxVertices, VertexAttributes(*attributes))
+		vertices = VertexBufferObject(isStatic, maxVertices, VertexAttributes(*attributes))
 		indices = LargeIndexBufferObject(true, maxIndices)
 	}
 
@@ -30,6 +30,11 @@ class BigMesh
 		this.vertices.setVertices(vertices, offset, count)
 
 		return this
+	}
+
+	fun updateVertices(vertices: FloatArray, offset: Int, count: Int)
+	{
+		this.vertices.updateVertices(offset, vertices, offset, count)
 	}
 
 	fun bind(shader: ShaderProgram)

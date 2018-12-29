@@ -104,7 +104,7 @@ class HDRColourSpriteBatch
 
 	init
 	{
-		mesh = BigMesh(size * 4, size * 6,
+		mesh = BigMesh(false, size * 4, size * 6,
 					VertexAttribute(Usage.Position, 2, ShaderProgram.POSITION_ATTRIBUTE),
 					VertexAttribute(Usage.ColorUnpacked, 4, ShaderProgram.COLOR_ATTRIBUTE),
 					VertexAttribute(Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "0"),

@@ -284,7 +284,7 @@ class Sprite(val fileName: String, var animationDelay: Float, var textures: Arra
 	private var lastRenderKey = -1f
 	private var cachedRenderKey = -1f
 	private val vertexCache = FloatArray(44)
-	fun render(vertices: FloatArray, offset: Int, colour: Colour, x: Float, y: Float, width: Float, height: Float, scaleX: Float, scaleY: Float, rotation: Float)
+	fun render(vertices: FloatArray, offset: Int, colour: Colour, x: Float, y: Float, width: Float, height: Float, scaleX: Float, scaleY: Float, rotation: Float, isLit: Boolean)
 	{
 		val key = colour.hashCode() + x + y + width + height + scaleX + scaleY + rotation + texIndex
 		var cacheVertices = false
@@ -374,7 +374,7 @@ class Sprite(val fileName: String, var animationDelay: Float, var textures: Arra
 			texAlpha = 0f
 		}
 
-		doDraw(vertices, offset, tex1, tex2, colour, x, y, width / 2.0f, height / 2.0f, width, height, scaleX, scaleY, rotation, flipX, flipY, removeAmount, texAlpha)
+		doDraw(vertices, offset, tex1, tex2, colour, x, y, width / 2.0f, height / 2.0f, width, height, scaleX, scaleY, rotation, flipX, flipY, removeAmount, texAlpha, isLit)
 
 		if (cacheVertices)
 		{

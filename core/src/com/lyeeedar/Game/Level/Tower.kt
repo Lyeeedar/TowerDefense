@@ -260,7 +260,7 @@ class ShotEffectType : AbstractEffectType()
 			val targetPos = future.pos
 
 			val path = arrayOf(Vector2(), targetPos - entityPos)
-			path[1].y *= -1
+			//path[1].y *= -1
 
 			val effect = flightEffect.copy()
 			effect.faceInMoveDirection = true

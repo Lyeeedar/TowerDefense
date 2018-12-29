@@ -109,10 +109,10 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 	// ----------------------------------------------------------------------
 	private val mesh: BigMesh
+	private val staticMesh: BigMesh
 	private var currentBuffer: VertexBuffer? = null
 	private val vertices: FloatArray
 	private var currentVertexCount = 0
-	private var currentStaticVertexCount = 0
 	private val staticBuffers = com.badlogic.gdx.utils.Array<VertexBuffer>()
 	private val queuedBuffers = com.badlogic.gdx.utils.Array<VertexBuffer>()
 	private lateinit var shader: ShaderProgram
@@ -137,13 +137,24 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 	init
 	{
-		mesh = BigMesh(maxSprites * 4, maxSprites * 6,
+		mesh = BigMesh(false, maxSprites * 4, maxSprites * 6,
 					   VertexAttribute(VertexAttributes.Usage.Position, 2, ShaderProgram.POSITION_ATTRIBUTE),
 					   VertexAttribute(VertexAttributes.Usage.ColorUnpacked, 4, ShaderProgram.COLOR_ATTRIBUTE),
 					   VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "0"),
 					   VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "1"),
 					   VertexAttribute(VertexAttributes.Usage.Generic, 2, "a_spritePos"),
-					   VertexAttribute(VertexAttributes.Usage.Generic, 1, "a_blendAlpha")
+					   VertexAttribute(VertexAttributes.Usage.Generic, 1, "a_blendAlpha"),
+					   VertexAttribute(VertexAttributes.Usage.Generic, 1, "a_isLit")
+					  )
+
+		staticMesh = BigMesh(true, maxSprites * 4, maxSprites * 6,
+					   VertexAttribute(VertexAttributes.Usage.Position, 2, ShaderProgram.POSITION_ATTRIBUTE),
+					   VertexAttribute(VertexAttributes.Usage.ColorUnpacked, 4, ShaderProgram.COLOR_ATTRIBUTE),
+					   VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "0"),
+					   VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "1"),
+					   VertexAttribute(VertexAttributes.Usage.Generic, 2, "a_spritePos"),
+					   VertexAttribute(VertexAttributes.Usage.Generic, 1, "a_blendAlpha"),
+					   VertexAttribute(VertexAttributes.Usage.Generic, 1, "a_isLit")
 					  )
 
 		val len = maxSprites * 6
@@ -162,6 +173,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			j += 4
 		}
 		mesh.setIndices(indices)
+		staticMesh.setIndices(indices)
 
 		vertices = FloatArray(maxVertices)
 
@@ -199,7 +211,6 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		delta = 0f
 		inStaticBegin = true
-		currentStaticVertexCount = 0
 	}
 
 	// ----------------------------------------------------------------------
@@ -248,7 +259,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		{
 			currentBuffer = bufferPool.obtain()
 			currentBuffer!!.reset(blendSrc, blendDst, texture)
-			currentBuffer!!.offset = currentStaticVertexCount + currentVertexCount
+			currentBuffer!!.offset = currentVertexCount
 		}
 
 		var buffer = currentBuffer!!
@@ -257,16 +268,16 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			queuedBuffers.add(currentBuffer)
 			buffer = bufferPool.obtain()
 			buffer.reset(blendSrc, blendDst, texture)
-			buffer.offset = currentStaticVertexCount + currentVertexCount
+			buffer.offset = currentVertexCount
 
 			currentBuffer = buffer
 		}
 
-		val offset = currentStaticVertexCount + currentVertexCount
+		val offset = currentVertexCount
 		buffer.count += verticesASprite
 		currentVertexCount += verticesASprite
 
-		if (currentStaticVertexCount + currentVertexCount == maxVertices) throw Exception("Too many vertices queued!")
+		if (currentVertexCount == maxVertices) throw Exception("Too many vertices queued!")
 
 		executor.addJob {
 			drawFun.invoke(vertices, offset)
@@ -283,7 +294,8 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		staticBuffers.addAll(queuedBuffers)
 		queuedBuffers.clear()
-		currentStaticVertexCount = currentVertexCount
+
+		staticMesh.setVertices(vertices, 0, currentVertexCount)
 		currentVertexCount = 0
 	}
 
@@ -422,15 +434,12 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		queuedBuffers.add(currentBuffer!!)
 		currentBuffer = null
 
-		mesh.setVertices(vertices, 0, currentStaticVertexCount + currentVertexCount)
-		mesh.bind(shader)
-
 		var lastBlendSrc = -1
 		var lastBlendDst = -1
 		var lastTexture: Texture? = null
 		var currentOffset = 0
 
-		fun drawBuffer(buffer: VertexBuffer)
+		fun drawBuffer(buffer: VertexBuffer, mesh: BigMesh)
 		{
 			if (buffer.texture != lastTexture)
 			{
@@ -452,14 +461,22 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			currentOffset += drawCount
 		}
 
+		staticMesh.bind(shader)
+
 		for (buffer in staticBuffers)
 		{
-			drawBuffer(buffer)
+			drawBuffer(buffer, staticMesh)
 		}
+
+		staticMesh.unbind(shader)
+
+		currentOffset = 0
+		mesh.setVertices(vertices, 0, currentVertexCount)
+		mesh.bind(shader)
 
 		for (buffer in queuedBuffers)
 		{
-			drawBuffer(buffer)
+			drawBuffer(buffer, mesh)
 			bufferPool.free(buffer)
 		}
 		queuedBuffers.clear()
@@ -517,7 +534,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 				if (sprite != null)
 				{
 					colour.mul(sprite.getRenderColour())
-					sprite.render(vertices, offset, colour, localx, localy, localw, localh, rs.scaleX, rs.scaleY, rs.rotation)
+					sprite.render(vertices, offset, colour, localx, localy, localw, localh, rs.scaleX, rs.scaleY, rs.rotation, rs.isLit)
 				}
 
 				if (rs.texture != null)
@@ -525,7 +542,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 					doDraw(vertices, offset,
 						   rs.texture!!, rs.nextTexture ?: rs.texture!!, colour,
 						   localx, localy, 0.5f, 0.5f, 1f, 1f, localw * rs.scaleX, localh * rs.scaleY, rs.rotation, rs.flipX, rs.flipY,
-						   0f, rs.blendAlpha)
+						   0f, rs.blendAlpha, rs.isLit)
 				}
 			} )
 		}
@@ -1070,7 +1087,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		private val smoothLighting = true
 		private val random = LightRNG()
 
-		private const val vertexSize = 4 + 2 + 2 + 2 + 2 + 1
+		private const val vertexSize = 4 + 2 + 2 + 2 + 2 + 1 + 1
 		private const val maxSprites = 10000
 		private const val verticesASprite = vertexSize * 4
 		private const val maxVertices = maxSprites * vertexSize
@@ -1084,6 +1101,7 @@ attribute vec2 ${ShaderProgram.TEXCOORD_ATTRIBUTE}0;
 attribute vec2 ${ShaderProgram.TEXCOORD_ATTRIBUTE}1;
 attribute vec2 a_spritePos;
 attribute float a_blendAlpha;
+attribute float a_isLit;
 
 uniform mat4 u_projTrans;
 uniform vec2 u_offset;
@@ -1094,6 +1112,7 @@ varying vec2 v_pixelPos;
 varying vec2 v_texCoords1;
 varying vec2 v_texCoords2;
 varying float v_blendAlpha;
+varying float v_isLit;
 
 void main()
 {
@@ -1109,6 +1128,7 @@ void main()
 	v_texCoords1 = ${ShaderProgram.TEXCOORD_ATTRIBUTE}0;
 	v_texCoords2 = ${ShaderProgram.TEXCOORD_ATTRIBUTE}1;
 	v_blendAlpha = a_blendAlpha;
+	v_isLit = a_isLit;
 	gl_Position = u_projTrans * truePos;
 }
 """
@@ -1126,6 +1146,7 @@ varying vec2 v_pixelPos;
 varying vec2 v_texCoords1;
 varying vec2 v_texCoords2;
 varying float v_blendAlpha;
+varying float v_isLit;
 
 uniform float u_tileSize;
 
@@ -1227,9 +1248,17 @@ void main()
 	vec4 outCol = mix(col1, col2, v_blendAlpha);
 
 	vec3 lightCol = u_ambient;
-	for (int i = 0; i < u_numLights; i++)
+
+	if (v_isLit > 0.0)
 	{
-		lightCol += calculateLight(i);
+		for (int i = 0; i < u_numLights; i++)
+		{
+			lightCol += calculateLight(i);
+		}
+	}
+	else
+	{
+		lightCol = vec3(1.0, 1.0, 1.0);
 	}
 
 	vec4 finalCol = clamp(v_color * outCol * vec4(lightCol, 1.0), 0.0, 1.0);
