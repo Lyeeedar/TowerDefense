@@ -461,27 +461,33 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			currentOffset += drawCount
 		}
 
-		staticMesh.bind(shader)
-
-		for (buffer in staticBuffers)
+		if (staticBuffers.size > 0)
 		{
-			drawBuffer(buffer, staticMesh)
+			staticMesh.bind(shader)
+
+			for (buffer in staticBuffers)
+			{
+				drawBuffer(buffer, staticMesh)
+			}
+
+			staticMesh.unbind(shader)
 		}
 
-		staticMesh.unbind(shader)
-
-		currentOffset = 0
-		mesh.setVertices(vertices, 0, currentVertexCount)
-		mesh.bind(shader)
-
-		for (buffer in queuedBuffers)
+		if (queuedBuffers.size > 0)
 		{
-			drawBuffer(buffer, mesh)
-			bufferPool.free(buffer)
-		}
-		queuedBuffers.clear()
+			currentOffset = 0
+			mesh.setVertices(vertices, 0, currentVertexCount)
+			mesh.bind(shader)
 
-		mesh.unbind(shader)
+			for (buffer in queuedBuffers)
+			{
+				drawBuffer(buffer, mesh)
+				bufferPool.free(buffer)
+			}
+			queuedBuffers.clear()
+
+			mesh.unbind(shader)
+		}
 
 		Gdx.gl.glDepthMask(true)
 		Gdx.gl.glDisable(GL20.GL_BLEND)
@@ -542,7 +548,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 					doDraw(vertices, offset,
 						   rs.texture!!, rs.nextTexture ?: rs.texture!!, colour,
 						   localx, localy, 0.5f, 0.5f, 1f, 1f, localw * rs.scaleX, localh * rs.scaleY, rs.rotation, rs.flipX, rs.flipY,
-						   0f, rs.blendAlpha, rs.isLit)
+						   0f, rs.blendAlpha, rs.isLit, false)
 				}
 			} )
 		}

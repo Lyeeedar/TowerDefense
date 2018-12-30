@@ -21,7 +21,7 @@ class LwjglApplicationChanger : AbstractApplicationChanger(LwjglPreferences("gam
 
 		val cfg = LwjglApplicationConfiguration()
 
-		cfg.title = "Match Dungeon"
+		cfg.title = "Tower Defense"
 		cfg.width = 800
 		cfg.height = 600
 		cfg.fullscreen = pref.getBoolean("fullscreen")

@@ -115,6 +115,7 @@ abstract class AbstractScreen() : Screen, InputProcessor, GestureDetector.Gestur
 
 		val diff = (end - start) / 1000000000f
 		frameDuration = (frameDuration + diff) / 2f
+		deltaAverage = (deltaAverage + delta) / 2f
 
 		fpsAccumulator += delta
 		if (fpsAccumulator > 0.5f)
@@ -122,12 +123,14 @@ abstract class AbstractScreen() : Screen, InputProcessor, GestureDetector.Gestur
 			fpsAccumulator = 0f
 
 			fps = (1f / frameDuration).toInt()
+			actualFps = (1.0f / deltaAverage).toInt()
 		}
 
 		if (!Global.release)
 		{
 			stage.batch.begin()
-			font.draw(stage.batch, "FPS: $fps", Global.resolution.x - 100f, Global.resolution.y - 20f)
+			font.draw(stage.batch, "Frame FPS: $fps", Global.resolution.x - 200f, Global.resolution.y - 20f)
+			font.draw(stage.batch, "Actual FPS: $actualFps", Global.resolution.x - 200f, Global.resolution.y - 50f)
 			stage.batch.end()
 		}
 
@@ -307,7 +310,7 @@ abstract class AbstractScreen() : Screen, InputProcessor, GestureDetector.Gestur
 
     // ----------------------------------------------------------------------
     fun sleep() {
-		diff = System.currentTimeMillis() - start
+		diff = ((System.nanoTime() - start) / 1000000f).toLong()
         if ( Global.fps > 0 ) {
 
             val targetDelay = 1000 / Global.fps
@@ -318,16 +321,7 @@ abstract class AbstractScreen() : Screen, InputProcessor, GestureDetector.Gestur
                 }
             }
         }
-		start = System.currentTimeMillis()
-
-		if (frametime == -1f)
-		{
-			frametime = 1f / diff
-		}
-		else
-		{
-			frametime = (frametime + 1f/diff) / 2f
-		}
+		start = System.nanoTime()
     }
 
     //endregion
@@ -343,9 +337,10 @@ abstract class AbstractScreen() : Screen, InputProcessor, GestureDetector.Gestur
 
     var diff: Long = 0
     var start: Long = System.currentTimeMillis()
-	var frametime: Float = -1f
 	var frameDuration: Float = 0f
+	var deltaAverage: Float = 0f
 	var fps: Int = 0
+	var actualFps: Int = 0
 	var fpsAccumulator: Float = 0f
 
 	lateinit var font: BitmapFont

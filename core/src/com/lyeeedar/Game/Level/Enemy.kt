@@ -33,6 +33,7 @@ class Enemy(val source: Spawner, val def: EnemyDef) : Entity()
 		sprite = def.sprite.copy()
 		sprite.baseScale[0] = 0.5f
 		sprite.baseScale[1] = 0.5f
+		sprite.smoothShade = true
 	}
 
 	override fun update(delta: Float, map: Map)

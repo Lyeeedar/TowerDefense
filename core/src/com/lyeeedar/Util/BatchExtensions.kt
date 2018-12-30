@@ -208,7 +208,7 @@ internal inline fun doDraw(batch: Batch, region: TextureRegion, packedColor: Flo
 internal inline fun doDraw(vertices: FloatArray, offset: Int, region1: TextureRegion, region2: TextureRegion, colour: Colour,
 		   x: Float, y: Float, originX: Float, originY: Float,
 		   width: Float, height: Float, scaleX: Float, scaleY: Float,
-		   rotation: Float, flipX: Boolean, flipY: Boolean, removeAmount: Float, blendAlpha: Float, isLit: Boolean)
+		   rotation: Float, flipX: Boolean, flipY: Boolean, removeAmount: Float, blendAlpha: Float, isLit: Boolean, smoothShade: Boolean)
 {
 	//##################################################################### Vertex Calculation #######################################//
 	// bottom left and top right corner points relative to origin
@@ -366,8 +366,8 @@ internal inline fun doDraw(vertices: FloatArray, offset: Int, region1: TextureRe
 	vertices[i+7] = r1v
 	vertices[i+8] = r2u
 	vertices[i+9] = r2v
-	vertices[i+10] = spriteX
-	vertices[i+11] = spriteY
+	vertices[i+10] = if (smoothShade) x1 else spriteX
+	vertices[i+11] = if (smoothShade) y1 else spriteY
 	vertices[i+12] = blendAlpha
 	vertices[i+13] = litVal
 
@@ -381,8 +381,8 @@ internal inline fun doDraw(vertices: FloatArray, offset: Int, region1: TextureRe
 	vertices[i+21] = r1v2
 	vertices[i+22] = r2u
 	vertices[i+23] = r2v2
-	vertices[i+24] = spriteX
-	vertices[i+25] = spriteY
+	vertices[i+24] = if (smoothShade) x2 else spriteX
+	vertices[i+25] = if (smoothShade) y2 else spriteY
 	vertices[i+26] = blendAlpha
 	vertices[i+27] = litVal
 
@@ -396,8 +396,8 @@ internal inline fun doDraw(vertices: FloatArray, offset: Int, region1: TextureRe
 	vertices[i+35] = r1v2
 	vertices[i+36] = r2u2
 	vertices[i+37] = r2v2
-	vertices[i+38] = spriteX
-	vertices[i+39] = spriteY
+	vertices[i+38] = if (smoothShade) x3 else spriteX
+	vertices[i+39] = if (smoothShade) y3 else spriteY
 	vertices[i+40] = blendAlpha
 	vertices[i+41] = litVal
 
@@ -411,8 +411,8 @@ internal inline fun doDraw(vertices: FloatArray, offset: Int, region1: TextureRe
 	vertices[i+49] = r1v
 	vertices[i+50] = r2u2
 	vertices[i+51] = r2v
-	vertices[i+52] = spriteX
-	vertices[i+53] = spriteY
+	vertices[i+52] = if (smoothShade) x4 else spriteX
+	vertices[i+53] = if (smoothShade) y4 else spriteY
 	vertices[i+54] = blendAlpha
 	vertices[i+55] = litVal
 }
