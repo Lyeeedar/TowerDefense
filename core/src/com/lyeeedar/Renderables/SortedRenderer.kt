@@ -402,6 +402,15 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			i++
 		}
 
+		while (i < shaderLightNum)
+		{
+			lightPosRange[(i*3)+0] = -1f
+			lightPosRange[(i*3)+1] = -1f
+			lightPosRange[(i*3)+2] = -1f
+
+			i++
+		}
+
 		if (rebuildShader)
 		{
 			shader.dispose()
@@ -418,16 +427,14 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		shader.setUniformf("u_ambient", ambientLight.vec3())
 		shader.setUniformf("u_tileSize", tileSize)
 
-		shader.setUniform3fv("u_lightPosRange", lightPosRange, 0, lights.size * 3)
-		shader.setUniform4fv("u_lightColourBrightness", lightColourBrightness, 0, lights.size * 4)
+		shader.setUniform3fv("u_lightPosRange", lightPosRange, 0, lightPosRange.size)
+		shader.setUniform4fv("u_lightColourBrightness", lightColourBrightness, 0, lightColourBrightness.size)
 
 		if (shaderHasShadows)
 		{
-			shader.setUniform3fv("u_lightShadowData", lightShadowData, 0, lights.size * 3)
+			shader.setUniform3fv("u_lightShadowData", lightShadowData, 0, lightShadowData.size)
 			shader.setUniform2fv("u_lightShadowPoints", lightShadowPoints, 0, shadowCacheOffset)
 		}
-
-		shader.setUniformi("u_numLights", lights.size)
 
 		executor.awaitAllJobs()
 
@@ -1138,62 +1145,16 @@ void main()
 	gl_Position = u_projTrans * truePos;
 }
 """
-			var fragmentShader = """
-#ifdef GL_ES
-#define LOWP lowp
-precision mediump float;
-#else
-#define LOWP
-#endif
+			var unrolledLightCode = ""
+			for (i in 0 until numLights)
+			{
+				unrolledLightCode += "lightCol += calculateLight($i);\n"
+			}
 
-varying vec4 v_color;
-varying vec2 v_spritePos;
-varying vec2 v_pixelPos;
-varying vec2 v_texCoords1;
-varying vec2 v_texCoords2;
-varying float v_blendAlpha;
-varying float v_isLit;
-
-uniform float u_tileSize;
-
-uniform vec3 u_ambient;
-uniform int u_numLights;
-uniform vec3 u_lightPosRange[$numLights];
-uniform vec4 u_lightColourBrightness[$numLights];
-
-#ifdef SHADOWS
-uniform vec3 u_lightShadowData[$numLights];
-uniform vec2 u_lightShadowPoints[$shaderLightPointNum];
-#endif
-
-uniform sampler2D u_texture;
-
-vec3 calculateLight(int index)
-{
-	vec3 posRange = u_lightPosRange[index];
-	vec4 colourBrightness = u_lightColourBrightness[index];
-
-	vec2 pos = posRange.xy;
-	float rangeSq = posRange.z;
-
-	vec2 pixelPos = v_pixelPos;
-
-#ifdef TILELIGHTING
-	pixelPos = (floor(v_spritePos / u_tileSize)) * u_tileSize;
-#else
-	pos += 0.5 * u_tileSize;
-#endif
-
-	vec2 diff = pos - pixelPos;
-	float distSq = (diff.x * diff.x) + (diff.y * diff.y);
-	if (distSq > rangeSq)
-	{
-		return vec3(0.0, 0.0, 0.0);
-	}
-	else
-	{
-#ifdef SHADOWS
-
+			var shadowCode = ""
+			if (shadows)
+			{
+				shadowCode = """
 		vec3 shadowData = u_lightShadowData[index];
 		int numShadowPoints = int(shadowData.x);
 		int shadowPointOffset = int(shadowData.y);
@@ -1234,7 +1195,39 @@ vec3 calculateLight(int index)
 		{
 			return vec3(0.0, 0.0, 0.0);
 		}
+					"""
+			}
 
+			var lightingCode = ""
+			if (numLights > 0)
+			{
+				lightingCode = """
+vec3 calculateLight(int index)
+{
+	vec3 posRange = u_lightPosRange[index];
+	vec4 colourBrightness = u_lightColourBrightness[index];
+
+	vec2 pos = posRange.xy;
+	float rangeSq = posRange.z;
+
+	vec2 pixelPos = v_pixelPos;
+
+#ifdef TILELIGHTING
+	pixelPos = (floor(v_spritePos / u_tileSize)) * u_tileSize;
+#else
+	pos += 0.5 * u_tileSize;
+#endif
+
+	vec2 diff = pos - pixelPos;
+	float distSq = (diff.x * diff.x) + (diff.y * diff.y);
+	if (distSq > rangeSq)
+	{
+		return vec3(0.0, 0.0, 0.0);
+	}
+	else
+	{
+#ifdef SHADOWS
+		$shadowCode
 #endif
 
 		float alpha = 1.0 - (distSq / rangeSq);
@@ -1245,6 +1238,39 @@ vec3 calculateLight(int index)
 		return lightCol * brightness * alpha;
 	}
 }
+					"""
+			}
+
+			var fragmentShader = """
+#ifdef GL_ES
+#define LOWP lowp
+precision mediump float;
+#else
+#define LOWP
+#endif
+
+varying vec4 v_color;
+varying vec2 v_spritePos;
+varying vec2 v_pixelPos;
+varying vec2 v_texCoords1;
+varying vec2 v_texCoords2;
+varying float v_blendAlpha;
+varying float v_isLit;
+
+uniform float u_tileSize;
+
+uniform vec3 u_ambient;
+uniform vec3 u_lightPosRange[$numLights];
+uniform vec4 u_lightColourBrightness[$numLights];
+
+#ifdef SHADOWS
+uniform vec3 u_lightShadowData[$numLights];
+uniform vec2 u_lightShadowPoints[$shaderLightPointNum];
+#endif
+
+uniform sampler2D u_texture;
+
+$lightingCode
 
 void main()
 {
@@ -1255,17 +1281,13 @@ void main()
 
 	vec3 lightCol = u_ambient;
 
-	if (v_isLit > 0.0)
-	{
-		for (int i = 0; i < u_numLights; i++)
-		{
-			lightCol += calculateLight(i);
-		}
-	}
-	else
-	{
-		lightCol = vec3(1.0, 1.0, 1.0);
-	}
+	//for (int i = 0; i < $numLights; i++)
+	//{
+	//	lightCol += calculateLight(i);
+	//}
+	$unrolledLightCode
+
+	lightCol = mix(vec3(1.0, 1.0, 1.0), lightCol, v_isLit);
 
 	vec4 finalCol = clamp(v_color * outCol * vec4(lightCol, 1.0), 0.0, 1.0);
 	gl_FragColor = finalCol;

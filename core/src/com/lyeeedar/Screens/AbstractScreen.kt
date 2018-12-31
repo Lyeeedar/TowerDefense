@@ -308,21 +308,21 @@ abstract class AbstractScreen() : Screen, InputProcessor, GestureDetector.Gestur
         create()
     }
 
-    // ----------------------------------------------------------------------
-    fun sleep() {
-		diff = ((System.nanoTime() - start) / 1000000f).toLong()
-        if ( Global.fps > 0 ) {
+	// ----------------------------------------------------------------------
+	fun sleep() {
+		diff = System.currentTimeMillis() - start
+		if ( Global.fps > 0 ) {
 
-            val targetDelay = 1000 / Global.fps
-            if ( diff < targetDelay ) {
-                try {
-                    Thread.sleep(targetDelay - diff)
-                } catch (e: InterruptedException) {
-                }
-            }
-        }
-		start = System.nanoTime()
-    }
+			val targetDelay = 1000 / Global.fps
+			if ( diff < targetDelay ) {
+				try {
+					Thread.sleep(targetDelay - diff)
+				} catch (e: InterruptedException) {
+				}
+			}
+		}
+		start = System.currentTimeMillis()
+	}
 
     //endregion
     //############################################################################
