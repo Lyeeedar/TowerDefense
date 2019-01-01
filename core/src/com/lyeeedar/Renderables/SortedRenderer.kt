@@ -371,7 +371,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 			if (shaderHasShadows)
 			{
-				val mode = if (light.cache.currentShadowCast.size <= light.cache.invCurrentShadowCast.size) -10 else 10
+				var mode = if (light.cache.currentShadowCast.size <= light.cache.invCurrentShadowCast.size) -10f else 10f
 				val cast = if (mode < 0) light.cache.currentShadowCast else light.cache.invCurrentShadowCast
 
 				val numCount = when
@@ -382,9 +382,14 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 					else -> cast.size.toFloat()
 				}
 
+				if (numCount == 0f)
+				{
+					mode = -10f
+				}
+
 				lightShadowData[(i*3)+0] = numCount
 				lightShadowData[(i*3)+1] = (shadowCacheOffset / 2).toFloat()
-				lightShadowData[(i*3)+2] = mode.toFloat()
+				lightShadowData[(i*3)+2] = mode
 
 				if (numCount > 0)
 				{
@@ -1159,42 +1164,25 @@ void main()
 		int numShadowPoints = int(shadowData.x);
 		int shadowPointOffset = int(shadowData.y);
 		int mode = int(shadowData.z); // -10 = shadow points are the visible ones. 10 = shadow points are the invisible ones
+		float modeVal = 1.0 - step(0.0, shadowData.z);
 
-		// A value of 0 means all tiles are visible
-		if (numShadowPoints > 0)
+		lightStrength *= step(0.0, shadowData.x); // if less than 0 then no tiles visible, so multiply by 0
+
+		pixelPos = (floor(v_spritePos / u_tileSize)) * u_tileSize;
+
+		float multiplier = 1.0 - step(1.0, shadowData.x) + (1.0 - modeVal); // if numpoints is 0 then all tiles are visible
+		for (int i = 0; i < numShadowPoints; i++)
 		{
-			pixelPos = (floor(v_spritePos / u_tileSize)) * u_tileSize;
+			vec2 offset = u_lightShadowPoints[shadowPointOffset+i];
+			vec2 visiblePos = posRange.xy + offset * u_tileSize;
+			diff = visiblePos - pixelPos;
+			float len = (diff.x * diff.x) + (diff.y * diff.y);
 
-			bool found = false;
-			for (int i = 0; i < numShadowPoints; i++)
-			{
-				vec2 offset = u_lightShadowPoints[shadowPointOffset+i];
-				vec2 visiblePos = posRange.xy + offset * u_tileSize;
-				diff = visiblePos - pixelPos;
-				float len = (diff.x * diff.x) + (diff.y * diff.y);
-
-				if (len < u_tileSize)
-				{
-					found = true;
-					break;
-				}
-			}
-
-			if (mode < 0 && !found)
-			{
-				return vec3(0.0, 0.0, 0.0);
-			}
-			else if (mode > 0 && found)
-			{
-				return vec3(0.0, 0.0, 0.0);
-			}
-
+			float newMult = step(len, u_tileSize);
+			multiplier = mix(multiplier, modeVal, newMult);
 		}
-		// A value of -1 means no tiles are visible
-		else if (numShadowPoints == -1)
-		{
-			return vec3(0.0, 0.0, 0.0);
-		}
+
+		lightStrength *= multiplier;
 					"""
 			}
 
@@ -1220,23 +1208,19 @@ vec3 calculateLight(int index)
 
 	vec2 diff = pos - pixelPos;
 	float distSq = (diff.x * diff.x) + (diff.y * diff.y);
-	if (distSq > rangeSq)
-	{
-		return vec3(0.0, 0.0, 0.0);
-	}
-	else
-	{
+
+	float lightStrength = step(distSq, rangeSq);
+
 #ifdef SHADOWS
-		$shadowCode
+	$shadowCode
 #endif
 
-		float alpha = 1.0 - (distSq / rangeSq);
+	float alpha = 1.0 - (distSq / rangeSq);
 
-		vec3 lightCol = colourBrightness.rgb;
-		float brightness = colourBrightness.a;
+	vec3 lightCol = colourBrightness.rgb;
+	float brightness = colourBrightness.a;
 
-		return lightCol * brightness * alpha;
-	}
+	return lightCol * brightness * alpha * lightStrength;
 }
 					"""
 			}
