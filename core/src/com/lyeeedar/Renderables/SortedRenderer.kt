@@ -57,7 +57,8 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		}
 	}
 
-	private val lights = com.badlogic.gdx.utils.Array<Light>()
+	private val basicLights = com.badlogic.gdx.utils.Array<Light>()
+	private val shadowLights = com.badlogic.gdx.utils.Array<Light>()
 
 	private var screenShakeRadius: Float = 0f
 	private var screenShakeAccumulator: Float = 0f
@@ -116,13 +117,15 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	private val staticBuffers = com.badlogic.gdx.utils.Array<VertexBuffer>()
 	private val queuedBuffers = com.badlogic.gdx.utils.Array<VertexBuffer>()
 	private lateinit var shader: ShaderProgram
-	private var shaderLightNum: Int = -1
-	private var shaderHasShadows = false
+	private var shaderLightNum: Int = 0
+	private var shaderShadowLightNum: Int = 0
 	private var shaderLightPointNum = 0
-	private lateinit var lightPosRange: FloatArray
-	private lateinit var lightColourBrightness: FloatArray
-	private lateinit var lightShadowData: FloatArray
-	private lateinit var lightShadowPoints: FloatArray
+	private var lightPosRange: FloatArray
+	private var lightColourBrightness: FloatArray
+	private var lightShadowPosRange: FloatArray
+	private var lightShadowColourBrightness: FloatArray
+	private var lightShadowData: FloatArray
+	private var lightShadowPoints: FloatArray
 	private val combinedMatrix: Matrix4 = Matrix4()
 
 	private val executor = LightweightThreadpool(3)
@@ -180,9 +183,11 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		shaderLightNum = 10
 		lightPosRange = FloatArray(shaderLightNum * 3)
 		lightColourBrightness = FloatArray(shaderLightNum * 4)
-		lightShadowData = FloatArray(shaderLightNum * 3)
+		lightShadowPosRange = FloatArray(shaderShadowLightNum * 3)
+		lightShadowColourBrightness = FloatArray(shaderShadowLightNum * 4)
+		lightShadowData = FloatArray(shaderShadowLightNum * 3)
 		lightShadowPoints = FloatArray(shaderLightPointNum * 2)
-		shader = createShader(shaderLightNum, false, shaderLightPointNum)
+		shader = createShader(shaderLightNum, shaderShadowLightNum, shaderLightPointNum)
 	}
 
 	// ----------------------------------------------------------------------
@@ -305,48 +310,39 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		if (currentBuffer == null) return
 
 		var rebuildShader = false
-		if (lights.size > shaderLightNum)
+
+		if (basicLights.size > shaderLightNum || shadowLights.size > shaderShadowLightNum)
 		{
-			shaderLightNum = lights.size + 5
+			shaderLightNum = basicLights.size
+			shaderShadowLightNum = shadowLights.size
 			rebuildShader = true
 			lightPosRange = FloatArray(shaderLightNum * 3)
 			lightColourBrightness = FloatArray(shaderLightNum * 4)
-			lightShadowData = FloatArray(shaderLightNum * 3)
+			lightShadowPosRange = FloatArray(shaderShadowLightNum * 3)
+			lightShadowColourBrightness = FloatArray(shaderShadowLightNum * 4)
+			lightShadowData = FloatArray(shaderShadowLightNum * 3)
 		}
 
 		var requiredShadowPoints = 0
-		var needsShadows = false
 		if (Global.collisionGrid != null)
 		{
-			for (light in lights)
+			for (light in shadowLights)
 			{
-				if (light.hasShadows)
+				val mode = if (light.cache.currentShadowCast.size <= light.cache.invCurrentShadowCast.size) -10 else 10
+				val cast = if (mode < 0) light.cache.currentShadowCast else light.cache.invCurrentShadowCast
+
+				val numCount = when
 				{
-					needsShadows = true
+					!light.hasShadows -> 0f
+					!light.cache.anyOpaque() -> 0f
+					else -> cast.size.toFloat()
+				}
 
-					val mode = if (light.cache.currentShadowCast.size <= light.cache.invCurrentShadowCast.size) -10 else 10
-					val cast = if (mode < 0) light.cache.currentShadowCast else light.cache.invCurrentShadowCast
-
-					val numCount = when
-					{
-						!light.hasShadows -> 0f
-						!light.cache.anyOpaque() -> 0f
-						!light.cache.anyClear() -> -1f
-						else -> cast.size.toFloat()
-					}
-
-					if (numCount > 0)
-					{
-						requiredShadowPoints += cast.size
-					}
+				if (numCount > 0)
+				{
+					requiredShadowPoints += cast.size
 				}
 			}
-		}
-
-		if (needsShadows && !shaderHasShadows)
-		{
-			shaderHasShadows = true
-			rebuildShader = true
 		}
 
 		if (shaderLightPointNum < requiredShadowPoints)
@@ -356,9 +352,8 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			lightShadowPoints = FloatArray(shaderLightPointNum * 2)
 		}
 
-		var shadowCacheOffset = 0
 		var i = 0
-		for (light in lights)
+		for (light in basicLights)
 		{
 			lightPosRange[(i*3)+0] = light.pos.x * tileSize + offsetx
 			lightPosRange[(i*3)+1] = light.pos.y * tileSize + offsety
@@ -368,41 +363,6 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			lightColourBrightness[(i*4)+1] = light.colour.g
 			lightColourBrightness[(i*4)+2] = light.colour.b
 			lightColourBrightness[(i*4)+3] = light.brightness
-
-			if (shaderHasShadows)
-			{
-				var mode = if (light.cache.currentShadowCast.size <= light.cache.invCurrentShadowCast.size) -10f else 10f
-				val cast = if (mode < 0) light.cache.currentShadowCast else light.cache.invCurrentShadowCast
-
-				val numCount = when
-				{
-					!light.hasShadows -> 0f
-					!light.cache.anyOpaque() -> 0f
-					!light.cache.anyClear() -> -1f
-					else -> cast.size.toFloat()
-				}
-
-				if (numCount == 0f)
-				{
-					mode = -10f
-				}
-
-				lightShadowData[(i*3)+0] = numCount
-				lightShadowData[(i*3)+1] = (shadowCacheOffset / 2).toFloat()
-				lightShadowData[(i*3)+2] = mode
-
-				if (numCount > 0)
-				{
-					for (point in cast)
-					{
-						val dx = point.x - light.pos.x
-						val dy = point.y - light.pos.y
-
-						lightShadowPoints[shadowCacheOffset++] = dx
-						lightShadowPoints[shadowCacheOffset++] = dy
-					}
-				}
-			}
 
 			i++
 		}
@@ -416,10 +376,68 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			i++
 		}
 
+		var shadowCacheOffset = 0
+		i = 0
+		for (light in shadowLights)
+		{
+			if (!light.cache.anyClear()) continue
+
+			lightShadowPosRange[(i*3)+0] = light.pos.x * tileSize + offsetx
+			lightShadowPosRange[(i*3)+1] = light.pos.y * tileSize + offsety
+			lightShadowPosRange[(i*3)+2] = (light.range * tileSize * 0.9f) * (light.range * tileSize * 0.9f)
+
+			lightShadowColourBrightness[(i*4)+0] = light.colour.r
+			lightShadowColourBrightness[(i*4)+1] = light.colour.g
+			lightShadowColourBrightness[(i*4)+2] = light.colour.b
+			lightShadowColourBrightness[(i*4)+3] = light.brightness
+
+			var mode = if (light.cache.currentShadowCast.size <= light.cache.invCurrentShadowCast.size) -10f else 10f
+			val cast = if (mode < 0) light.cache.currentShadowCast else light.cache.invCurrentShadowCast
+
+			val numCount = when
+			{
+				!light.hasShadows -> 0f
+				!light.cache.anyOpaque() -> 0f
+				else -> cast.size.toFloat()
+			}
+
+			if (numCount == 0f)
+			{
+				mode = -10f
+			}
+
+			lightShadowData[(i*3)+0] = numCount
+			lightShadowData[(i*3)+1] = (shadowCacheOffset / 2).toFloat()
+			lightShadowData[(i*3)+2] = mode
+
+			if (numCount > 0)
+			{
+				for (point in cast)
+				{
+					val dx = point.x - light.pos.x
+					val dy = point.y - light.pos.y
+
+					lightShadowPoints[shadowCacheOffset++] = dx
+					lightShadowPoints[shadowCacheOffset++] = dy
+				}
+			}
+
+			i++
+		}
+
+		while (i < shaderShadowLightNum)
+		{
+			lightShadowPosRange[(i*3)+0] = -1f
+			lightShadowPosRange[(i*3)+1] = -1f
+			lightShadowPosRange[(i*3)+2] = -1f
+
+			i++
+		}
+
 		if (rebuildShader)
 		{
 			shader.dispose()
-			shader = createShader(shaderLightNum, shaderHasShadows, shaderLightPointNum)
+			shader = createShader(shaderLightNum, shaderShadowLightNum, shaderLightPointNum)
 		}
 
 		Gdx.gl.glEnable(GL20.GL_BLEND)
@@ -435,10 +453,12 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		shader.setUniform3fv("u_lightPosRange", lightPosRange, 0, lightPosRange.size)
 		shader.setUniform4fv("u_lightColourBrightness", lightColourBrightness, 0, lightColourBrightness.size)
 
-		if (shaderHasShadows)
+		if (shaderShadowLightNum > 0)
 		{
-			shader.setUniform3fv("u_lightShadowData", lightShadowData, 0, lightShadowData.size)
-			shader.setUniform2fv("u_lightShadowPoints", lightShadowPoints, 0, shadowCacheOffset)
+			shader.setUniform3fv("u_shadowedLightPosRange", lightShadowPosRange, 0, lightShadowPosRange.size)
+			shader.setUniform4fv("u_shadowedLightColourBrightness", lightShadowColourBrightness, 0, lightShadowColourBrightness.size)
+			shader.setUniform3fv("u_shadowedLightData", lightShadowData, 0, lightShadowData.size)
+			shader.setUniform2fv("u_shadowedLightPoints", lightShadowPoints, 0, shadowCacheOffset)
 		}
 
 		executor.awaitAllJobs()
@@ -585,7 +605,8 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		}
 		tilingMap.clear()
 
-		lights.clear()
+		basicLights.clear()
+		shadowLights.clear()
 
 		if (queuedSprites < spriteArray.size / 4)
 		{
@@ -625,7 +646,14 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			}
 		}
 
-		for (light in lights)
+		for (light in basicLights)
+		{
+			executor.addJob {
+				light.update(delta)
+			}
+		}
+
+		for (light in shadowLights)
 		{
 			executor.addJob {
 				light.update(delta)
@@ -853,7 +881,15 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	fun addLight(light: Light, ix: Float, iy: Float)
 	{
 		light.pos.set(ix, iy)
-		lights.add(light)
+
+		if (Global.collisionGrid != null && light.hasShadows)
+		{
+			shadowLights.add(light)
+		}
+		else
+		{
+			basicLights.add(light)
+		}
 	}
 
 	// ----------------------------------------------------------------------
@@ -893,8 +929,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		if (tilingSprite.light != null)
 		{
-			tilingSprite.light!!.pos.set(lx, ly)
-			lights.add(tilingSprite.light!!)
+			addLight(tilingSprite.light!!, lx, ly)
 		}
 
 		// check if onscreen
@@ -1110,7 +1145,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		private const val verticesASprite = vertexSize * 4
 		private const val maxVertices = maxSprites * vertexSize
 
-		fun createShader(numLights: Int, shadows: Boolean, shaderLightPointNum: Int): ShaderProgram
+		fun createShader(numLights: Int, numShadowLights: Int, shaderLightPointNum: Int): ShaderProgram
 		{
 			val vertexShader = """
 attribute vec4 ${ShaderProgram.POSITION_ATTRIBUTE};
@@ -1156,33 +1191,80 @@ void main()
 				unrolledLightCode += "lightCol += calculateLight($i);\n"
 			}
 
-			var shadowCode = ""
-			if (shadows)
+			var unrolledShadowLightCode = ""
+			for (i in 0 until numShadowLights)
 			{
-				shadowCode = """
-		vec3 shadowData = u_lightShadowData[index];
-		int numShadowPoints = int(shadowData.x);
-		int shadowPointOffset = int(shadowData.y);
-		int mode = int(shadowData.z); // -10 = shadow points are the visible ones. 10 = shadow points are the invisible ones
-		float modeVal = 1.0 - step(0.0, shadowData.z);
+				unrolledShadowLightCode += "lightCol += calculateShadowedLight($i);\n"
+			}
 
-		lightStrength *= step(0.0, shadowData.x); // if less than 0 then no tiles visible, so multiply by 0
+			val tileLightingCode = when
+			{
+				smoothLighting -> "pos += 0.5 * u_tileSize;"
+				else -> "pixelPos = (floor(v_spritePos / u_tileSize)) * u_tileSize;"
+			}
 
-		pixelPos = (floor(v_spritePos / u_tileSize)) * u_tileSize;
+			val lightStrengthCode = """
+	vec2 pos = posRange.xy;
+	float rangeSq = posRange.z;
 
-		float multiplier = 1.0 - step(1.0, shadowData.x) + (1.0 - modeVal); // if numpoints is 0 then all tiles are visible
-		for (int i = 0; i < numShadowPoints; i++)
-		{
-			vec2 offset = u_lightShadowPoints[shadowPointOffset+i];
-			vec2 visiblePos = posRange.xy + offset * u_tileSize;
-			diff = visiblePos - pixelPos;
-			float len = (diff.x * diff.x) + (diff.y * diff.y);
+	vec2 pixelPos = v_pixelPos;
 
-			float newMult = step(len, u_tileSize);
-			multiplier = mix(multiplier, modeVal, newMult);
-		}
+	$tileLightingCode
 
-		lightStrength *= multiplier;
+	vec2 diff = pos - pixelPos;
+	float distSq = (diff.x * diff.x) + (diff.y * diff.y);
+
+	float lightStrength = step(distSq, rangeSq);
+				"""
+
+			var shadowLightingCode = ""
+			var shadowUniforms = ""
+			if (numShadowLights > 0)
+			{
+				shadowUniforms = """
+uniform vec3 u_shadowedLightPosRange[$numShadowLights];
+uniform vec4 u_shadowedLightColourBrightness[$numShadowLights];
+uniform vec3 u_shadowedLightData[$numShadowLights];
+uniform vec2 u_shadowedLightPoints[$shaderLightPointNum];
+					"""
+
+				shadowLightingCode = """
+vec3 calculateShadowedLight(int index)
+{
+	vec3 posRange = u_shadowedLightPosRange[index];
+	vec4 colourBrightness = u_shadowedLightColourBrightness[index];
+
+	$lightStrengthCode
+
+	vec3 shadowData = u_shadowedLightData[index];
+	int numShadowPoints = int(shadowData.x);
+	int shadowPointOffset = int(shadowData.y);
+	int mode = int(shadowData.z); // -10 = shadow points are the visible ones. 10 = shadow points are the invisible ones
+	float modeVal = 1.0 - step(0.0, shadowData.z);
+
+	pixelPos = (floor(v_spritePos / u_tileSize)) * u_tileSize;
+
+	float multiplier = 1.0 - step(1.0, shadowData.x) + (1.0 - modeVal); // if numpoints is 0 then all tiles are visible
+	for (int i = 0; i < numShadowPoints; i++)
+	{
+		vec2 offset = u_shadowedLightPoints[shadowPointOffset+i];
+		vec2 visiblePos = posRange.xy + offset * u_tileSize;
+		diff = visiblePos - pixelPos;
+		float len = (diff.x * diff.x) + (diff.y * diff.y);
+
+		float newMult = step(len, u_tileSize);
+		multiplier = mix(multiplier, modeVal, newMult);
+	}
+
+	lightStrength *= multiplier;
+
+	float alpha = 1.0 - (distSq / rangeSq);
+
+	vec3 lightCol = colourBrightness.rgb;
+	float brightness = colourBrightness.a;
+
+	return lightCol * brightness * alpha * lightStrength;
+}
 					"""
 			}
 
@@ -1195,25 +1277,7 @@ vec3 calculateLight(int index)
 	vec3 posRange = u_lightPosRange[index];
 	vec4 colourBrightness = u_lightColourBrightness[index];
 
-	vec2 pos = posRange.xy;
-	float rangeSq = posRange.z;
-
-	vec2 pixelPos = v_pixelPos;
-
-#ifdef TILELIGHTING
-	pixelPos = (floor(v_spritePos / u_tileSize)) * u_tileSize;
-#else
-	pos += 0.5 * u_tileSize;
-#endif
-
-	vec2 diff = pos - pixelPos;
-	float distSq = (diff.x * diff.x) + (diff.y * diff.y);
-
-	float lightStrength = step(distSq, rangeSq);
-
-#ifdef SHADOWS
-	$shadowCode
-#endif
+	$lightStrengthCode
 
 	float alpha = 1.0 - (distSq / rangeSq);
 
@@ -1225,14 +1289,7 @@ vec3 calculateLight(int index)
 					"""
 			}
 
-			var fragmentShader = """
-#ifdef GL_ES
-#define LOWP lowp
-precision mediump float;
-#else
-#define LOWP
-#endif
-
+			val fragmentShader = """
 varying vec4 v_color;
 varying vec2 v_spritePos;
 varying vec2 v_pixelPos;
@@ -1247,14 +1304,13 @@ uniform vec3 u_ambient;
 uniform vec3 u_lightPosRange[$numLights];
 uniform vec4 u_lightColourBrightness[$numLights];
 
-#ifdef SHADOWS
-uniform vec3 u_lightShadowData[$numLights];
-uniform vec2 u_lightShadowPoints[$shaderLightPointNum];
-#endif
+$shadowUniforms
 
 uniform sampler2D u_texture;
 
 $lightingCode
+
+$shadowLightingCode
 
 void main()
 {
@@ -1265,11 +1321,9 @@ void main()
 
 	vec3 lightCol = u_ambient;
 
-	//for (int i = 0; i < $numLights; i++)
-	//{
-	//	lightCol += calculateLight(i);
-	//}
 	$unrolledLightCode
+
+	$unrolledShadowLightCode
 
 	lightCol = mix(vec3(1.0, 1.0, 1.0), lightCol, v_isLit);
 
@@ -1277,15 +1331,6 @@ void main()
 	gl_FragColor = finalCol;
 }
 """
-			if (!smoothLighting)
-			{
-				fragmentShader = "#define TILELIGHTING 1\n$fragmentShader"
-			}
-
-			if (shadows)
-			{
-				fragmentShader = "#define SHADOWS 1\n$fragmentShader"
-			}
 
 			val shader = ShaderProgram(vertexShader, fragmentShader)
 			if (!shader.isCompiled) throw IllegalArgumentException("Error compiling shader: " + shader.log)
