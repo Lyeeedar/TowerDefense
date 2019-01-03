@@ -384,8 +384,8 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			var dy = 0f
 			for (point in light.cache.opaqueTiles)
 			{
-				dx = point.x - light.pos.x
-				dy = point.y - light.pos.y
+				dx = (point.x - light.pos.x.toInt()).toFloat()
+				dy = (point.y - light.pos.y.toInt()).toFloat()
 
 				lightShadowOccluders[shadowCacheOffset++] = dx
 				lightShadowOccluders[shadowCacheOffset++] = dy
@@ -754,7 +754,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		if (effect.light != null)
 		{
-			addLight(effect.light!!, lx, ly)
+			addLight(effect.light!!, lx + 0.5f, ly + 0.5f)
 		}
 
 		//val scale = effect.animation?.renderScale()?.get(0) ?: 1f
@@ -903,7 +903,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		if (tilingSprite.light != null)
 		{
-			addLight(tilingSprite.light!!, lx, ly)
+			addLight(tilingSprite.light!!, lx + 0.5f, ly + 0.5f)
 		}
 
 		// check if onscreen
@@ -985,7 +985,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		if (sprite.light != null)
 		{
-			addLight(sprite.light!!, ix, iy)
+			addLight(sprite.light!!, ix + 0.5f, iy + 0.5f)
 		}
 
 		// check if onscreen
@@ -1198,8 +1198,7 @@ float calculateLightStrength(vec3 posRange)
 
 #ifdef TILELIGHTING
 	pixelPos = (floor(v_spritePos / u_tileSize)) * u_tileSize;
-#else
-	pos += 0.5 * u_tileSize;
+	pos = (floor(pos / u_tileSize)) * u_tileSize;
 #endif
 
 	vec2 diff = pos - pixelPos;
@@ -1243,12 +1242,20 @@ float rayBoxIntersect ( vec2 rpos, vec2 rdir, vec2 vmin, vec2 vmax )
 }
 
 // ------------------------------------------------------
-bool isPointVisible(int index, vec2 rpos)
+bool isPointVisible(int index, vec2 point)
 {
-	vec2 rtilePos = rpos;//(floor(rpos / u_tileSize)) * u_tileSize;
-	vec2 tilePos = (floor(v_spritePos / u_tileSize)) * u_tileSize;
+	vec3 posRange = u_shadowedLightPosRange[index];
 
-	vec2 diff = v_pixelPos - rpos;
+	vec2 baseTile = (floor(v_spritePos / u_tileSize)) * u_tileSize;
+	vec2 lightTile = (floor(posRange.xy / u_tileSize)) * u_tileSize;
+
+	vec2 pixelPos = v_pixelPos;
+	if (pixelPos.y - v_spritePos.y > u_tileSize*0.9)
+	{
+		pixelPos.y = v_spritePos.y + u_tileSize*0.9;
+	}
+
+	vec2 diff = point - pixelPos;
 	float rayLen = length(diff);
 	vec2 rdir = 1.0 / (diff / rayLen);
 
@@ -1257,13 +1264,13 @@ bool isPointVisible(int index, vec2 rpos)
 	for (int i = 0; i < $pointsPerLight; i++)
 	{
 		vec2 occluder = u_shadowedLightOccluders[(index * $pointsPerLight) + i];
-		vec2 occluderPos = rtilePos + occluder * u_tileSize;
-		float intersect = rayBoxIntersect(rpos, rdir, occluderPos, occluderPos + vec2(u_tileSize));
+		vec2 occluderPos = lightTile + occluder * u_tileSize;
+		float intersect = rayBoxIntersect(pixelPos, rdir, occluderPos, occluderPos + vec2(u_tileSize));
 
-		collided = intersect > 0.0 && intersect < rayLen ? true : collided;
+		collided = intersect > 0.0 && intersect <= rayLen ? true : collided;
 
 		occluderPos = (floor(occluderPos / u_tileSize)) * u_tileSize;
-		if (tilePos == occluderPos)
+		if (baseTile == occluderPos)
 		{
 			collidedOverride = true;
 		}
@@ -1279,6 +1286,8 @@ vec3 calculateShadowLight(int index)
 	vec4 colourBrightness = u_shadowedLightColourBrightness[index];
 
 	float lightStrength = calculateLightStrength(posRange);
+
+	float halfTile = u_tileSize * 0.5;
 
 	float multiplier = isPointVisible(index, posRange.xy) ? 1.0 : 0.0;
 
