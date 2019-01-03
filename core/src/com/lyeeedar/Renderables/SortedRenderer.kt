@@ -119,7 +119,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	private lateinit var shader: ShaderProgram
 	private var shaderLightNum: Int = 0
 	private var shaderShadowLightNum: Int = 0
-	private var occludersPerLight = 0
+	private var shaderOccludersPerLight = 0
 	private var lightPosRange: FloatArray
 	private var lightColourBrightness: FloatArray
 	private var lightShadowPosRange: FloatArray
@@ -184,8 +184,8 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		lightColourBrightness = FloatArray(shaderLightNum * 4)
 		lightShadowPosRange = FloatArray(shaderShadowLightNum * 3)
 		lightShadowColourBrightness = FloatArray(shaderShadowLightNum * 4)
-		lightShadowOccluders = FloatArray(occludersPerLight * shaderShadowLightNum * 2)
-		shader = createShader(shaderLightNum, shaderShadowLightNum, occludersPerLight)
+		lightShadowOccluders = FloatArray(shaderOccludersPerLight * shaderShadowLightNum * 4)
+		shader = createShader(shaderLightNum, shaderShadowLightNum, shaderOccludersPerLight)
 	}
 
 	// ----------------------------------------------------------------------
@@ -325,7 +325,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		{
 			for (light in shadowLights)
 			{
-				val numCount = light.cache.opaqueTiles.size
+				val numCount = light.cache.opaqueRegions.size
 
 				if (light.cache.anyClear() && numCount > occludersPerLight)
 				{
@@ -334,11 +334,11 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			}
 		}
 
-		if (this.occludersPerLight < occludersPerLight)
+		if (shaderOccludersPerLight < occludersPerLight)
 		{
 			rebuildShader = true
-			this.occludersPerLight = occludersPerLight
-			lightShadowOccluders = FloatArray(occludersPerLight * shaderShadowLightNum * 2)
+			shaderOccludersPerLight = occludersPerLight
+			lightShadowOccluders = FloatArray(occludersPerLight * shaderShadowLightNum * 4)
 		}
 
 		var i = 0
@@ -382,19 +382,27 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 			var dx = 0f
 			var dy = 0f
-			for (point in light.cache.opaqueTiles)
+			var w = 0f
+			var h = 0f
+			for (region in light.cache.opaqueRegions)
 			{
-				dx = (point.x - light.pos.x.toInt()).toFloat()
-				dy = (point.y - light.pos.y.toInt()).toFloat()
+				dx = region.x - light.pos.x.toInt()
+				dy = region.y - light.pos.y.toInt()
+				w = region.width
+				h = region.height
 
 				lightShadowOccluders[shadowCacheOffset++] = dx
 				lightShadowOccluders[shadowCacheOffset++] = dy
+				lightShadowOccluders[shadowCacheOffset++] = w
+				lightShadowOccluders[shadowCacheOffset++] = h
 			}
 
-			while (shadowCacheOffset < (i+1) * this.occludersPerLight * 2)
+			while (shadowCacheOffset < (i+1) * shaderOccludersPerLight * 4)
 			{
 				lightShadowOccluders[shadowCacheOffset++] = dx
 				lightShadowOccluders[shadowCacheOffset++] = dy
+				lightShadowOccluders[shadowCacheOffset++] = w
+				lightShadowOccluders[shadowCacheOffset++] = h
 			}
 
 			i++
@@ -412,7 +420,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		if (rebuildShader)
 		{
 			shader.dispose()
-			shader = createShader(shaderLightNum, shaderShadowLightNum, this.occludersPerLight)
+			shader = createShader(shaderLightNum, shaderShadowLightNum, shaderOccludersPerLight)
 		}
 
 		Gdx.gl.glEnable(GL20.GL_BLEND)
@@ -432,7 +440,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		{
 			shader.setUniform3fv("u_shadowedLightPosRange", lightShadowPosRange, 0, lightShadowPosRange.size)
 			shader.setUniform4fv("u_shadowedLightColourBrightness", lightShadowColourBrightness, 0, lightShadowColourBrightness.size)
-			shader.setUniform2fv("u_shadowedLightOccluders", lightShadowOccluders, 0, lightShadowOccluders.size)
+			shader.setUniform4fv("u_shadowedLightOccluders", lightShadowOccluders, 0, lightShadowOccluders.size)
 		}
 
 		executor.awaitAllJobs()
@@ -1119,7 +1127,17 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		private const val verticesASprite = vertexSize * 4
 		private const val maxVertices = maxSprites * vertexSize
 
-		fun createShader(numLights: Int, numShadowLights: Int, pointsPerLight: Int): ShaderProgram
+		fun createShader(numLights: Int, numShadowLights: Int, occludersPerLight: Int): ShaderProgram
+		{
+			val vertexShader = getVertexUnoptimised(numLights, numShadowLights, occludersPerLight)
+			val fragmentShader = getFragmentUnoptimised(numLights, numShadowLights, occludersPerLight)
+
+			val shader = ShaderProgram(vertexShader, fragmentShader)
+			if (!shader.isCompiled) throw IllegalArgumentException("Error compiling shader: " + shader.log)
+			return shader
+		}
+
+		fun getVertexUnoptimised(numLights: Int, numShadowLights: Int, occludersPerLight: Int): String
 		{
 			val vertexShader = """
 attribute vec4 ${ShaderProgram.POSITION_ATTRIBUTE};
@@ -1160,6 +1178,11 @@ void main()
 }
 """
 
+			return vertexShader
+		}
+
+		fun getFragmentUnoptimised(numLights: Int, numShadowLights: Int, occludersPerLight: Int): String
+		{
 			val shadowDefine = if (numShadowLights > 0) "#define SHADOWS 1" else ""
 			val fragmentShader = """
 
@@ -1183,7 +1206,7 @@ uniform vec4 u_lightColourBrightness[$numLights];
 #ifdef SHADOWS
 uniform vec3 u_shadowedLightPosRange[$numShadowLights];
 uniform vec4 u_shadowedLightColourBrightness[$numShadowLights];
-uniform vec2 u_shadowedLightOccluders[${pointsPerLight * numShadowLights}];
+uniform vec4 u_shadowedLightOccluders[${occludersPerLight * numShadowLights}];
 #endif
 
 uniform sampler2D u_texture;
@@ -1242,6 +1265,13 @@ float rayBoxIntersect ( vec2 rpos, vec2 rdir, vec2 vmin, vec2 vmax )
 }
 
 // ------------------------------------------------------
+float insideBox(vec2 v, vec2 bottomLeft, vec2 topRight)
+{
+    vec2 s = step(bottomLeft, v) - step(topRight, v);
+    return s.x * s.y;
+}
+
+// ------------------------------------------------------
 bool isPointVisible(int index, vec2 point)
 {
 	vec3 posRange = u_shadowedLightPosRange[index];
@@ -1250,10 +1280,7 @@ bool isPointVisible(int index, vec2 point)
 	vec2 lightTile = (floor(posRange.xy / u_tileSize)) * u_tileSize;
 
 	vec2 pixelPos = v_pixelPos;
-	if (pixelPos.y - v_spritePos.y > u_tileSize*0.9)
-	{
-		pixelPos.y = v_spritePos.y + u_tileSize*0.9;
-	}
+	pixelPos.y = v_spritePos.y + min(pixelPos.y - v_spritePos.y, u_tileSize*0.9);
 
 	vec2 diff = point - pixelPos;
 	float rayLen = length(diff);
@@ -1261,16 +1288,16 @@ bool isPointVisible(int index, vec2 point)
 
 	bool collided = false;
 	bool collidedOverride = false;
-	for (int i = 0; i < $pointsPerLight; i++)
+	for (int i = 0; i < $occludersPerLight; i++)
 	{
-		vec2 occluder = u_shadowedLightOccluders[(index * $pointsPerLight) + i];
-		vec2 occluderPos = lightTile + occluder * u_tileSize;
-		float intersect = rayBoxIntersect(pixelPos, rdir, occluderPos, occluderPos + vec2(u_tileSize));
+		vec4 occluder = u_shadowedLightOccluders[(index * $occludersPerLight) + i] * u_tileSize;
+		occluder.xy += lightTile;
+		float intersect = rayBoxIntersect(pixelPos, rdir, occluder.xy, occluder.xy + occluder.zw);
 
 		collided = intersect > 0.0 && intersect <= rayLen ? true : collided;
 
-		occluderPos = (floor(occluderPos / u_tileSize)) * u_tileSize;
-		if (baseTile == occluderPos)
+		occluder.xy = (floor(occluder.xy / u_tileSize)) * u_tileSize;
+		if (insideBox(baseTile, occluder.xy, occluder.xy + occluder.zw) > 0.0)
 		{
 			collidedOverride = true;
 		}
@@ -1329,9 +1356,7 @@ void main()
 }
 """
 
-			val shader = ShaderProgram(vertexShader, fragmentShader)
-			if (!shader.isCompiled) throw IllegalArgumentException("Error compiling shader: " + shader.log)
-			return shader
+			return fragmentShader
 		}
 	}
 }
