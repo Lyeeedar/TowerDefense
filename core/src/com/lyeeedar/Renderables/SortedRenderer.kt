@@ -119,13 +119,12 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	private lateinit var shader: ShaderProgram
 	private var shaderLightNum: Int = 0
 	private var shaderShadowLightNum: Int = 0
-	private var pointsPerLight = 0
+	private var occludersPerLight = 0
 	private var lightPosRange: FloatArray
 	private var lightColourBrightness: FloatArray
 	private var lightShadowPosRange: FloatArray
 	private var lightShadowColourBrightness: FloatArray
-	private var lightShadowData: FloatArray
-	private var lightShadowPoints: FloatArray
+	private var lightShadowOccluders: FloatArray
 	private val combinedMatrix: Matrix4 = Matrix4()
 
 	private val executor = LightweightThreadpool(3)
@@ -185,9 +184,8 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		lightColourBrightness = FloatArray(shaderLightNum * 4)
 		lightShadowPosRange = FloatArray(shaderShadowLightNum * 3)
 		lightShadowColourBrightness = FloatArray(shaderShadowLightNum * 4)
-		lightShadowData = FloatArray(shaderShadowLightNum * 3)
-		lightShadowPoints = FloatArray(pointsPerLight * shaderShadowLightNum * 2)
-		shader = createShader(shaderLightNum, shaderShadowLightNum, pointsPerLight)
+		lightShadowOccluders = FloatArray(occludersPerLight * shaderShadowLightNum * 2)
+		shader = createShader(shaderLightNum, shaderShadowLightNum, occludersPerLight)
 	}
 
 	// ----------------------------------------------------------------------
@@ -320,36 +318,27 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			lightColourBrightness = FloatArray(shaderLightNum * 4)
 			lightShadowPosRange = FloatArray(shaderShadowLightNum * 3)
 			lightShadowColourBrightness = FloatArray(shaderShadowLightNum * 4)
-			lightShadowData = FloatArray(shaderShadowLightNum * 3)
 		}
 
-		var pointsPerLight = 0
+		var occludersPerLight = 0
 		if (Global.collisionGrid != null)
 		{
 			for (light in shadowLights)
 			{
-				val mode = if (light.cache.currentShadowCast.size <= light.cache.invCurrentShadowCast.size) -10 else 10
-				val cast = if (mode < 0) light.cache.currentShadowCast else light.cache.invCurrentShadowCast
+				val numCount = light.cache.opaqueTiles.size
 
-				val numCount = when
+				if (light.cache.anyClear() && numCount > occludersPerLight)
 				{
-					!light.hasShadows -> 0f
-					!light.cache.anyOpaque() -> 0f
-					else -> cast.size.toFloat()
-				}
-
-				if (numCount > pointsPerLight)
-				{
-					pointsPerLight = cast.size
+					occludersPerLight = numCount
 				}
 			}
 		}
 
-		if (this.pointsPerLight < pointsPerLight)
+		if (this.occludersPerLight < occludersPerLight)
 		{
 			rebuildShader = true
-			this.pointsPerLight = pointsPerLight
-			lightShadowPoints = FloatArray(pointsPerLight * shaderShadowLightNum * 2)
+			this.occludersPerLight = occludersPerLight
+			lightShadowOccluders = FloatArray(occludersPerLight * shaderShadowLightNum * 2)
 		}
 
 		var i = 0
@@ -391,44 +380,21 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			lightShadowColourBrightness[(i*4)+2] = light.colour.b
 			lightShadowColourBrightness[(i*4)+3] = light.brightness
 
-			var mode = if (light.cache.currentShadowCast.size <= light.cache.invCurrentShadowCast.size) -10f else 10f
-			val cast = if (mode < 0) light.cache.currentShadowCast else light.cache.invCurrentShadowCast
-
-			val numCount = when
+			var dx = 0f
+			var dy = 0f
+			for (point in light.cache.opaqueTiles)
 			{
-				!light.hasShadows -> 0f
-				!light.cache.anyOpaque() -> 0f
-				else -> cast.size.toFloat()
+				dx = point.x - light.pos.x
+				dy = point.y - light.pos.y
+
+				lightShadowOccluders[shadowCacheOffset++] = dx
+				lightShadowOccluders[shadowCacheOffset++] = dy
 			}
 
-			if (numCount == 0f)
+			while (shadowCacheOffset < (i+1) * this.occludersPerLight * 2)
 			{
-				mode = -10f
-			}
-
-			//shadowCacheOffset = i * 30
-			lightShadowData[(i*3)+0] = numCount
-			lightShadowData[(i*3)+1] = (shadowCacheOffset / 2).toFloat()
-			lightShadowData[(i*3)+2] = mode
-
-			if (numCount > 0)
-			{
-				var dx = 0f
-				var dy = 0f
-				for (point in cast)
-				{
-					dx = point.x - light.pos.x
-					dy = point.y - light.pos.y
-
-					lightShadowPoints[shadowCacheOffset++] = dx
-					lightShadowPoints[shadowCacheOffset++] = dy
-				}
-
-				while (shadowCacheOffset < (i+1) * pointsPerLight * 2)
-				{
-					lightShadowPoints[shadowCacheOffset++] = dx
-					lightShadowPoints[shadowCacheOffset++] = dy
-				}
+				lightShadowOccluders[shadowCacheOffset++] = dx
+				lightShadowOccluders[shadowCacheOffset++] = dy
 			}
 
 			i++
@@ -446,7 +412,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		if (rebuildShader)
 		{
 			shader.dispose()
-			shader = createShader(shaderLightNum, shaderShadowLightNum, this.pointsPerLight)
+			shader = createShader(shaderLightNum, shaderShadowLightNum, this.occludersPerLight)
 		}
 
 		Gdx.gl.glEnable(GL20.GL_BLEND)
@@ -466,8 +432,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		{
 			shader.setUniform3fv("u_shadowedLightPosRange", lightShadowPosRange, 0, lightShadowPosRange.size)
 			shader.setUniform4fv("u_shadowedLightColourBrightness", lightShadowColourBrightness, 0, lightShadowColourBrightness.size)
-			shader.setUniform3fv("u_shadowedLightData", lightShadowData, 0, lightShadowData.size)
-			shader.setUniform2fv("u_shadowedLightPoints", lightShadowPoints, 0, lightShadowPoints.size)
+			shader.setUniform2fv("u_shadowedLightOccluders", lightShadowOccluders, 0, lightShadowOccluders.size)
 		}
 
 		executor.awaitAllJobs()
@@ -1194,139 +1159,12 @@ void main()
 	gl_Position = u_projTrans * truePos;
 }
 """
-			var unrolledLightCode = ""
-			for (i in 0 until numLights)
-			{
-				unrolledLightCode += "lightCol += calculateLight($i);\n"
-			}
 
-			var unrolledShadowLightCode = ""
-			for (i in 0 until numShadowLights)
-			{
-				unrolledShadowLightCode += "lightCol += calculateShadowedLight($i);\n"
-			}
-
-			val tileLightingCode = when
-			{
-				smoothLighting -> "pos += 0.5 * u_tileSize;"
-				else -> "pixelPos = (floor(v_spritePos / u_tileSize)) * u_tileSize;"
-			}
-
-			val lightStrengthCode = """
-	vec2 pos = posRange.xy;
-	float rangeSq = posRange.z;
-
-	vec2 pixelPos = v_pixelPos;
-
-	$tileLightingCode
-
-	vec2 diff = pos - pixelPos;
-	float distSq = (diff.x * diff.x) + (diff.y * diff.y);
-
-	float lightStrength = step(distSq, rangeSq);
-				"""
-
-			var shadowLightingCode = ""
-			var shadowUniforms = ""
-			if (numShadowLights > 0)
-			{
-				val shaderLightPointNum = pointsPerLight * numShadowLights
-
-				shadowUniforms = """
-uniform vec3 u_shadowedLightPosRange[$numShadowLights];
-uniform vec4 u_shadowedLightColourBrightness[$numShadowLights];
-uniform vec3 u_shadowedLightData[$numShadowLights];
-uniform vec2 u_shadowedLightPoints[$shaderLightPointNum];
-					"""
-
-				var shadowPointUnrolled = ""
-				for (i in 0 until pointsPerLight)
-				{
-					val rawCode = """
-		offset = u_shadowedLightPoints[(index * $pointsPerLight) + $i];
-		visiblePos = posRange.xy + offset * u_tileSize;
-		diff = visiblePos - pixelPos;
-		len = (diff.x * diff.x) + (diff.y * diff.y);
-
-		newMult = step(len, u_tileSize);
-		multiplier = mix(multiplier, modeVal, newMult);
-		"""
-
-					shadowPointUnrolled += rawCode + "\n"
-				}
-
-				shadowLightingCode = """
-float rayBoxIntersect ( vec2 rpos, vec2 rdir, vec2 vmin, vec2 vmax )
-{
-   float t[7];
-   t[0] = (vmin.x - rpos.x)/rdir.x;
-   t[1] = (vmax.x - rpos.x)/rdir.x;
-   t[2] = (vmin.y - rpos.y)/rdir.y;
-   t[3] = (vmax.y - rpos.y)/rdir.y;
-   t[4] = max(min(t[0], t[1]), min(t[2], t[3])));
-   t[5] = min(max(t[0], t[1]), max(t[2], t[3])));
-   t[6] = (t[5] < 0.0 || t[4] > t[5]) ? -1.0 : t[4];
-   return t[6];
-}
-
-vec3 calculateShadowedLight(int index)
-{
-	vec3 posRange = u_shadowedLightPosRange[index];
-	vec4 colourBrightness = u_shadowedLightColourBrightness[index];
-
-	$lightStrengthCode
-
-	vec3 shadowData = u_shadowedLightData[index];
-	int numShadowPoints = int(shadowData.x);
-	int shadowPointOffset = int(shadowData.y);
-	int mode = int(shadowData.z); // -10 = shadow points are the visible ones. 10 = shadow points are the invisible ones
-	float modeVal = 1.0 - step(0.0, shadowData.z);
-
-	pixelPos = (floor(v_spritePos / u_tileSize)) * u_tileSize;
-
-	float multiplier = 1.0 - step(1.0, shadowData.x) + (1.0 - modeVal); // if numpoints is 0 then all tiles are visible
-
-	vec2 offset;
-	vec2 visiblePos;
-	float len;
-	float newMult;
-
-	$shadowPointUnrolled
-
-	lightStrength *= multiplier;
-
-	float alpha = 1.0 - (distSq / rangeSq);
-
-	vec3 lightCol = colourBrightness.rgb;
-	float brightness = colourBrightness.a;
-
-	return lightCol * brightness * alpha * lightStrength;
-}
-					"""
-			}
-
-			var lightingCode = ""
-			if (numLights > 0)
-			{
-				lightingCode = """
-vec3 calculateLight(int index)
-{
-	vec3 posRange = u_lightPosRange[index];
-	vec4 colourBrightness = u_lightColourBrightness[index];
-
-	$lightStrengthCode
-
-	float alpha = 1.0 - (distSq / rangeSq);
-
-	vec3 lightCol = colourBrightness.rgb;
-	float brightness = colourBrightness.a;
-
-	return lightCol * brightness * alpha * lightStrength;
-}
-					"""
-			}
-
+			val shadowDefine = if (numShadowLights > 0) "#define SHADOWS 1" else ""
 			val fragmentShader = """
+
+$shadowDefine
+
 varying vec4 v_color;
 varying vec2 v_spritePos;
 varying vec2 v_pixelPos;
@@ -1338,17 +1176,122 @@ varying float v_isLit;
 uniform float u_tileSize;
 
 uniform vec3 u_ambient;
+
 uniform vec3 u_lightPosRange[$numLights];
 uniform vec4 u_lightColourBrightness[$numLights];
 
-$shadowUniforms
+#ifdef SHADOWS
+uniform vec3 u_shadowedLightPosRange[$numShadowLights];
+uniform vec4 u_shadowedLightColourBrightness[$numShadowLights];
+uniform vec2 u_shadowedLightOccluders[${pointsPerLight * numShadowLights}];
+#endif
 
 uniform sampler2D u_texture;
 
-$lightingCode
+// ------------------------------------------------------
+float calculateLightStrength(vec3 posRange)
+{
+	vec2 pos = posRange.xy;
+	float rangeSq = posRange.z;
 
-$shadowLightingCode
+	vec2 pixelPos = v_pixelPos;
 
+#ifdef TILELIGHTING
+	pixelPos = (floor(v_spritePos / u_tileSize)) * u_tileSize;
+#else
+	pos += 0.5 * u_tileSize;
+#endif
+
+	vec2 diff = pos - pixelPos;
+	float distSq = (diff.x * diff.x) + (diff.y * diff.y);
+
+	float lightStrength = step(distSq, rangeSq);
+	float alpha = 1.0 - (distSq / rangeSq);
+
+	return lightStrength * alpha;
+}
+
+// ------------------------------------------------------
+vec3 calculateLight(int index)
+{
+	vec3 posRange = u_lightPosRange[index];
+	vec4 colourBrightness = u_lightColourBrightness[index];
+
+	float lightStrength = calculateLightStrength(posRange);
+
+	vec3 lightCol = colourBrightness.rgb;
+	float brightness = colourBrightness.a;
+
+	return lightCol * brightness * lightStrength;
+}
+
+#ifdef SHADOWS
+
+// ------------------------------------------------------
+float rayBoxIntersect ( vec2 rpos, vec2 rdir, vec2 vmin, vec2 vmax )
+{
+	float t0 = (vmin.x - rpos.x) * rdir.x;
+	float t1 = (vmax.x - rpos.x) * rdir.x;
+	float t2 = (vmin.y - rpos.y) * rdir.y;
+	float t3 = (vmax.y - rpos.y) * rdir.y;
+
+	float t4 = max(min(t0, t1), min(t2, t3));
+	float t5 = min(max(t0, t1), max(t2, t3));
+
+	float t6 = (t5 < 0.0 || t4 > t5) ? -1.0 : t4;
+	return t6;
+}
+
+// ------------------------------------------------------
+bool isPointVisible(int index, vec2 rpos)
+{
+	vec2 rtilePos = rpos;//(floor(rpos / u_tileSize)) * u_tileSize;
+	vec2 tilePos = (floor(v_spritePos / u_tileSize)) * u_tileSize;
+
+	vec2 diff = v_pixelPos - rpos;
+	float rayLen = length(diff);
+	vec2 rdir = 1.0 / (diff / rayLen);
+
+	bool collided = false;
+	bool collidedOverride = false;
+	for (int i = 0; i < $pointsPerLight; i++)
+	{
+		vec2 occluder = u_shadowedLightOccluders[(index * $pointsPerLight) + i];
+		vec2 occluderPos = rtilePos + occluder * u_tileSize;
+		float intersect = rayBoxIntersect(rpos, rdir, occluderPos, occluderPos + vec2(u_tileSize));
+
+		collided = intersect > 0.0 && intersect < rayLen ? true : collided;
+
+		occluderPos = (floor(occluderPos / u_tileSize)) * u_tileSize;
+		if (tilePos == occluderPos)
+		{
+			collidedOverride = true;
+		}
+	}
+
+	return !collided || collidedOverride;
+}
+
+// ------------------------------------------------------
+vec3 calculateShadowLight(int index)
+{
+	vec3 posRange = u_shadowedLightPosRange[index];
+	vec4 colourBrightness = u_shadowedLightColourBrightness[index];
+
+	float lightStrength = calculateLightStrength(posRange);
+
+	float multiplier = isPointVisible(index, posRange.xy) ? 1.0 : 0.0;
+
+	lightStrength *= multiplier;
+
+	vec3 lightCol = colourBrightness.rgb;
+	float brightness = colourBrightness.a;
+
+	return lightCol * brightness * lightStrength;
+}
+#endif
+
+// ------------------------------------------------------
 void main()
 {
 	vec4 col1 = texture2D(u_texture, v_texCoords1);
@@ -1358,9 +1301,17 @@ void main()
 
 	vec3 lightCol = u_ambient;
 
-	$unrolledLightCode
+	for (int i = 0; i < $numLights; i++)
+	{
+		lightCol += calculateLight(i);
+	}
 
-	$unrolledShadowLightCode
+#ifdef SHADOWS
+	for (int i = 0; i < $numShadowLights; i++)
+	{
+		lightCol += calculateShadowLight(i);
+	}
+#endif
 
 	lightCol = mix(vec3(1.0, 1.0, 1.0), lightCol, v_isLit);
 

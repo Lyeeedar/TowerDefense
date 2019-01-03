@@ -14,6 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Widget
 import com.lyeeedar.Game.Level.*
 import com.lyeeedar.Game.Level.Map
 import com.lyeeedar.Global
+import com.lyeeedar.Renderables.Light
 import com.lyeeedar.Renderables.Particle.ParticleEffect
 import com.lyeeedar.Renderables.SortedRenderer
 import com.lyeeedar.Renderables.Sprite.Sprite
@@ -52,6 +53,9 @@ class MapWidget(val map: Map) : Widget()
 	val TILE = 0
 	val ENTITY = TILE+1
 	val EFFECT = ENTITY+1
+
+	val light = Light(Colour.RED, 2f, 6f, true)
+	var lpos = Vector2()
 
 	val renderer = SortedRenderer(tileSize, map.width.toFloat(), map.height.toFloat(), EFFECT+1, true)
 
@@ -161,15 +165,10 @@ class MapWidget(val map: Map) : Widget()
 						{
 							val xp = x + ((map.width * tileSize) / 2f) - (width / 2f)
 
-							val sx = (xp / tileSize).toInt()
-							val sy = (y / tileSize).toInt()
+							val sx = xp / tileSize
+							val sy = y / tileSize
 
-							val point = Point(sx, sy)
-
-							//if (point != map.dragStart)
-							//{
-							//	map.dragEnd(point)
-							//}
+							lpos.set(sx, sy)
 						}
 					})
 
@@ -303,6 +302,8 @@ class MapWidget(val map: Map) : Widget()
 		}
 
 		renderer.begin(Gdx.app.graphics.deltaTime, xp, yp, map.ambient)
+
+		renderer.addLight(light, lpos.x, lpos.y)
 
 		for (x in 0 until map.width)
 		{

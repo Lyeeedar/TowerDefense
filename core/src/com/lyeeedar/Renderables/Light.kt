@@ -11,7 +11,7 @@ import squidpony.squidgrid.FOV
 //
 // vec4 posx, posy, packedColBrightness, range
 
-class Light(colour: Colour? = null, brightness: Float = 1f, range: Float = 3f)
+class Light(colour: Colour? = null, brightness: Float = 1f, range: Float = 3f, hasShadows: Boolean = false)
 {
 	var pos = Vector2()
 
@@ -40,6 +40,7 @@ class Light(colour: Colour? = null, brightness: Float = 1f, range: Float = 3f)
 
 		this.brightness = brightness
 		this.range = range
+		this.hasShadows = hasShadows
 	}
 
 	val cache: ShadowCastCache = ShadowCastCache(fovType = FOV.SHADOW)

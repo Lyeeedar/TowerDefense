@@ -36,7 +36,7 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 		private set
 	var lasty: Int = -Int.MAX_VALUE
 		private set
-	private val opaqueTiles = com.badlogic.gdx.utils.Array<Point>()
+	val opaqueTiles = com.badlogic.gdx.utils.Array<Point>()
 	private val clearTiles = com.badlogic.gdx.utils.Array<Point>()
 	val currentShadowCast = com.badlogic.gdx.utils.Array<Point>()
 	val invCurrentShadowCast = com.badlogic.gdx.utils.Array<Point>()
