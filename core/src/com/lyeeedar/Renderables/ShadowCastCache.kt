@@ -1,13 +1,10 @@
 package com.lyeeedar.Renderables
 
-import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.ObjectSet
 import com.lyeeedar.Direction
 import com.lyeeedar.Global.Companion.collisionGrid
-import com.lyeeedar.Util.Point
-import com.lyeeedar.Util.max
-import com.lyeeedar.Util.min
+import com.lyeeedar.Util.*
 import ktx.collections.isNotEmpty
 import squidpony.squidgrid.FOV
 import squidpony.squidgrid.Radius
@@ -46,10 +43,149 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 	val clearTiles = com.badlogic.gdx.utils.Array<Point>()
 	val currentShadowCast = com.badlogic.gdx.utils.Array<Point>()
 	val invCurrentShadowCast = com.badlogic.gdx.utils.Array<Point>()
-	val opaqueRegions = com.badlogic.gdx.utils.Array<Rectangle>()
+	val opaqueRegions = com.badlogic.gdx.utils.Array<PointRect>()
+
+	var regionsVisible = false
+	val currentCastRegions = com.badlogic.gdx.utils.Array<PointRect>()
 
 	fun anyOpaque() = opaqueTiles.size > 0
 	fun anyClear() = clearTiles.size > 0
+
+	fun updateCurrentCastRegions(rawOutput: Array<DoubleArray>)
+	{
+		val collisionGrid = collisionGrid!!
+
+		val visible = com.badlogic.gdx.utils.Array<Point>()
+		val visibleOOB = com.badlogic.gdx.utils.Array<Point>()
+		val invisible = com.badlogic.gdx.utils.Array<Point>()
+		val invisibleOOB = com.badlogic.gdx.utils.Array<Point>()
+
+		for (ix in 0 until lastrange * 2 + 1)
+		{
+			for (iy in 0 until lastrange * 2 + 1)
+			{
+				val gx = ix + lastx - lastrange
+				val gy = iy + lasty - lastrange
+
+				if (collisionGrid.inBounds(gx, gy))
+				{
+					val oob = Vector2.dst2(gx.toFloat(), gy.toFloat(), lastx.toFloat(), lasty.toFloat()) > (lastrange * lastrange).toFloat()
+
+					if (rawOutput[ix][iy] > 0)
+					{
+						val point = Point.obtainTS().set(gx, gy)
+
+						if (oob)
+						{
+							visibleOOB.add(point)
+						}
+						else
+						{
+							visible.add(point)
+						}
+					}
+					else
+					{
+						val point = Point.obtainTS().set(gx, gy)
+
+						if (oob)
+						{
+							invisibleOOB.add(point)
+						}
+						else
+						{
+							invisible.add(point)
+						}
+					}
+				}
+			}
+		}
+
+		val points: com.badlogic.gdx.utils.Array<Point>
+		val pointsOOB: com.badlogic.gdx.utils.Array<Point>
+		if (visible.size > invisible.size)
+		{
+			points = invisible
+			pointsOOB = invisibleOOB
+			regionsVisible = false
+		}
+		else
+		{
+			points = visible
+			pointsOOB = visibleOOB
+			regionsVisible = true
+		}
+
+		currentCastRegions.clear()
+
+		val remainingSet = ObjectSet<Point>()
+		remainingSet.addAll(points)
+
+		val oobSet = ObjectSet<Point>()
+		oobSet.addAll(pointsOOB)
+		oobSet.addAll(points)
+
+		while (remainingSet.size > 0)
+		{
+			val current = remainingSet.asSequence().random()!!
+			remainingSet.remove(current)
+
+			val rect = PointRect(current.x, current.y, 1, 1)
+
+			val collided = FastEnumMap<Direction, Boolean>(Direction::class.java)
+
+			val edgePoints = com.badlogic.gdx.utils.Array<Point>()
+			while (true)
+			{
+				var moved = false
+				for (dir in Direction.CardinalValues)
+				{
+					if (collided[dir] == true) continue
+
+					rect.grow(dir, 1)
+
+					rect.getEdge(dir, edgePoints)
+					var hadCollision = false
+					for (point in edgePoints)
+					{
+						if (!remainingSet.contains(point) && !oobSet.contains(point))
+						{
+							hadCollision = true
+						}
+					}
+
+					if (!hadCollision)
+					{
+						moved = true
+						for (point in edgePoints)
+						{
+							remainingSet.remove(point)
+						}
+					}
+					else
+					{
+						collided[dir] = true
+						rect.shrink(dir.opposite, 1)
+					}
+
+					Point.freeAllTS(edgePoints)
+					edgePoints.clear()
+				}
+
+				if (!moved)
+				{
+					break
+				}
+			}
+
+			currentCastRegions.add(rect)
+		}
+
+		Point.freeAllTS(visible)
+		Point.freeAllTS(invisible)
+		Point.freeAllTS(visibleOOB)
+		Point.freeAllTS(invisibleOOB)
+	}
 
 	fun updateOpaqueRegions()
 	{
@@ -110,11 +246,11 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 				val maxx = max(end1.x, end2.x)
 				val maxy = max(end1.y, end2.y)
 
-				opaqueRegions.add(Rectangle(minx.toFloat(), miny.toFloat(), (maxx - minx).toFloat() + 1f, (maxy - miny).toFloat() + 1f))
+				opaqueRegions.add(PointRect(minx, miny, (maxx - minx) + 1, (maxy - miny) + 1))
 			}
 			else
 			{
-				opaqueRegions.add(Rectangle(sourceTile.x.toFloat(), sourceTile.y.toFloat(), 1f, 1f))
+				opaqueRegions.add(PointRect(sourceTile.x, sourceTile.y, 1, 1))
 			}
 		}
 	}
@@ -158,8 +294,6 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 				lastx = x
 				lasty = y
 				lastrange = range
-
-				updateOpaqueRegions()
 			}
 
 			return currentShadowCast
@@ -285,6 +419,11 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 			lastrange = range
 
 			updateOpaqueRegions()
+
+			if (anySolid)
+			{
+				updateCurrentCastRegions(rawOutput!!)
+			}
 		}
 
 		return currentShadowCast
