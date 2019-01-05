@@ -349,72 +349,53 @@ internal inline fun doDraw(vertices: FloatArray, offset: Int, region1: TextureRe
 	}
 	//##################################################################### Vertex Calculation #######################################//
 
-	val r = colour.r//.clamp(0f, 1f)
-	val g = colour.g//.clamp(0f, 1f)
-	val b = colour.b//.clamp(0f, 1f)
-	val a = colour.a//.clamp(0f, 1f)
-	val litVal = if (isLit) 1.0f else 0.0f
+	val packedCol = colour.toFloatBits()
+	val packedData = if (blendAlpha == 0f && isLit) 0.0f else packFloats(blendAlpha, if (isLit) 0.0f else 1.0f, 0f, 0f)
 
-	val i = offset
-	vertices[i+0] = x1
-	vertices[i+1] = y1
-	vertices[i+2] = r
-	vertices[i+3] = g
-	vertices[i+4] = b
-	vertices[i+5] = a
-	vertices[i+6] = r1u
-	vertices[i+7] = r1v
-	vertices[i+8] = r2u
-	vertices[i+9] = r2v
-	vertices[i+10] = if (smoothShade) x1 else spriteX
-	vertices[i+11] = if (smoothShade) y1 else spriteY
-	vertices[i+12] = blendAlpha
-	vertices[i+13] = litVal
+	var i = offset
+	vertices[i++] = x1
+	vertices[i++] = y1
+	vertices[i++] = if (smoothShade) x1 else spriteX
+	vertices[i++] = if (smoothShade) y1 else spriteY
+	vertices[i++] = r1u
+	vertices[i++] = r1v
+	vertices[i++] = r2u
+	vertices[i++] = r2v
+	vertices[i++] = packedCol
+	vertices[i++] = packedData
 
-	vertices[i+14] = x2
-	vertices[i+15] = y2
-	vertices[i+16] = r
-	vertices[i+17] = g
-	vertices[i+18] = b
-	vertices[i+19] = a
-	vertices[i+20] = r1u
-	vertices[i+21] = r1v2
-	vertices[i+22] = r2u
-	vertices[i+23] = r2v2
-	vertices[i+24] = if (smoothShade) x2 else spriteX
-	vertices[i+25] = if (smoothShade) y2 else spriteY
-	vertices[i+26] = blendAlpha
-	vertices[i+27] = litVal
+	vertices[i++] = x2
+	vertices[i++] = y2
+	vertices[i++] = if (smoothShade) x2 else spriteX
+	vertices[i++] = if (smoothShade) y2 else spriteY
+	vertices[i++] = r1u
+	vertices[i++] = r1v2
+	vertices[i++] = r2u
+	vertices[i++] = r2v2
+	vertices[i++] = packedCol
+	vertices[i++] = packedData
 
-	vertices[i+28] = x3
-	vertices[i+29] = y3
-	vertices[i+30] = r
-	vertices[i+31] = g
-	vertices[i+32] = b
-	vertices[i+33] = a
-	vertices[i+34] = r1u2
-	vertices[i+35] = r1v2
-	vertices[i+36] = r2u2
-	vertices[i+37] = r2v2
-	vertices[i+38] = if (smoothShade) x3 else spriteX
-	vertices[i+39] = if (smoothShade) y3 else spriteY
-	vertices[i+40] = blendAlpha
-	vertices[i+41] = litVal
+	vertices[i++] = x3
+	vertices[i++] = y3
+	vertices[i++] = if (smoothShade) x3 else spriteX
+	vertices[i++] = if (smoothShade) y3 else spriteY
+	vertices[i++] = r1u2
+	vertices[i++] = r1v2
+	vertices[i++] = r2u2
+	vertices[i++] = r2v2
+	vertices[i++] = packedCol
+	vertices[i++] = packedData
 
-	vertices[i+42] = x4
-	vertices[i+43] = y4
-	vertices[i+44] = r
-	vertices[i+45] = g
-	vertices[i+46] = b
-	vertices[i+47] = a
-	vertices[i+48] = r1u2
-	vertices[i+49] = r1v
-	vertices[i+50] = r2u2
-	vertices[i+51] = r2v
-	vertices[i+52] = if (smoothShade) x4 else spriteX
-	vertices[i+53] = if (smoothShade) y4 else spriteY
-	vertices[i+54] = blendAlpha
-	vertices[i+55] = litVal
+	vertices[i++] = x4
+	vertices[i++] = y4
+	vertices[i++] = if (smoothShade) x4 else spriteX
+	vertices[i++] = if (smoothShade) y4 else spriteY
+	vertices[i++] = r1u2
+	vertices[i++] = r1v
+	vertices[i++] = r2u2
+	vertices[i++] = r2v
+	vertices[i++] = packedCol
+	vertices[i++] = packedData
 }
 
 inline fun calculateVertexData(region1: TextureRegion, region2: TextureRegion,

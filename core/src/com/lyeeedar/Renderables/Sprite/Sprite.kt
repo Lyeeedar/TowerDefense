@@ -8,6 +8,7 @@ import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.Array
 import com.lyeeedar.Renderables.Animation.AbstractColourAnimation
 import com.lyeeedar.Renderables.Renderable
+import com.lyeeedar.Renderables.SortedRenderer
 import com.lyeeedar.Util.Colour
 import com.lyeeedar.Util.doDraw
 import com.lyeeedar.Util.draw
@@ -283,26 +284,46 @@ class Sprite(val fileName: String, var animationDelay: Float, var textures: Arra
 		return renderCol
 	}
 
-	private var lastRenderKey = -1f
-	private var cachedRenderKey = -1f
-	private val vertexCache = FloatArray(44)
+	private class VertexHash(private var colour: Float, private var x: Float, private var y: Float, private var width: Float, private var height: Float, private var scaleX: Float, private var scaleY: Float, private var rotation: Float, private var texIndex: Int)
+	{
+		fun isSame(colour: Float, x: Float, y: Float, width: Float, height: Float, scaleX: Float, scaleY: Float, rotation: Float, texIndex: Int): Boolean
+		{
+			return this.colour == colour && this.x == x && this.y == y && this.width == width && this.height == height && this.scaleX == scaleX && this.scaleY == scaleY && this.rotation == rotation && this.texIndex == texIndex
+		}
+
+		fun update(colour: Float, x: Float, y: Float, width: Float, height: Float, scaleX: Float, scaleY: Float, rotation: Float, texIndex: Int)
+		{
+			this.colour = colour
+			this.x = x
+			this.y = y
+			this.width = width
+			this.height = height
+			this.scaleX = scaleX
+			this.scaleY = scaleY
+			this.rotation = rotation
+			this.texIndex = texIndex
+		}
+	}
+	private val lastRenderHash = VertexHash(-1f, -1f, -1f, -1f, -1f, -1f, -1f, -1f, -1)
+	private val cachedRenderHash = VertexHash(-1f, -1f, -1f, -1f, -1f, -1f, -1f, -1f, -1)
+	private val vertexCache = FloatArray(SortedRenderer.verticesASprite)
 	fun render(vertices: FloatArray, offset: Int, colour: Colour, x: Float, y: Float, width: Float, height: Float, scaleX: Float, scaleY: Float, rotation: Float, isLit: Boolean)
 	{
-		val key = colour.hashCode() + x + y + width + height + scaleX + scaleY + rotation + texIndex
 		var cacheVertices = false
 		if (!hasAnim && !frameBlend)
 		{
-			if (key == cachedRenderKey)
+			if (cachedRenderHash.isSame(colour.toFloatBits(), x, y, width, height, scaleX, scaleY, rotation, texIndex))
 			{
-				System.arraycopy(vertexCache, 0, vertices, offset, 44)
+				System.arraycopy(vertexCache, 0, vertices, offset, SortedRenderer.verticesASprite)
+				return
 			}
-			else if (lastRenderKey == key)
+			else if (lastRenderHash.isSame(colour.toFloatBits(), x, y, width, height, scaleX, scaleY, rotation, texIndex))
 			{
 				cacheVertices = true
 			}
 			else
 			{
-				lastRenderKey = key
+				lastRenderHash.update(colour.toFloatBits(), x, y, width, height, scaleX, scaleY, rotation, texIndex)
 			}
 		}
 
@@ -380,8 +401,8 @@ class Sprite(val fileName: String, var animationDelay: Float, var textures: Arra
 
 		if (cacheVertices)
 		{
-			cachedRenderKey = key
-			System.arraycopy(vertices, offset, vertexCache, 0, 44)
+			cachedRenderHash.update(colour.toFloatBits(), x, y, width, height, scaleX, scaleY, rotation, texIndex)
+			System.arraycopy(vertices, offset, vertexCache, 0, SortedRenderer.verticesASprite)
 		}
 	}
 

@@ -140,23 +140,17 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	init
 	{
 		mesh = BigMesh(false, maxSprites * 4, maxSprites * 6,
-					   VertexAttribute(VertexAttributes.Usage.Position, 2, ShaderProgram.POSITION_ATTRIBUTE),
-					   VertexAttribute(VertexAttributes.Usage.ColorUnpacked, 4, ShaderProgram.COLOR_ATTRIBUTE),
-					   VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "0"),
-					   VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "1"),
-					   VertexAttribute(VertexAttributes.Usage.Generic, 2, "a_spritePos"),
-					   VertexAttribute(VertexAttributes.Usage.Generic, 1, "a_blendAlpha"),
-					   VertexAttribute(VertexAttributes.Usage.Generic, 1, "a_isLit")
+					   VertexAttribute(VertexAttributes.Usage.Position, 4, ShaderProgram.POSITION_ATTRIBUTE),
+					   VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 4, ShaderProgram.TEXCOORD_ATTRIBUTE),
+					   VertexAttribute(VertexAttributes.Usage.ColorPacked, 4, ShaderProgram.COLOR_ATTRIBUTE),
+					   VertexAttribute(VertexAttributes.Usage.ColorPacked, 4, "a_additionalData")
 					  )
 
 		staticMesh = BigMesh(true, maxSprites * 4, maxSprites * 6,
-					   VertexAttribute(VertexAttributes.Usage.Position, 2, ShaderProgram.POSITION_ATTRIBUTE),
-					   VertexAttribute(VertexAttributes.Usage.ColorUnpacked, 4, ShaderProgram.COLOR_ATTRIBUTE),
-					   VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "0"),
-					   VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "1"),
-					   VertexAttribute(VertexAttributes.Usage.Generic, 2, "a_spritePos"),
-					   VertexAttribute(VertexAttributes.Usage.Generic, 1, "a_blendAlpha"),
-					   VertexAttribute(VertexAttributes.Usage.Generic, 1, "a_isLit")
+							 VertexAttribute(VertexAttributes.Usage.Position, 4, ShaderProgram.POSITION_ATTRIBUTE),
+							 VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 4, ShaderProgram.TEXCOORD_ATTRIBUTE),
+							 VertexAttribute(VertexAttributes.Usage.ColorPacked, 4, ShaderProgram.COLOR_ATTRIBUTE),
+							 VertexAttribute(VertexAttributes.Usage.ColorPacked, 4, "a_additionalData")
 					  )
 
 		val len = maxSprites * 6
@@ -1169,18 +1163,21 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 			SMOOTH
 		}
 
+		// Optimisation reference:
+		// https://zz85.github.io/glsl-optimizer/
+
 		private val smoothLighting = true
 		private val shadowMode: ShadowMode = ShadowMode.TILE
 		private val random = LightRNG()
 
-		private const val vertexSize = 4 + 2 + 2 + 2 + 2 + 1 + 1
+		public const val vertexSize = 4 + 4 + 1 + 1
 		private const val maxSprites = 10000
-		private const val verticesASprite = vertexSize * 4
+		public const val verticesASprite = vertexSize * 4
 		private const val maxVertices = maxSprites * vertexSize
 
 		fun createShader(numLights: Int, numShadowLights: Int, occludersPerLight: Int): ShaderProgram
 		{
-			val vertexShader = getVertexUnoptimised(numLights, numShadowLights, occludersPerLight)
+			val vertexShader = getVertexOptimised(numLights, numShadowLights, occludersPerLight)
 			val fragmentShader = getFragmentOptimised(numLights, numShadowLights, occludersPerLight)
 
 			val shader = ShaderProgram(vertexShader, fragmentShader)
@@ -1192,12 +1189,9 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		{
 			val vertexShader = """
 attribute vec4 ${ShaderProgram.POSITION_ATTRIBUTE};
+attribute vec4 ${ShaderProgram.TEXCOORD_ATTRIBUTE};
 attribute vec4 ${ShaderProgram.COLOR_ATTRIBUTE};
-attribute vec2 ${ShaderProgram.TEXCOORD_ATTRIBUTE}0;
-attribute vec2 ${ShaderProgram.TEXCOORD_ATTRIBUTE}1;
-attribute vec2 a_spritePos;
-attribute float a_blendAlpha;
-attribute float a_isLit;
+attribute vec4 a_additionalData;
 
 uniform mat4 u_projTrans;
 uniform vec2 u_offset;
@@ -1213,18 +1207,57 @@ varying float v_isLit;
 void main()
 {
 	v_color = ${ShaderProgram.COLOR_ATTRIBUTE};
-	v_color.a = min(v_color.a, 1.0);
 
-	vec4 rawPos = ${ShaderProgram.POSITION_ATTRIBUTE};
 	vec2 worldPos = ${ShaderProgram.POSITION_ATTRIBUTE}.xy + u_offset;
-	vec4 truePos = vec4(worldPos.x, worldPos.y, rawPos.z, rawPos.w);
+	vec4 truePos = vec4(worldPos.x, worldPos.y, 0.0, 1.0);
 
 	v_pixelPos = worldPos;
-	v_spritePos = a_spritePos;
-	v_texCoords1 = ${ShaderProgram.TEXCOORD_ATTRIBUTE}0;
-	v_texCoords2 = ${ShaderProgram.TEXCOORD_ATTRIBUTE}1;
-	v_blendAlpha = a_blendAlpha;
-	v_isLit = a_isLit;
+	v_spritePos = ${ShaderProgram.POSITION_ATTRIBUTE}.zw;
+	v_texCoords1 = ${ShaderProgram.TEXCOORD_ATTRIBUTE}.xy;
+	v_texCoords2 = ${ShaderProgram.TEXCOORD_ATTRIBUTE}.zw;
+	v_blendAlpha = a_additionalData.x;
+	v_isLit = float(a_additionalData.y == 0.0);
+	gl_Position = u_projTrans * truePos;
+}
+"""
+
+			return vertexShader
+		}
+
+		fun getVertexOptimised(numLights: Int, numShadowLights: Int, occludersPerLight: Int): String
+		{
+			val androidDefine = if (Global.android) "#define LOWP lowp" else "#define LOWP"
+
+			val vertexShader = """
+$androidDefine
+
+attribute vec4 ${ShaderProgram.POSITION_ATTRIBUTE};
+attribute vec4 ${ShaderProgram.TEXCOORD_ATTRIBUTE};
+attribute LOWP vec4 ${ShaderProgram.COLOR_ATTRIBUTE};
+attribute LOWP vec4 a_additionalData;
+
+uniform mat4 u_projTrans;
+uniform vec2 u_offset;
+
+varying LOWP vec4 v_color;
+varying vec4 v_pos;
+varying vec4 v_texCoords;
+varying LOWP vec4 v_additionalData;
+
+void main()
+{
+	v_color = ${ShaderProgram.COLOR_ATTRIBUTE};
+
+	vec2 worldPos = ${ShaderProgram.POSITION_ATTRIBUTE}.xy + u_offset;
+	vec4 truePos;
+	truePos.xy = worldPos;
+	truePos.zw = vec2(0.0, 1.0);
+
+	v_pos.xy = worldPos;
+	v_pos.zw = ${ShaderProgram.POSITION_ATTRIBUTE}.zw;
+	v_texCoords = ${ShaderProgram.TEXCOORD_ATTRIBUTE};
+	v_additionalData = a_additionalData;
+
 	gl_Position = u_projTrans * truePos;
 }
 """
@@ -1499,12 +1532,9 @@ $tileLightingDefine
 $androidDefine
 
 varying LOWP vec4 v_color;
-varying vec2 v_spritePos;
-varying vec2 v_pixelPos;
-varying vec2 v_texCoords1;
-varying vec2 v_texCoords2;
-varying LOWP float v_blendAlpha;
-varying LOWP float v_isLit;
+varying vec4 v_pos;
+varying vec4 v_texCoords;
+varying LOWP vec4 v_additionalData;
 
 uniform float u_tileSize;
 
@@ -1533,7 +1563,7 @@ void main ()
 	LOWP vec3 lightCol = u_ambient;
 
 #ifdef TILELIGHTING
-	vec2 spriteTile = floor(v_spritePos / u_tileSize) * u_tileSize;
+	vec2 spriteTile = floor(v_pos.zw / u_tileSize) * u_tileSize;
 #endif
 
 """
@@ -1548,7 +1578,7 @@ void main ()
 #ifdef TILELIGHTING
 	vec2 diff_$i = posRange_$i.xy - spriteTile;
 #else
-	vec2 diff_$i = posRange_$i.xy - v_pixelPos;
+	vec2 diff_$i = posRange_$i.xy - v_pos.xy;
 #endif
 
 	float len_$i = (diff_$i.x * diff_$i.x) + (diff_$i.y * diff_$i.y);
@@ -1568,8 +1598,6 @@ void main ()
 	shadowPixelPos.x = v_pixelPos.x;
 	shadowPixelPos.y = (v_spritePos.y + min((v_pixelPos.y - v_spritePos.y), (u_tileSize * 0.9)));
 
-	vec2 baseTile = (floor((v_spritePos / u_tileSize)) * u_tileSize);
-
 				"""
 
 
@@ -1582,7 +1610,7 @@ void main ()
 #ifdef TILELIGHTING
 	vec2 shadowDiff_$li = (shadowPosRange_$li.xy - spriteTile);
 #else
-	vec2 shadowDiff_$li = (shadowPosRange_$li.xy - v_pixelPos);
+	vec2 shadowDiff_$li = (shadowPosRange_$li.xy - v_pos.xy);
 #endif
 	float shadowLen_$li = ((shadowDiff_$li.x * shadowDiff_$li.x) + (shadowDiff_$li.y * shadowDiff_$li.y));
 
@@ -1638,8 +1666,8 @@ void main ()
 //########## Shadow Lighting ##########//
 
 	vec2 shadowPixelPos;
-	shadowPixelPos.x = v_pixelPos.x;
-	shadowPixelPos.y = v_spritePos.y + min(v_pixelPos.y - v_spritePos.y, u_tileSize * 0.9);
+	shadowPixelPos.x = v_pos.x;
+	shadowPixelPos.y = v_pos.w + min(v_pos.y - v_pos.w, u_tileSize * 0.9);
 	"""
 					for (li in 0 until numShadowLights)
 					{
@@ -1650,7 +1678,7 @@ void main ()
 #ifdef TILELIGHTING
 	vec2 shadowDiff_$li = shadowPosRangeMode_$li.xy - spriteTile;
 #else
-	vec2 shadowDiff_$li = shadowPosRangeMode_$li.xy - v_pixelPos;
+	vec2 shadowDiff_$li = shadowPosRangeMode_$li.xy - v_pos.xy;
 #endif
 	float shadowLen_$li = (shadowDiff_$li.x * shadowDiff_$li.x) + (shadowDiff_$li.y * shadowDiff_$li.y);
 
@@ -1685,10 +1713,10 @@ void main ()
 
 //########## final composite ##########//
 	LOWP vec4 lightCol4;
-	lightCol4.rgb = mix(vec3(1.0, 1.0, 1.0), lightCol, v_isLit);
+	lightCol4.rgb = mix(vec3(1.0, 1.0, 1.0), lightCol, 1.0 - v_additionalData.y);
 	lightCol4.a = 1.0;
 
-	LOWP vec4 outCol = clamp(v_color * mix(texture2D(u_texture, v_texCoords1), texture2D(u_texture, v_texCoords2), v_blendAlpha) * lightCol4, 0.0, 1.0);
+	LOWP vec4 outCol = clamp(v_color * mix(texture2D(u_texture, v_texCoords.xy), texture2D(u_texture, v_texCoords.zw), v_additionalData.x) * lightCol4, 0.0, 1.0);
 	gl_FragColor = outCol;
 }
 				"""
