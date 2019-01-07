@@ -55,6 +55,8 @@ class Colour()
 
 	fun copy(): Colour = Colour(this)
 
+	fun isWhite(): Boolean = r == 1f && g == 1f && b == 1f && a == 1f
+
 	fun r(r: Float): Colour
 	{
 		if (fixed) throw Exception("Tried to modify fixed colour!")
@@ -95,6 +97,12 @@ class Colour()
 		g = other.g
 		b = other.b
 		a = other.a
+
+		this.cachedR = other.cachedR
+		this.cachedG = other.cachedG
+		this.cachedB = other.cachedB
+		this.cachedA = other.cachedA
+		this.cachedFB = other.cachedFB
 
 		return this
 	}

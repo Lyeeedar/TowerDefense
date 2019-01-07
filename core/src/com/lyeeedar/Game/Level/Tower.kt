@@ -27,6 +27,8 @@ class Tower(val def: TowerDefinition) : Entity()
 		}
 
 		sprite = def.sprite.copy()
+		sprite.baseScale[0] = 2f
+		sprite.size[1] = 2
 	}
 
 	override fun update(delta: Float, map: Map)

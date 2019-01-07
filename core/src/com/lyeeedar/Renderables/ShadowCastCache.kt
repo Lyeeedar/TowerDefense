@@ -33,7 +33,7 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 
 	private val fov: FOV = FOV(fovType)
 
-	var lastrange: Int = -Int.MAX_VALUE
+	var lastrange: Int = -1
 		private set
 	var lastx: Int = -Int.MAX_VALUE
 		private set
@@ -197,6 +197,7 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 			tileSet.add(tile)
 		}
 
+		val tempPoint = Point.obtainTS()
 		while (tileSet.isNotEmpty())
 		{
 			val sourceTile = tileSet.asSequence().first()
@@ -205,7 +206,8 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 			var chosenDir: Direction = Direction.CENTER
 			for (dir in Direction.CardinalValues)
 			{
-				val newPoint = sourceTile + dir
+				val newPoint = tempPoint.set(sourceTile)
+				newPoint.plusAssign(dir)
 				if (tileSet.contains(newPoint))
 				{
 					chosenDir = dir
@@ -215,30 +217,31 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 
 			if (chosenDir != Direction.CENTER)
 			{
-				var end1 = sourceTile
+				val end1 = Point.obtainTS().set(sourceTile)
+				val newPoint = Point.obtainTS()
 				while (true)
 				{
-					val newPoint = end1 + chosenDir
+					newPoint.set(end1).plusAssign(chosenDir)
 					if (!tileSet.contains(newPoint))
 					{
 						break
 					}
 
 					tileSet.remove(newPoint)
-					end1 = newPoint
+					end1.set(newPoint)
 				}
 
-				var end2 = sourceTile
+				val end2 = Point.obtainTS().set(sourceTile)
 				while (true)
 				{
-					val newPoint = end2 - chosenDir
+					newPoint.set(end2).minusAssign(chosenDir)
 					if (!tileSet.contains(newPoint))
 					{
 						break
 					}
 
 					tileSet.remove(newPoint)
-					end2 = newPoint
+					end2.set(newPoint)
 				}
 
 				val minx = min(end1.x, end2.x)
@@ -247,12 +250,18 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 				val maxy = max(end1.y, end2.y)
 
 				opaqueRegions.add(PointRect(minx, miny, (maxx - minx) + 1, (maxy - miny) + 1))
+
+				end1.freeTS()
+				end2.freeTS()
+				newPoint.freeTS()
 			}
 			else
 			{
 				opaqueRegions.add(PointRect(sourceTile.x, sourceTile.y, 1, 1))
 			}
 		}
+
+		tempPoint.freeTS()
 	}
 
 	fun getShadowCast(x: Int, y: Int, range: Int): com.badlogic.gdx.utils.Array<Point>
@@ -306,7 +315,7 @@ class ShadowCastCache @JvmOverloads constructor(val fovType: Int = FOV.SHADOW)
 		{
 			recalculate = true
 		}
-		else if (range != lastrange)
+		else if (range > lastrange)
 		{
 			recalculate = true
 		}

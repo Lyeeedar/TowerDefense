@@ -350,6 +350,7 @@ open class Point : Pool.Poolable, Comparable<Point>
 	operator fun plusAssign(other: Point) { x += other.x; y += other.y }
 	operator fun plusAssign(other: Direction) { x += other.x; y += other.y }
 	operator fun minusAssign(other: Point) { x -= other.x; y -= other.y }
+	operator fun minusAssign(other: Direction) { x -= other.x; y -= other.y }
 	operator fun timesAssign(other: Point) { x *= other.x; y *= other.y }
 	operator fun divAssign(other: Point) { x /= other.x; y /= other.y }
 

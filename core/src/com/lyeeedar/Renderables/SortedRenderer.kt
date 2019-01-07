@@ -590,7 +590,9 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 				if (sprite != null)
 				{
-					colour.mul(sprite.getRenderColour())
+					val renderCol = sprite.getRenderColour()
+					if (!renderCol.isWhite()) colour.mul(renderCol)
+
 					sprite.render(vertices, offset, colour, localx, localy, localw, localh, rs.scaleX, rs.scaleY, rs.rotation, rs.isLit)
 				}
 

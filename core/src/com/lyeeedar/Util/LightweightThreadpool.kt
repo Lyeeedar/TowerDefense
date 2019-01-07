@@ -38,11 +38,15 @@ class ThreadPoolThread(val index: Int)
 						}
 						else
 						{
-							val job = jobQueue[executeIndex.get()]!!
-							job.invoke()
-							executeIndex.incrementAndGet()
+							val execute = executeIndex.getAndIncrement()
 
-							if (allowParkThreads && executeIndex.get() == queueIndex.get())
+							if (execute < queueIndex.get())
+							{
+								val job = jobQueue[execute]!!
+								job.invoke()
+							}
+
+							if (allowParkThreads && executeIndex.get() >= queueIndex.get())
 							{
 								synchronized(lock)
 								{
@@ -74,21 +78,15 @@ class ThreadPoolThread(val index: Int)
 
 	fun awaitAllJobs()
 	{
-		if (allowParkThreads)
+		// Help with executing the current jobs instead of just sleeping
+		while (executeIndex.get() < queueIndex.get())
 		{
-			synchronized(lock)
+			val execute = executeIndex.getAndIncrement()
+
+			if (execute < queueIndex.get())
 			{
-				while (executeIndex.get() < queueIndex.get())
-				{
-					lock.wait()
-				}
-			}
-		}
-		else
-		{
-			while (executeIndex.get() < queueIndex.get())
-			{
-				Thread.yield()
+				val job = jobQueue[execute]!!
+				job.invoke()
 			}
 		}
 

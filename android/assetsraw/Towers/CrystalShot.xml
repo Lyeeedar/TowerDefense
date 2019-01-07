@@ -13,7 +13,7 @@
 				<Name>Oryx/Custom/items/gem</Name>
 			</Icon>
 			<Sprite meta:RefKey="Sprite">
-				<Name>Oryx/Custom/terrain/CrystalTower</Name>
+				<Name>Oryx/Custom/terrain/CrystalTower1</Name>
 				<DrawActualSize>true</DrawActualSize>
 				<Light meta:RefKey="Light">
 					<Colour>92,29,143,255</Colour>
