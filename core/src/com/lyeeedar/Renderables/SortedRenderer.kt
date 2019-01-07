@@ -13,6 +13,7 @@ import com.badlogic.gdx.math.Matrix4
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.IntMap
+import com.badlogic.gdx.utils.ObjectMap
 import com.badlogic.gdx.utils.ObjectSet
 import com.badlogic.gdx.utils.Pool
 import com.lyeeedar.BlendMode
@@ -26,6 +27,7 @@ import com.lyeeedar.Renderables.Sprite.Sprite
 import com.lyeeedar.Renderables.Sprite.TilingSprite
 import com.lyeeedar.Util.*
 import ktx.collections.set
+import ktx.collections.toGdxArray
 import squidpony.squidmath.LightRNG
 
 
@@ -119,7 +121,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 	private lateinit var shader: ShaderProgram
 	private var shaderLightNum: Int = 0
 	private var shaderShadowLightNum: Int = 0
-	private var shaderRegionsPerLight = 0
+	private var shaderRegionsPerLight: IntArray = IntArray(0)
 	private var lightPosRange: FloatArray
 	private var lightColourBrightness: FloatArray
 	private var lightShadowPosRange: FloatArray
@@ -179,7 +181,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		lightShadowPosRange = FloatArray(0)
 		lightShadowColourBrightness = FloatArray(0)
 		lightShadowRegions = FloatArray(0)
-		shader = createShader(shaderLightNum, shaderShadowLightNum, shaderRegionsPerLight)
+		shader = createShader(shaderLightNum, shaderShadowLightNum, IntArray(0))
 	}
 
 	// ----------------------------------------------------------------------
@@ -303,23 +305,33 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		var rebuildShader = false
 
-		if (basicLights.size > shaderLightNum || shadowLights.size > shaderShadowLightNum)
+		if (basicLights.size > shaderLightNum)
 		{
 			shaderLightNum = basicLights.size
-			shaderShadowLightNum = shadowLights.size
 			rebuildShader = true
+
 			lightPosRange = FloatArray(shaderLightNum * 3)
 			lightColourBrightness = FloatArray(shaderLightNum * 4)
+		}
+
+		val sortedShadowLights = shadowLights.filter { it.cache.anyClear() }.sortedBy { if (shadowMode == ShadowMode.TILE) it.cache.currentCastRegions.size else it.cache.opaqueRegions.size }.toGdxArray()
+
+		if (sortedShadowLights.size != shaderShadowLightNum)
+		{
+			shaderShadowLightNum = sortedShadowLights.size
+			rebuildShader = true
 
 			val shadowPosRangeSize = if (shadowMode == ShadowMode.TILE) 4 else 3
 			lightShadowPosRange = FloatArray(shaderShadowLightNum * shadowPosRangeSize)
 			lightShadowColourBrightness = FloatArray(shaderShadowLightNum * 4)
 		}
 
-		var regionsPerLight = 0
+		val regionsPerLight = IntArray(shaderShadowLightNum)
+		var regionsDifferent = false
 		if (Global.collisionGrid != null)
 		{
-			for (light in shadowLights)
+			var i = 0
+			for (light in sortedShadowLights)
 			{
 				val numCount: Int
 				if (shadowMode == ShadowMode.TILE)
@@ -331,18 +343,24 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 					numCount = light.cache.opaqueRegions.size
 				}
 
-				if (light.cache.anyClear() && numCount > regionsPerLight)
+				if (i < shaderRegionsPerLight.size)
 				{
-					regionsPerLight = numCount
+					val shaderNumCount = shaderRegionsPerLight[i]
+					if (numCount > shaderNumCount || numCount < shaderNumCount * 0.75f)
+					{
+						regionsDifferent = true
+					}
 				}
+
+				regionsPerLight[i++] = numCount
 			}
 		}
 
-		if (shaderRegionsPerLight < regionsPerLight)
+		if (regionsPerLight.size != shaderRegionsPerLight.size || regionsDifferent)
 		{
 			rebuildShader = true
 			shaderRegionsPerLight = regionsPerLight
-			lightShadowRegions = FloatArray(regionsPerLight * shaderShadowLightNum * 4)
+			lightShadowRegions = FloatArray(regionsPerLight.sum() * 4)
 		}
 
 		var i = 0
@@ -371,10 +389,8 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		var shadowCacheOffset = 0
 		i = 0
-		for (light in shadowLights)
+		for (light in sortedShadowLights)
 		{
-			if (!light.cache.anyClear()) continue
-
 			lightShadowColourBrightness[(i*4)+0] = light.colour.r
 			lightShadowColourBrightness[(i*4)+1] = light.colour.g
 			lightShadowColourBrightness[(i*4)+2] = light.colour.b
@@ -399,6 +415,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 				lightShadowPosRange[(i * 3) + 2] = (light.range * tileSize * 0.9f) * (light.range * tileSize * 0.9f)
 			}
 
+			val cacheStart = shadowCacheOffset
 			var minx = 0f
 			var miny = 0f
 			var maxx = 0f
@@ -416,7 +433,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 				lightShadowRegions[shadowCacheOffset++] = maxy
 			}
 
-			while (shadowCacheOffset < (i+1) * shaderRegionsPerLight * 4)
+			while (shadowCacheOffset < cacheStart + shaderRegionsPerLight[i] * 4)
 			{
 				lightShadowRegions[shadowCacheOffset++] = minx
 				lightShadowRegions[shadowCacheOffset++] = miny
@@ -448,7 +465,7 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 
 		if (rebuildShader)
 		{
-			shader.dispose()
+			//shader.dispose()
 			shader = createShader(shaderLightNum, shaderShadowLightNum, shaderRegionsPerLight)
 		}
 
@@ -1177,17 +1194,30 @@ class SortedRenderer(var tileSize: Float, val width: Float, val height: Float, v
 		public const val verticesASprite = vertexSize * 4
 		private const val maxVertices = maxSprites * vertexSize
 
-		fun createShader(numLights: Int, numShadowLights: Int, occludersPerLight: Int): ShaderProgram
+		private val cachedShaders = ObjectMap<String, ShaderProgram>()
+
+		fun createShader(numLights: Int, numShadowLights: Int, regionsPerLight: IntArray): ShaderProgram
 		{
-			val vertexShader = getVertexOptimised(numLights, numShadowLights, occludersPerLight)
-			val fragmentShader = getFragmentOptimised(numLights, numShadowLights, occludersPerLight)
+			val key = numLights.toString() + numShadowLights.toString() + regionsPerLight.map { it.toString() }.joinToString()
+
+			val existing = cachedShaders[key]
+			if (existing != null)
+			{
+				return existing
+			}
+
+			val vertexShader = getVertexOptimised()
+			val fragmentShader = getFragmentOptimised(numLights, numShadowLights, regionsPerLight)
 
 			val shader = ShaderProgram(vertexShader, fragmentShader)
 			if (!shader.isCompiled) throw IllegalArgumentException("Error compiling shader: " + shader.log)
+
+			cachedShaders[key] = shader
+
 			return shader
 		}
 
-		fun getVertexUnoptimised(numLights: Int, numShadowLights: Int, occludersPerLight: Int): String
+		fun getVertexUnoptimised(): String
 		{
 			val vertexShader = """
 attribute vec4 ${ShaderProgram.POSITION_ATTRIBUTE};
@@ -1226,7 +1256,7 @@ void main()
 			return vertexShader
 		}
 
-		fun getVertexOptimised(numLights: Int, numShadowLights: Int, occludersPerLight: Int): String
+		fun getVertexOptimised(): String
 		{
 			val androidDefine = if (Global.android) "#define LOWP lowp" else "#define LOWP"
 
@@ -1267,7 +1297,7 @@ void main()
 			return vertexShader
 		}
 
-		fun getFragmentUnoptimised(numLights: Int, numShadowLights: Int, regionsPerLight: Int): String
+		fun getFragmentUnoptimised(numLights: Int, numShadowLights: Int, regionsPerLight: IntArray): String
 		{
 			val shadowDefine =
 				if (numShadowLights > 0)
@@ -1280,6 +1310,22 @@ void main()
 					}
 				}
 				else ""
+
+			var regionsDefine = "const vec2 regionSizes[${regionsPerLight.size}] = vec2[${regionsPerLight.size}]("
+
+			var currentRegionIndex = 0
+			for (region in regionsPerLight)
+			{
+				if (currentRegionIndex != 0)
+				{
+					regionsDefine += ", "
+				}
+
+				regionsDefine += "vec2($currentRegionIndex, $region)"
+				currentRegionIndex += region
+			}
+
+			regionsDefine += ");"
 
 			val tileLightingDefine = if (!smoothLighting) "#define TILELIGHTING 1" else ""
 			val fragmentShader = """
@@ -1305,13 +1351,15 @@ uniform vec4 u_lightColourBrightness[$numLights];
 #ifdef SMOOTHSHADOWS
 uniform vec3 u_shadowedLightPosRange[$numShadowLights];
 uniform vec4 u_shadowedLightColourBrightness[$numShadowLights];
-uniform vec4 u_shadowedLightRegions[${regionsPerLight * numShadowLights}];
+$regionsDefine
+uniform vec4 u_shadowedLightRegions[${regionsPerLight.sum()}];
 #endif
 
 #ifdef TILESHADOWS
 uniform vec4 u_shadowedLightPosRangeMode[$numShadowLights];
 uniform vec4 u_shadowedLightColourBrightness[$numShadowLights];
-uniform vec4 u_shadowedLightRegions[${regionsPerLight * numShadowLights}];
+$regionsDefine
+uniform vec4 u_shadowedLightRegions[${regionsPerLight.sum()}];
 #endif
 
 uniform sampler2D u_texture;
@@ -1365,9 +1413,9 @@ bool insideBox(vec2 v, vec2 bottomLeft, vec2 topRight)
 bool isPointVisible(int index, vec2 point, bool regionsAreLit)
 {
 	bool inRegion = false;
-	for (int i = 0; i < $regionsPerLight; i++)
+	for (int i = 0; i < regionSizes[index].y; i++)
 	{
-		vec4 region = u_shadowedLightRegions[(index * $regionsPerLight) + i];
+		vec4 region = u_shadowedLightRegions[regionSizes[index].x + i];
 		inRegion = inRegion || insideBox(point, region.xy, region.zw);
 	}
 
@@ -1438,9 +1486,9 @@ bool isPointVisible(int index, vec2 point)
 
 	float collided = 0.0;
 	float collidedOverride = 0.0;
-	for (int i = 0; i < $regionsPerLight; i++)
+	for (int i = 0; i < regionSizes[index].y; i++)
 	{
-		vec4 occluder = u_shadowedLightRegions[(index * $regionsPerLight) + i];
+		vec4 occluder = u_shadowedLightRegions[regionSizes[index].x + i];
 		float intersect = rayBoxIntersect(pixelPos, rdir, occluder.xy, occluder.zw);
 
 		collided += float(intersect > 0.0 && intersect < rayLen);
@@ -1510,7 +1558,7 @@ void main()
 			return fragmentShader
 		}
 
-		fun getFragmentOptimised(numLights: Int, numShadowLights: Int, regionsPerLight: Int): String
+		fun getFragmentOptimised(numLights: Int, numShadowLights: Int, regionsPerLight: IntArray): String
 		{
 			val androidDefine = if (Global.android) "#define LOWP lowp" else "#define LOWP"
 
@@ -1548,13 +1596,13 @@ uniform LOWP vec4 u_lightColourBrightness[$numLights];
 #ifdef SMOOTHSHADOWS
 uniform vec3 u_shadowedLightPosRange[$numShadowLights];
 uniform LOWP vec4 u_shadowedLightColourBrightness[$numShadowLights];
-uniform vec4 u_shadowedLightRegions[${regionsPerLight * numShadowLights}];
+uniform vec4 u_shadowedLightRegions[${regionsPerLight.sum()}];
 #endif
 
 #ifdef TILESHADOWS
 uniform vec4 u_shadowedLightPosRangeMode[$numShadowLights];
 uniform LOWP vec4 u_shadowedLightColourBrightness[$numShadowLights];
-uniform vec4 u_shadowedLightRegions[${regionsPerLight * numShadowLights}];
+uniform vec4 u_shadowedLightRegions[${regionsPerLight.sum()}];
 #endif
 
 uniform sampler2D u_texture;
@@ -1602,12 +1650,12 @@ void main ()
 
 				"""
 
-
+					var regionIndex = 0
 					for (li in 0 until numShadowLights)
 					{
 						fragmentShader += """
 	vec3 shadowPosRange_$li = u_shadowedLightPosRange[$li];
-	vec4 shadowColourBrightness_$li = u_shadowedLightColourBrightness[$li];
+	LOWP vec4 shadowColourBrightness_$li = u_shadowedLightColourBrightness[$li];
 
 #ifdef TILELIGHTING
 	vec2 shadowDiff_$li = (shadowPosRange_$li.xy - spriteTile);
@@ -1616,25 +1664,25 @@ void main ()
 #endif
 	float shadowLen_$li = ((shadowDiff_$li.x * shadowDiff_$li.x) + (shadowDiff_$li.y * shadowDiff_$li.y));
 
-	float shadowLightStrength_$li = (float((shadowPosRange_$li.z >= shadowLen_$li)) * (1.0 - (shadowLen_$li / shadowPosRange_$li.z)));
+	LOWP float shadowLightStrength_$li = (float((shadowPosRange_$li.z >= shadowLen_$li)) * (1.0 - (shadowLen_$li / shadowPosRange_$li.z)));
 
 	vec2 rayDiff_$li = (shadowPosRange_$li.xy - shadowPixelPos);
 	float rayLen_$li = sqrt(dot(rayDiff_$li, rayDiff_$li));
 
-	vec2 rdir_$li = (1.0/((rayDiff_$li / rayLen_$li)));
-	float collided_$li = 0.0;
-	float collidedOverride_$li = 0.0;
+	LOWP vec2 rdir_$li = (1.0/((rayDiff_$li / rayLen_$li)));
+	LOWP float collided_$li = 0.0;
+	LOWP float collidedOverride_$li = 0.0;
 
 	vec2 occluderPixel_${li};
 	vec2 tmax_${li};
 	vec2 tmin_${li};
 						"""
 
-						for (oi in 0 until regionsPerLight)
+						for (oi in 0 until regionsPerLight[li])
 						{
 							fragmentShader += """
 
-	vec4 occluder_${li}_$oi = u_shadowedLightRegions[${li * regionsPerLight + oi}];
+	vec4 occluder_${li}_$oi = u_shadowedLightRegions[${regionIndex++}];
 
 	tmin_${li} = (occluder_${li}_$oi.xy - shadowPixelPos) * rdir_$li;
 	tmax_${li} = (occluder_${li}_$oi.zw - shadowPixelPos) * rdir_$li;
@@ -1642,11 +1690,11 @@ void main ()
 	float t4_${li}_$oi = max(min(tmin_${li}.x, tmax_${li}.x), min(tmin_${li}.y, tmax_${li}.y));
 	float t5_${li}_$oi = min(max(tmin_${li}.x, tmax_${li}.x), max(tmin_${li}.y, tmax_${li}.y));
 
-	float intersection_${li}_$oi = (t5_${li}_$oi < 0.0 || t4_${li}_$oi > t5_${li}_$oi) ? -1.0 : t4_${li}_$oi;
+	LOWP float intersection_${li}_$oi = (t5_${li}_$oi < 0.0 || t4_${li}_$oi > t5_${li}_$oi) ? -1.0 : t4_${li}_$oi;
 
 	collided_$li = collided_$li + float((intersection_${li}_$oi > 0.0) && (intersection_${li}_$oi < rayLen_$li));
 
-	vec2 inBox_${li}_$oi = (vec2(greaterThanEqual(baseTile, occluder_${li}_$oi.xy)) - vec2(greaterThanEqual(baseTile, occluder_${li}_$oi.zw)));
+	LOWP vec2 inBox_${li}_$oi = (vec2(greaterThanEqual(baseTile, occluder_${li}_$oi.xy)) - vec2(greaterThanEqual(baseTile, occluder_${li}_$oi.zw)));
 	collidedOverride_$li = (collidedOverride_$li + (inBox_${li}_$oi.x * inBox_${li}_$oi.y));
 
 	"""
@@ -1671,6 +1719,7 @@ void main ()
 	shadowPixelPos.x = v_pos.x;
 	shadowPixelPos.y = v_pos.w + min(v_pos.y - v_pos.w, u_tileSize * 0.9);
 	"""
+					var regionIndex = 0
 					for (li in 0 until numShadowLights)
 					{
 						fragmentShader += """
@@ -1689,11 +1738,11 @@ void main ()
 	LOWP float inRegion_$li = 0.0;
 						"""
 
-						for (oi in 0 until regionsPerLight)
+						for (oi in 0 until regionsPerLight[li])
 						{
 							fragmentShader += """
 
-	vec4 region_${li}_$oi = u_shadowedLightRegions[${li * regionsPerLight + oi}];
+	vec4 region_${li}_$oi = u_shadowedLightRegions[${regionIndex++}];
 
 	LOWP vec2 inBox_${li}_$oi = vec2(greaterThanEqual(shadowPixelPos, region_${li}_$oi.xy)) - vec2(greaterThanEqual(shadowPixelPos, region_${li}_$oi.zw));
 	inRegion_$li = inRegion_$li + (inBox_${li}_$oi.x * inBox_${li}_$oi.y);
