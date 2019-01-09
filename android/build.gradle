@@ -15,7 +15,7 @@ android {
         instrumentTest.setRoot('tests')
     }
     defaultConfig {
-        applicationId "com.lyeeedar"
+        applicationId "com.lyeeedar.TowerDefense"
         minSdkVersion 9
         targetSdkVersion 24
     }
