@@ -1560,7 +1560,7 @@ void main()
 
 		fun getFragmentOptimised(numLights: Int, numShadowLights: Int, regionsPerLight: IntArray): String
 		{
-			val androidDefine = if (Global.android) "#define LOWP lowp" else "#define LOWP"
+			val androidDefine = if (Global.android) "#define LOWP lowp\nprecision mediump float;" else "#define LOWP"
 
 			val shadowDefine =
 				if (numShadowLights > 0)
